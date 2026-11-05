@@ -57,6 +57,6 @@ npm exec -w @jfood/mobile -- expo-doctor
 
 ## Modelo de datos
 
-La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso.Las entradas guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
+La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso. Las entradas guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
 
 Los objetivos iniciales de la interfaz son provisionales (2000 kcal) hasta completar su configuración en Perfil, y la pantalla de Inicio lo indica explícitamente. Todos los datos se almacenan localmente en `jfood.db`.
