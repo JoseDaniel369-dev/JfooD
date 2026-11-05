@@ -1,0 +1,27 @@
+{
+  "name": "jfood",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1"
+  },
+  "scripts": {
+    "build": "npm run build -w @jfood/core && npm run build -w @jfood/api",
+    "build:core": "npm run build -w @jfood/core",
+    "lint": "npm run lint -w @jfood/mobile",
+    "postinstall": "npm run build -w @jfood/core",
+    "start:api": "npm run dev -w @jfood/api",
+    "start:mobile": "npm run build -w @jfood/core && npm run start -w @jfood/mobile",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

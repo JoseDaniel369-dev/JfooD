@@ -1,0 +1,22 @@
+# Dependencies and local tooling
+node_modules/
+.cache/
+.expo/
+
+# Builds
+dist/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Android / iOS generated projects
+apps/mobile/android/
+apps/mobile/ios/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
