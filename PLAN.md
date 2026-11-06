@@ -51,7 +51,7 @@ Monorepo con npm workspaces:
 
 1. **Barra inferior y área segura en Android** (`apps/mobile/src/app/(tabs)/_layout.tsx` y `apps/mobile/app.json`)
    - Se usa una altura numérica explícita (`49 + inset inferior`) para asegurar que el navegador realmente reserve el espacio necesario; `height: undefined` no funciona porque React Native ignora los valores `undefined` al aplanar estilos.
-   - `paddingBottom: Math.max(insets.bottom, 24)` reserva el inset real cuando el sistema lo informa, y usa un suelo de 24 dp para dispositivos con navegación por gestos que reportan `insets.bottom = 0` o lo infrarreportan.
+   - `paddingBottom: Math.max(insets.bottom, 64)` reserva el inset real cuando el sistema lo informa, y usa un suelo de 64 dp para dispositivos con navegación por gestos o barras de navegación más altas que reportan `insets.bottom = 0` o lo infrarreportan.
    - Se añade `expo-navigation-bar` para mantener el estilo oscuro de los botones de la barra del sistema sobre el fondo claro de la app.
 
 2. **Fecha del diario siempre actualizada** (`apps/mobile/src/features/diary/hooks/useDiaryDay.ts`)

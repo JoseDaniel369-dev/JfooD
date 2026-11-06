@@ -8,16 +8,16 @@ import { colors } from '@/theme';
  * Base height of the tab bar content (react-navigation's default height without
  * insets). Keep this in sync with the navigator if the default ever changes.
  */
-const TAB_BAR_CONTENT_HEIGHT = 49;
+const TAB_BAR_CONTENT_HEIGHT = 56;
 
 /**
  * Defensive floor for the bottom safe area on Android. Some devices report
  * insets.bottom = 0 (gesture navigation with the hint disabled, or OEMs that
- * under-report the navigation bar). 48dp matches the standard 3-button
- * navigation bar height, so the tab bar background extends below the system
- * navigation zone instead of letting it overlap the tab bar content.
+ * under-report the navigation bar). 64dp covers taller navigation bars and
+ * gesture areas found on some devices, so the tab bar background extends below
+ * the system navigation zone instead of letting it overlap the tab bar content.
  */
-const MIN_BOTTOM_INSET = 48;
+const MIN_BOTTOM_INSET = 64;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
