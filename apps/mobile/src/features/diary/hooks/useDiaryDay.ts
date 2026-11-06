@@ -30,7 +30,14 @@ export function useDiaryDay() {
   );
 
   const reload = useCallback(async () => {
-    setState((current) => ({ ...current, error: null, loading: true }));
+    setState((current) => ({
+      ...current,
+      error: null,
+      // Solo mostramos el spinner si todavía no hay datos cargados.
+      // Las recargas posteriores (cambio de pestaña, nueva fecha) son silenciosas
+      // para evitar el parpadeo completo de la pantalla.
+      loading: current.day === null,
+    }));
 
     try {
       const day = await loadDay();
@@ -62,26 +69,6 @@ export function useDiaryDay() {
       clearInterval(interval);
     };
   }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    void loadDay()
-      .then((day) => {
-        if (active) {
-          setState({ day, error: null, loading: false });
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setState({ day: null, error: ERROR_MESSAGE, loading: false });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [loadDay]);
 
   useFocusEffect(
     useCallback(() => {

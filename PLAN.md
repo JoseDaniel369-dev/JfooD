@@ -72,7 +72,7 @@ Monorepo con npm workspaces:
 
 ### 3.3 Verificación del estado actual
 
-- 14/14 pruebas superadas (5 API, 2 móvil, 7 core).
+- 21/21 pruebas superadas (5 API, 2 móvil, 14 core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
@@ -88,11 +88,13 @@ Monorepo con npm workspaces:
 - `apps/mobile/src/app/(tabs)/_layout.tsx`: navegación por pestañas y área segura inferior.
 - `apps/mobile/src/app/(tabs)/index.tsx`: resumen del día, macronutrientes y accesos.
 - `apps/mobile/src/app/(tabs)/diary.tsx`: diario del día y comidas.
-- `apps/mobile/src/app/(tabs)/planner.tsx`, `progress.tsx`, `profile.tsx`: estados informativos pendientes.
+- `apps/mobile/src/app/(tabs)/profile.tsx`: formulario de datos personales y objetivos calculados.
+- `apps/mobile/src/app/(tabs)/planner.tsx`, `progress.tsx`: estados informativos pendientes.
 - `apps/mobile/src/app/scanner.tsx`: entrada al futuro escáner.
 - `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha y lista de comidas.
+- `apps/mobile/src/features/profile/`: formulario, hook y tipos del perfil de usuario.
 - `apps/mobile/src/data/sqlite/migrations/`: migraciones versionadas.
-- `apps/mobile/src/data/sqlite/repositories/diaryRepository.ts`: consulta del día (solo lectura por ahora).
+- `apps/mobile/src/data/sqlite/repositories/`: `diaryRepository.ts`, `goalsRepository.ts`, `profileRepository.ts` e `id.ts` (generador de ids locales).
 - `apps/mobile/src/components/`: `Screen`, `Card`, `ProgressBar`, estados de carga y error.
 - `apps/mobile/src/theme/index.ts`: colores, espaciados y radios.
 
@@ -105,6 +107,7 @@ Monorepo con npm workspaces:
 ### Núcleo
 
 - `packages/core/src/nutrition/nutrients.ts`: `calculateNutrients`, `sumNutrients`, `Nutrients`.
+- `packages/core/src/nutrition/goals.ts`: cálculo de edad, BMR (Mifflin-St Jeor), TDEE, objetivos de macronutrientes y esquemas Zod del perfil.
 - `packages/core/src/schemas/recognition.ts`: contratos de reconocimiento sin nutrientes.
 
 ---

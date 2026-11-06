@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -65,8 +65,14 @@ export function useProfile() {
     [database],
   );
 
+  const hasLoaded = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
+      if (hasLoaded.current) {
+        return;
+      }
+      hasLoaded.current = true;
       void load();
     }, [load]),
   );

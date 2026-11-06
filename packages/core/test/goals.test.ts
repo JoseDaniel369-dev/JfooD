@@ -30,6 +30,18 @@ test('rejects invalid birth dates in schema', () => {
   assert.equal(result.success, false);
 });
 
+test('rejects impossible calendar dates', () => {
+  const result = userProfileSchema.safeParse({
+    weightKg: 70,
+    heightCm: 175,
+    birthDate: '1990-02-31',
+    variant: 'male',
+    activityLevel: 'moderate',
+  });
+
+  assert.equal(result.success, false);
+});
+
 test('calculates Mifflin-St Jeor BMR for a male', () => {
   // 30 years, 70 kg, 175 cm, male => 10*70 + 6.25*175 - 5*30 + 5 = 1 648.75
   const bmr = calculateBmr({

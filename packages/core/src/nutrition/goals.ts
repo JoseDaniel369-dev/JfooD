@@ -15,10 +15,30 @@ export const activityLevelSchema = z.enum(ACTIVITY_LEVELS);
 export type MifflinVariant = z.infer<typeof mifflinVariantSchema>;
 export type ActivityLevel = z.infer<typeof activityLevelSchema>;
 
+const birthDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => isRealCalendarDate(value), {
+    message: 'Fecha de nacimiento no válida.',
+  });
+
+function isRealCalendarDate(value: string): boolean {
+  const [yearStr, monthStr, dayStr] = value.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 export const userProfileSchema = z.object({
   weightKg: z.number().positive().max(300),
   heightCm: z.number().positive().max(300),
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  birthDate: birthDateSchema,
   variant: mifflinVariantSchema,
   activityLevel: activityLevelSchema,
 });
