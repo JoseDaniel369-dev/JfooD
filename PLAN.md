@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 6 de noviembre de 2026
-**Estado:** Fase 0 completada. Correcciones urgentes aplicadas (barra de navegación, repositorio Git). Fase 2 (perfil y objetivos) implementada. Fase 1 (diario completo y catálogo local) sigue pendiente.
+**Estado:** Fase 0 completada. Fase 2 (perfil y objetivos) implementada. Fase 1 (diario completo y catálogo local) en curso: plan detallado aprobado, pendiente de implementación.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -135,28 +135,72 @@ Scaffolding, navegación, SQLite, lectura del diario, motor nutricional, API de 
 
 **Objetivo:** que el usuario pueda registrar, editar y eliminar alimentos reales en su diario sin conexión.
 
-Alcance:
+**Decisiones de diseño aprobadas:**
 
-- Repositorio de alimentos:
-  - Alta manual de alimento con nombre, marca opcional y macros por 100 g.
-  - Normalización del nombre para búsqueda.
-  - Búsqueda local por nombre, favoritos y alimentos usados recientemente.
-- Repositorio del diario (escritura):
-  - Asegurar la comida del día (`local_date` + `meal_type`).
-  - Añadir entrada con alimento y gramos, guardando el snapshot por 100 g.
-  - Editar gramos, mover de comida y eliminar entrada.
-- Interfaz:
-  - Flujo de añadir alimento: buscar o crear → elegir gramos y comida → confirmar.
-  - Acciones de editar y eliminar desde la lista de comidas.
-  - Validación con los esquemas de `@jfood/core` y estados vacíos/errores claros.
-  - Recarga del diario tras cada mutación (sin depender solo del intervalo de fecha).
-- Pruebas:
-  - Lógica pura de normalización, validación y cálculo.
-  - Verificación manual del flujo completo en dispositivo/emulador.
+- Flujo de añadir alimento: **modal paso a paso** en la ruta `diary/add-food`.
+- Catálogo local: **solo crear alimentos y marcarlos como favoritos**. Editar o borrar alimentos del catálogo queda fuera de esta fase.
 
-Fuera de alcance: escáner, códigos de barras, importación BEDCA/Open Food Facts, sincronización o cuentas.
+#### Tarea 1 — Catálogo de alimentos (lectura/escritura)
 
-Criterios de aceptación:
+Archivos nuevos:
+
+- `apps/mobile/src/features/foods/utils/normalize.ts`
+  - Normalizar nombres: minúsculas, sin tildes (`á→a`, `é→e`, …), `ñ→n`, espacios colapsados y recortados.
+- `apps/mobile/src/features/foods/types.ts`
+  - Tipos `Food`, `FoodInput`, `CreateFoodInput`, etc.
+- `apps/mobile/src/data/sqlite/repositories/foodRepository.ts`
+  - `createFood(database, input)` → inserta con `source = 'user'`, macros por 100 g (pueden ser `null`) y `is_favorite = false`.
+  - `searchFoods(database, query, limit)` → búsqueda por `normalized_name` usando `LIKE`, ordenada por favoritos primero y nombre.
+  - `getRecentFoods(database, limit)` → alimentos usados recientemente a partir de `diary_entries.created_at`.
+  - `getFavoriteFoods(database, limit)` → alimentos marcados como favoritos.
+  - `toggleFavorite(database, foodId)` → cambia `is_favorite`.
+- Tests de normalización en `apps/mobile/test/foods/normalize.test.ts`.
+
+#### Tarea 2 — Repositorio del diario (escritura)
+
+Ampliar `apps/mobile/src/data/sqlite/repositories/diaryRepository.ts`:
+
+- `ensureMeal(database, localDate, mealType)` → `INSERT OR IGNORE` en `diary_meals` (la restricción única `(local_date, meal_type)` lo hace atómico).
+- `addEntry(database, { localDate, mealType, food, grams })` → asegura la comida + inserta entrada con **snapshot** de nombre y macros por 100 g.
+- `updateEntryGrams(database, entryId, grams)` → actualiza gramos de una entrada existente.
+- `moveEntry(database, entryId, targetLocalDate, targetMealType)` → mueve entrada a otra comida, asegurando la comida destino.
+- `deleteEntry(database, entryId)` → elimina la entrada.
+- Validaciones con `gramsSchema` y `nutrientsPer100gSchema` de `@jfood/core`.
+
+#### Tarea 3 — Interfaz de usuario
+
+- `apps/mobile/src/app/(tabs)/diary.tsx` y componentes de `MealList`:
+  - Botón "+" en cada comida y CTA en comidas vacías para añadir alimento.
+  - Al tocar una entrada existente: opciones para **editar gramos**, **mover de comida** o **eliminar** (con confirmación).
+- `apps/mobile/src/app/diary/add-food.tsx` (modal paso a paso):
+  1. **Paso de búsqueda:** campo de texto + lista de resultados + secciones "Favoritos" y "Recientes".
+  2. **Paso de creación:** botón "Crear alimento" que abre formulario con nombre, marca opcional y macros por 100 g.
+  3. **Paso de cantidad:** al seleccionar o crear un alimento, elegir gramos y comida destino, luego "Añadir".
+- `apps/mobile/src/features/diary/hooks/useDiaryDay.ts`:
+  - Añadir una versión silenciosa de `reload` para usar tras mutaciones sin mostrar spinner.
+- Estados vacíos y de error claros; todos los textos en español.
+
+#### Tarea 4 — Pruebas, calidad y cierre
+
+- Tests de lógica pura: normalización, validación de gramos, cálculo de nutrientes.
+- Verificación manual completa en dispositivo/emulador:
+  - Añadir alimento a cada comida.
+  - Editar gramos.
+  - Mover entre comidas.
+  - Eliminar entrada.
+  - Persistencia tras cerrar y abrir la app.
+- Checklist completo de calidad:
+  - `npm test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npx expo-doctor`
+  - `npx expo export --platform android`
+- Actualizar `README.md` y `PLAN.md` con el estado final de la Fase 1.
+
+**Fuera de alcance:** escáner, códigos de barras, importación BEDCA/Open Food Facts, editar/borrar alimentos del catálogo, sincronización o cuentas.
+
+**Criterios de aceptación:**
 
 - Añadir, editar y eliminar entradas actualiza totales y comidas inmediatamente.
 - Los datos persisten tras cerrar y reabrir la app.
@@ -221,8 +265,8 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
 ## 7. Decisiones pendientes
 
 1. **Repositorio Git:** ✅ RESUELTO. Se eliminó el `.git` anidado de `apps/mobile` y el código de la app móvil se incorporó como archivos normales del repositorio raíz.
-2. **Alcance de la Fase 1:** confirmar el flujo exacto de alta manual, edición y búsqueda antes de implementar.
-3. **Datos de alimentos:** la Fase 1 trabaja solo con alimentos creados por el usuario. La importación desde BEDCA/Open Food Facts queda para una fase posterior.
+2. **Alcance de la Fase 1:** ✅ RESUELTO. Flujo modal paso a paso (`diary/add-food`); catálogo local con crear alimento + favorito; edición del diario mediante gramos, mover y eliminar entrada.
+3. **Datos de alimentos:** ✅ RESUELTO. La Fase 1 trabaja solo con alimentos creados por el usuario. La importación desde BEDCA/Open Food Facts queda para una fase posterior.
 4. **Peso y objetivos:** ✅ RESUELTO. El peso actual se captura en Perfil (Fase 2) y se registra como el primer `weight_log`, desbloqueando el cálculo de Mifflin-St Jeor y preparando la Fase 3.
 
 ---
@@ -243,10 +287,11 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
    ```text
    Estoy retomando JfooD en una sesión nueva. Antes de hacer nada, lee
    PLAN.md, README.md y apps/mobile/AGENTS.md. Confirma el estado real
-   con las comprobaciones del documento y propón el plan detallado de
-   la Fase 1 (diario completo y catálogo local).
+   con las comprobaciones del documento e implementa la Fase 1
+   (diario completo y catálogo local) siguiendo el plan detallado de
+   PLAN.md §6 "Fase 1 — Diario completo y catálogo local".
 
-   No hagas operaciones Git sin mi aprobación. No avances a la Fase 2
+   No hagas operaciones Git sin mi aprobación. No avances a la Fase 3
    hasta que revise y apruebe la Fase 1. No añadas dependencias
    innecesarias ni funciones fuera del alcance acordado.
    ```
