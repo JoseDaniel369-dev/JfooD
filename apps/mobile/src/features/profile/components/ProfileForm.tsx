@@ -68,7 +68,7 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
       for (const issue of parsed.error.issues) {
         const key = issue.path[0];
         if (typeof key === 'string') {
-          errors[key] = issue.message;
+          errors[key] = getFieldErrorMessage(key, issue.message);
         }
       }
       setFieldErrors(errors);
@@ -207,6 +207,27 @@ function parseNumber(value: string): number {
   const normalized = value.replace(',', '.');
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && normalized.trim() !== '' ? parsed : NaN;
+}
+
+function getFieldErrorMessage(field: string, zodMessage: string): string {
+  if (zodMessage.toLowerCase().includes('required')) {
+    return 'Campo obligatorio.';
+  }
+
+  switch (field) {
+    case 'weightKg':
+      return 'Introduce un peso válido en kilogramos.';
+    case 'heightCm':
+      return 'Introduce una altura válida en centímetros.';
+    case 'birthDate':
+      return 'Introduce la fecha en formato AAAA-MM-DD.';
+    case 'variant':
+      return 'Selecciona una opción.';
+    case 'activityLevel':
+      return 'Selecciona tu nivel de actividad.';
+    default:
+      return 'Valor no válido.';
+  }
 }
 
 const styles = StyleSheet.create({
