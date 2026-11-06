@@ -13,11 +13,11 @@ const TAB_BAR_CONTENT_HEIGHT = 49;
 /**
  * Defensive floor for the bottom safe area on Android. Some devices report
  * insets.bottom = 0 (gesture navigation with the hint disabled, or OEMs that
- * under-report the navigation bar). 24dp covers the standard gesture area so
- * the tab bar background extends below the system navigation zone instead of
- * letting it overlap the tab bar content.
+ * under-report the navigation bar). 48dp matches the standard 3-button
+ * navigation bar height, so the tab bar background extends below the system
+ * navigation zone instead of letting it overlap the tab bar content.
  */
-const MIN_BOTTOM_INSET = 24;
+const MIN_BOTTOM_INSET = 48;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
