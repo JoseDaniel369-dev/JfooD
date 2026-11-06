@@ -1,0 +1,28 @@
+import type { SQLiteDatabase } from 'expo-sqlite';
+
+import { initialMigration } from './migrations/001_initial';
+
+const migrations = [{ version: 1, sql: initialMigration }] as const;
+
+export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
+  await database.execAsync(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
+  `);
+
+  const result = await database.getFirstAsync<{ user_version: number }>(
+    'PRAGMA user_version',
+  );
+  const currentVersion = result?.user_version ?? 0;
+
+  for (const migration of migrations) {
+    if (migration.version <= currentVersion) {
+      continue;
+    }
+
+    await database.withTransactionAsync(async () => {
+      await database.execAsync(migration.sql);
+      await database.execAsync(`PRAGMA user_version = ${migration.version}`);
+    });
+  }
+}
