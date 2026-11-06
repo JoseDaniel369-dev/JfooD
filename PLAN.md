@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 5 de noviembre de 2026
-**Estado:** Fase 0 completada. Siguiente: Fase 1 (diario completo y catálogo local).
+**Última actualización:** 6 de noviembre de 2026
+**Estado:** Fase 0 completada. Correcciones urgentes aplicadas (barra de navegación, repositorio Git). Fase 2 (perfil y objetivos) implementada. Fase 1 (diario completo y catálogo local) sigue pendiente.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -49,10 +49,10 @@ Monorepo con npm workspaces:
 
 ### 3.2 Correcciones aplicadas
 
-1. **Barra inferior y área segura en Android** (`apps/mobile/src/app/(tabs)/_layout.tsx`)
-   - Se eliminó la altura fija y se toma el control explícito del inset inferior con `useSafeAreaInsets()`.
-   - `paddingBottom: Math.max(insets.bottom, 12)` garantiza separación real del área de navegación del sistema, incluso cuando Android reporta `0` en navegación por gestos.
-   - `height: undefined` anula la altura fija interna del navegador (`49 + inset`) para que el contenido no se comprima.
+1. **Barra inferior y área segura en Android** (`apps/mobile/src/app/(tabs)/_layout.tsx` y `apps/mobile/app.json`)
+   - Se usa una altura numérica explícita (`49 + inset inferior`) para asegurar que el navegador realmente reserve el espacio necesario; `height: undefined` no funciona porque React Native ignora los valores `undefined` al aplanar estilos.
+   - `paddingBottom: Math.max(insets.bottom, 24)` reserva el inset real cuando el sistema lo informa, y usa un suelo de 24 dp para dispositivos con navegación por gestos que reportan `insets.bottom = 0` o lo infrarreportan.
+   - Se añade `expo-navigation-bar` para mantener el estilo oscuro de los botones de la barra del sistema sobre el fondo claro de la app.
 
 2. **Fecha del diario siempre actualizada** (`apps/mobile/src/features/diary/hooks/useDiaryDay.ts`)
    - Se refresca al volver a primer plano (`AppState`) y cada 60 segundos mientras la app está abierta.
@@ -160,14 +160,30 @@ Criterios de aceptación:
 - No se requiere red ni clave de Gemini.
 - Todas las comprobaciones de calidad en verde.
 
-### Fase 2 — Perfil y objetivos (propuesta, pendiente de planificar)
+### Fase 2 — Perfil y objetivos ✅ COMPLETADA
 
-- Formulario de perfil con altura, fecha de nacimiento, sexo/variante Mifflin y actividad.
-- Cálculo de objetivos en `packages/core` con pruebas.
-- Guardado de objetivos en `nutrition_goals` con `effective_from`.
-- Sustitución de los objetivos provisionales y desaparición del aviso.
-- Validación de datos y estados de error.
-- Posible uso del peso actual como primer `weight_log`; confirmar el orden con la Fase 3.
+**Objetivo:** que el usuario configure sus datos personales y la app calcule objetivos nutricionales reales, sustituyendo los provisionales de 2000 kcal.
+
+Alcance implementado:
+
+- Motor en `packages/core` (`src/nutrition/goals.ts`):
+  - Cálculo de edad a partir de `birthDate`.
+  - Ecuación Mifflin-St Jeor para ambas variantes.
+  - TDEE con multiplicadores por nivel de actividad.
+  - Reparto de macros: proteína 1,6 g/kg, grasa 25 % de las kcal, resto en carbohidratos.
+  - Esquemas Zod compartidos y tests de regresión.
+- Datos en móvil:
+  - `profileRepository`: leer perfil + peso más reciente; guardar perfil, objetivos y primer `weight_log` en una transacción.
+  - `goalsRepository`: lectura de objetivos aplicables a una fecha, con objetivos por defecto como fallback.
+  - Refactor de `diaryRepository` para reutilizar `goalsRepository`.
+- Interfaz:
+  - Pantalla Perfil con formulario (peso, altura, fecha de nacimiento, sexo, actividad) y validación Zod.
+  - Recarga del diario al volver a Inicio (`useFocusEffect` en `useDiaryDay`) para reflejar los nuevos objetivos.
+  - Desaparición del aviso de objetivos provisionales tras guardar.
+- Decisiones aplicadas:
+  - Peso actual capturado en Fase 2 y guardado como primer `weight_log`.
+  - Reparto de macros: 1,6 g/kg de proteína, 25 % grasa, resto carbohidratos.
+- Pruebas: lógica pura de objetivos testeada; comprobaciones de calidad en verde.
 
 ### Fase 3 — Progreso (propuesta)
 
@@ -201,10 +217,10 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
 
 ## 7. Decisiones pendientes
 
-1. **Repositorio Git:** no hay repositorio en la raíz y existe un `.git` anidado en `apps/mobile`. Hay que decidir si se unifica el historial en la raíz o se mantiene como está. No hacer commits ni eliminar `.git` sin aprobación.
+1. **Repositorio Git:** ✅ RESUELTO. Se eliminó el `.git` anidado de `apps/mobile` y el código de la app móvil se incorporó como archivos normales del repositorio raíz.
 2. **Alcance de la Fase 1:** confirmar el flujo exacto de alta manual, edición y búsqueda antes de implementar.
 3. **Datos de alimentos:** la Fase 1 trabaja solo con alimentos creados por el usuario. La importación desde BEDCA/Open Food Facts queda para una fase posterior.
-4. **Peso y objetivos:** decidir si el peso actual se captura en Perfil (Fase 2) o al inicio de Progreso (Fase 3).
+4. **Peso y objetivos:** ✅ RESUELTO. El peso actual se captura en Perfil (Fase 2) y se registra como el primer `weight_log`, desbloqueando el cálculo de Mifflin-St Jeor y preparando la Fase 3.
 
 ---
 

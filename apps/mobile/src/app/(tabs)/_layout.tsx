@@ -5,13 +5,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme';
 
 /**
- * Android gesture navigation can report a bottom inset of 0 while the system
- * gesture area still overlays the screen, so enforce a minimum bottom padding.
+ * Base height of the tab bar content (react-navigation's default height without
+ * insets). Keep this in sync with the navigator if the default ever changes.
  */
-const MIN_TAB_BAR_BOTTOM_PADDING = 12;
+const TAB_BAR_CONTENT_HEIGHT = 49;
+
+/**
+ * Defensive floor for the bottom safe area on Android. Some devices report
+ * insets.bottom = 0 (gesture navigation with the hint disabled, or OEMs that
+ * under-report the navigation bar). 24dp covers the standard gesture area so
+ * the tab bar background extends below the system navigation zone instead of
+ * letting it overlap the tab bar content.
+ */
+const MIN_BOTTOM_INSET = 24;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, MIN_BOTTOM_INSET);
 
   return (
     <Tabs
@@ -25,15 +35,13 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          // Explicit bottom inset so the bar always clears the Android system
-          // navigation area. This style wins over the navigator's automatic
-          // `paddingBottom: insets.bottom`, making the behavior deterministic.
-          // `height: undefined` cancels the navigator's fixed height
-          // (`49 + inset`) so the bar is content-sized and the padding below
-          // can never squeeze the icons or labels.
-          height: undefined,
+          // The navigator computes a fixed height (49 + insets.bottom) by
+          // default. A style value of `height: undefined` is ignored when
+          // React Native flattens style arrays, so it never cancelled the
+          // default height. Use an explicit numeric height instead.
+          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
           paddingTop: 4,
-          paddingBottom: Math.max(insets.bottom, MIN_TAB_BAR_BOTTOM_PADDING),
+          paddingBottom: bottomInset,
         },
       }}
     >

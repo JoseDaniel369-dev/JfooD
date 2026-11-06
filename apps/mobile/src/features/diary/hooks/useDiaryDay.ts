@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { getDiaryDay } from '@/data/sqlite/repositories/diaryRepository';
@@ -81,6 +82,12 @@ export function useDiaryDay() {
       active = false;
     };
   }, [loadDay]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   return { ...state, localDate, reload };
 }

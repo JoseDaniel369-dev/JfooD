@@ -5,20 +5,13 @@ import {
 } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
 import type {
   DiaryDay,
   DiaryEntry,
   MealSummary,
   MealType,
-  NutritionGoals,
 } from '@/features/diary/types';
-
-const DEFAULT_GOALS: NutritionGoals = {
-  caloriesKcal: 2000,
-  proteinGrams: 125,
-  carbohydrateGrams: 250,
-  fatGrams: 55,
-};
 
 const EMPTY_NUTRIENTS: Nutrients = {
   caloriesKcal: 0,
@@ -26,13 +19,6 @@ const EMPTY_NUTRIENTS: Nutrients = {
   carbohydrateGrams: 0,
   fatGrams: 0,
 };
-
-interface GoalRow {
-  calories_kcal: number;
-  protein_grams: number;
-  carbohydrate_grams: number;
-  fat_grams: number;
-}
 
 interface EntryRow {
   id: string;
@@ -49,15 +35,8 @@ export async function getDiaryDay(
   database: SQLiteDatabase,
   localDate: string,
 ): Promise<DiaryDay> {
-  const [goalRow, entryRows] = await Promise.all([
-    database.getFirstAsync<GoalRow>(
-      `SELECT calories_kcal, protein_grams, carbohydrate_grams, fat_grams
-       FROM nutrition_goals
-       WHERE effective_from <= ?
-       ORDER BY effective_from DESC, id DESC
-       LIMIT 1`,
-      localDate,
-    ),
+  const [{ goals, goalsAreDefault }, entryRows] = await Promise.all([
+    getLatestGoals(database, localDate),
     database.getAllAsync<EntryRow>(
       `SELECT entry.id, meal.meal_type, entry.food_name, entry.grams,
               entry.calories_kcal, entry.protein_grams,
@@ -79,8 +58,8 @@ export async function getDiaryDay(
 
   return {
     localDate,
-    goals: goalRow ? mapGoals(goalRow) : DEFAULT_GOALS,
-    goalsAreDefault: goalRow === null,
+    goals,
+    goalsAreDefault,
     entries,
     consumed,
     meals: {
@@ -104,15 +83,6 @@ function mapEntry(row: EntryRow): DiaryEntry {
       carbohydrateGrams: row.carbohydrate_grams,
       fatGrams: row.fat_grams,
     },
-  };
-}
-
-function mapGoals(row: GoalRow): NutritionGoals {
-  return {
-    caloriesKcal: row.calories_kcal,
-    proteinGrams: row.protein_grams,
-    carbohydrateGrams: row.carbohydrate_grams,
-    fatGrams: row.fat_grams,
   };
 }
 

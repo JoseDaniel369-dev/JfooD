@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
+import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -12,6 +13,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
+      <NavigationBar style="dark" />
       <Suspense fallback={<AppLoading />}>
         <SQLiteProvider
           databaseName="jfood.db"

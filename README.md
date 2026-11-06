@@ -12,7 +12,7 @@ Aplicación móvil personal de nutrición, offline-first, desarrollada con React
 
 La base inicial incluye navegación por las cinco secciones, identidad visual, migración SQLite, lectura del resumen diario desde la base local y endpoint de salud del backend. Planificador, progreso, perfil y escáner muestran estados informativos hasta sus respectivas fases; no simulan funciones todavía no implementadas.
 
-La barra de pestañas respeta el área segura del sistema en Android: reserva el inset inferior real y un margen mínimo cuando el sistema no lo informa, sin altura fija que pueda comprimir sus iconos o etiquetas. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
+La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`49 + inset inferior`) y un suelo de 24 dp para la zona de navegación por gestos, evitando que la barra del sistema se solape con los iconos o etiquetas. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
 
 El motor ya calcula nutrientes por gramos y conserva los valores desconocidos como `null`. El contrato de reconocimiento admite únicamente nombre, gramos estimados y confianza, nunca valores nutricionales generados por Gemini.
 
