@@ -47,6 +47,15 @@ export function useDiaryDay() {
     }
   }, [loadDay]);
 
+  const refresh = useCallback(async () => {
+    try {
+      const day = await loadDay();
+      setState({ day, error: null, loading: false });
+    } catch {
+      setState({ day: null, error: ERROR_MESSAGE, loading: false });
+    }
+  }, [loadDay]);
+
   useEffect(() => {
     const refreshLocalDate = () => {
       const nextDate = toLocalDate(new Date());
@@ -76,5 +85,5 @@ export function useDiaryDay() {
     }, [reload]),
   );
 
-  return { ...state, localDate, reload };
+  return { ...state, localDate, reload, refresh };
 }

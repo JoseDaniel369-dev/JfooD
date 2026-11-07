@@ -31,6 +31,13 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
+              name="diary/add-food"
+              options={{
+                presentation: 'modal',
+                title: 'Añadir',
+              }}
+            />
+            <Stack.Screen
               name="scanner"
               options={{
                 presentation: 'modal',

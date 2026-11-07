@@ -1,17 +1,21 @@
 import {
   calculateNutrients,
+  gramsSchema,
+  nutrientsPer100gSchema,
   sumNutrients,
   type Nutrients,
 } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
+import { generateId } from '@/data/sqlite/utils/id';
 import type {
   DiaryDay,
   DiaryEntry,
   MealSummary,
   MealType,
 } from '@/features/diary/types';
+import type { Food } from '@/features/foods/types';
 
 const EMPTY_NUTRIENTS: Nutrients = {
   caloriesKcal: 0,
@@ -102,4 +106,133 @@ function summarizeMeal(
         )
       : EMPTY_NUTRIENTS,
   };
+}
+
+export async function ensureMeal(
+  database: SQLiteDatabase,
+  localDate: string,
+  mealType: MealType,
+): Promise<string> {
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  const result = await database.runAsync(
+    `INSERT OR IGNORE INTO diary_meals (id, local_date, meal_type, created_at)
+     VALUES (?, ?, ?, ?)`,
+    [id, localDate, mealType, now],
+  );
+
+  if (result.changes > 0) {
+    return id;
+  }
+
+  const existing = await database.getFirstAsync<{ id: string }>(
+    'SELECT id FROM diary_meals WHERE local_date = ? AND meal_type = ?',
+    [localDate, mealType],
+  );
+
+  if (!existing) {
+    throw new Error('No se ha podido asegurar la comida del diario.');
+  }
+
+  return existing.id;
+}
+
+interface AddEntryInput {
+  localDate: string;
+  mealType: MealType;
+  food: Food;
+  grams: number;
+}
+
+export async function addEntry(
+  database: SQLiteDatabase,
+  input: AddEntryInput,
+): Promise<void> {
+  const validGrams = gramsSchema.parse(input.grams);
+  const per100g = nutrientsPer100gSchema.parse({
+    caloriesKcal: input.food.caloriesKcal,
+    proteinGrams: input.food.proteinGrams,
+    carbohydrateGrams: input.food.carbohydrateGrams,
+    fatGrams: input.food.fatGrams,
+  });
+
+  const mealId = await ensureMeal(database, input.localDate, input.mealType);
+  const now = new Date().toISOString();
+  const id = generateId();
+
+  await database.runAsync(
+    `INSERT INTO diary_entries (
+      id, meal_id, food_id, food_name, grams,
+      calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      mealId,
+      input.food.id,
+      input.food.name,
+      validGrams,
+      per100g.caloriesKcal,
+      per100g.proteinGrams,
+      per100g.carbohydrateGrams,
+      per100g.fatGrams,
+      now,
+      now,
+    ],
+  );
+}
+
+export async function updateEntryGrams(
+  database: SQLiteDatabase,
+  entryId: string,
+  grams: number,
+): Promise<void> {
+  const validGrams = gramsSchema.parse(grams);
+  const now = new Date().toISOString();
+
+  await database.runAsync(
+    'UPDATE diary_entries SET grams = ?, updated_at = ? WHERE id = ?',
+    [validGrams, now, entryId],
+  );
+}
+
+export async function moveEntry(
+  database: SQLiteDatabase,
+  entryId: string,
+  targetLocalDate: string,
+  targetMealType: MealType,
+): Promise<void> {
+  const entry = await database.getFirstAsync<{ meal_id: string }>(
+    'SELECT meal_id FROM diary_entries WHERE id = ?',
+    [entryId],
+  );
+
+  if (!entry) {
+    throw new Error('Entrada no encontrada.');
+  }
+
+  const targetMealId = await ensureMeal(
+    database,
+    targetLocalDate,
+    targetMealType,
+  );
+
+  if (entry.meal_id === targetMealId) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+  await database.runAsync(
+    'UPDATE diary_entries SET meal_id = ?, updated_at = ? WHERE id = ?',
+    [targetMealId, now, entryId],
+  );
+}
+
+export async function deleteEntry(
+  database: SQLiteDatabase,
+  entryId: string,
+): Promise<void> {
+  await database.runAsync('DELETE FROM diary_entries WHERE id = ?', [entryId]);
 }

@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 6 de noviembre de 2026
-**Estado:** Fase 0 completada. Fase 2 (perfil y objetivos) implementada. Fase 1 (diario completo y catálogo local) en curso: plan detallado aprobado, pendiente de implementación.
+**Última actualización:** 7 de noviembre de 2026
+**Estado:** Fase 0, Fase 1 y Fase 2 completadas. Fase 1 (diario completo y catálogo local) implementada con catálogo local, favoritos, escritura del diario y modal paso a paso.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -72,7 +72,7 @@ Monorepo con npm workspaces:
 
 ### 3.3 Verificación del estado actual
 
-- 21/21 pruebas superadas (5 API, 2 móvil, 14 core).
+- 27/27 pruebas superadas (5 API, 7 móvil, 15 core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
@@ -91,7 +91,9 @@ Monorepo con npm workspaces:
 - `apps/mobile/src/app/(tabs)/profile.tsx`: formulario de datos personales y objetivos calculados.
 - `apps/mobile/src/app/(tabs)/planner.tsx`, `progress.tsx`: estados informativos pendientes.
 - `apps/mobile/src/app/scanner.tsx`: entrada al futuro escáner.
-- `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha y lista de comidas.
+- `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario.
+- `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha, lista de comidas y modal de edición de gramos.
+- `apps/mobile/src/features/foods/`: tipos, normalización de nombres y utilidades del catálogo local.
 - `apps/mobile/src/features/profile/`: formulario, hook y tipos del perfil de usuario.
 - `apps/mobile/src/data/sqlite/migrations/`: migraciones versionadas.
 - `apps/mobile/src/data/sqlite/repositories/`: `diaryRepository.ts`, `goalsRepository.ts`, `profileRepository.ts` e `id.ts` (generador de ids locales).
@@ -131,7 +133,7 @@ Los objetivos por defecto (2000 kcal) se usan solo mientras no exista una fila a
 
 Scaffolding, navegación, SQLite, lectura del diario, motor nutricional, API de salud, calidad y documentación.
 
-### Fase 1 — Diario completo y catálogo local ⬅ SIGUIENTE
+### Fase 1 — Diario completo y catálogo local ✅ COMPLETADA
 
 **Objetivo:** que el usuario pueda registrar, editar y eliminar alimentos reales en su diario sin conexión.
 
