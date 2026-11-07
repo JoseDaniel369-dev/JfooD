@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 7 de noviembre de 2026
-**Estado:** Fase 0, Fase 1 y Fase 2 completadas. Fase 1 (diario completo y catálogo local) implementada con catálogo local, favoritos, escritura del diario y modal paso a paso.
+**Estado:** Fases 0, 1, 2 y 3 completadas. Fase 3 (progreso) implementada con registro de peso por fecha, historial y tendencia semanal local.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -72,7 +72,7 @@ Monorepo con npm workspaces:
 
 ### 3.3 Verificación del estado actual
 
-- 27/27 pruebas superadas (5 API, 7 móvil, 15 core).
+- 34/34 pruebas superadas (5 API, 14 móvil, 15 core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
@@ -94,6 +94,7 @@ Monorepo con npm workspaces:
 - `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario.
 - `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha, lista de comidas y modal de edición de gramos.
 - `apps/mobile/src/features/foods/`: tipos, normalización de nombres y utilidades del catálogo local.
+- `apps/mobile/src/features/progress/`: repositorio, hook, utilidades de tendencia y pantalla de progreso.
 - `apps/mobile/src/features/profile/`: formulario, hook y tipos del perfil de usuario.
 - `apps/mobile/src/data/sqlite/migrations/`: migraciones versionadas.
 - `apps/mobile/src/data/sqlite/repositories/`: `diaryRepository.ts`, `goalsRepository.ts`, `profileRepository.ts` e `id.ts` (generador de ids locales).
@@ -234,11 +235,18 @@ Alcance implementado:
   - Reparto de macros: 1,6 g/kg de proteína, 25 % grasa, resto carbohidratos.
 - Pruebas: lógica pura de objetivos testeada; comprobaciones de calidad en verde.
 
-### Fase 3 — Progreso (propuesta)
+### Fase 3 — Progreso ✅ COMPLETADA
 
-- Registro y edición de peso por fecha.
-- Historial y tendencia local, sin nube.
-- Evitar dependencias de gráficos si no son imprescindibles.
+**Objetivo:** registrar y consultar la evolución del peso de forma local, sin nube ni dependencias de gráficos.
+
+Alcance implementado:
+
+- Repositorio `weightRepository.ts`: lectura, upsert por fecha (aprovechando la restricción única de `weight_logs`) y eliminación de registros.
+- Utilidades de tendencia en `features/progress/utils/trend.ts`: cambio respecto al registro anterior y media móvil de los últimos 7 días calendario.
+- Hook `useWeightLogs`: carga al enfocar la pantalla, guardado y borrado con recarga automática.
+- Pantalla `progress.tsx`: resumen con peso actual, cambio y tendencia; formulario para añadir/editar peso, nota opcional y fecha editable; historial con selección para editar y eliminación con confirmación; estados vacíos y de error en español.
+- Tests de regresión para las utilidades de tendencia.
+- Sin dependencias nuevas: todo se resuelve con componentes y utilidades existentes.
 
 ### Fase 4 — Planificador (propuesta)
 
