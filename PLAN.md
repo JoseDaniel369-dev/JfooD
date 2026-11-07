@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 7 de noviembre de 2026
-**Estado:** Fases 0, 1, 2 y 3 completadas. Fase 3 (progreso) implementada con registro de peso por fecha, historial y tendencia semanal local.
+**Estado:** Fases 0, 1, 2, 3 y 4 completadas. Fase 4 (planificador) implementada con planificación de comidas a partir del catálogo local y copia de un día planificado al diario.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -248,11 +248,71 @@ Alcance implementado:
 - Tests de regresión para las utilidades de tendencia.
 - Sin dependencias nuevas: todo se resuelve con componentes y utilidades existentes.
 
-### Fase 4 — Planificador (propuesta)
+### Fase 4 — Planificador semanal ✅ COMPLETADA
 
-- Plan semanal basado en el catálogo local.
-- Copiar un día planificado al diario.
-- Sin sincronización ni cuentas.
+**Objetivo:** que el usuario planifique comidas con alimentos de su catálogo local y pueda copiar un día planificado al diario, todo offline.
+
+**Decisiones de diseño aprobadas:**
+
+- Navegación de días con controles «Anterior / Hoy / Siguiente» y fecha formateada. Sin librería de calendario.
+- Datos separados del diario: tabla `plan_entries` creada con la migración `002_plan`. El plan y el diario pueden divergir.
+- Snapshot de nombre y macros por 100 g en cada entrada del plan, igual que en el diario, para que cambios en el catálogo no alteren planes pasados.
+- Copiar al diario: botón por día con confirmación; copia todas las entradas del plan de esa fecha al diario sin borrar el plan.
+- Modal de añadir reutilizado: `diary/add-food` acepta el parámetro `target=plan` y, en ese modo, escribe en el plan en lugar del diario.
+
+#### Tarea 1 — Migración y repositorio del plan
+
+Archivos nuevos:
+
+- `apps/mobile/src/data/sqlite/migrations/002_plan.ts`
+  - Crea `plan_entries` con clave foránea opcional a `foods`, fecha, tipo de comida, nombre del alimento, gramos y snapshot de macros por 100 g.
+  - Índices por fecha y por alimento.
+- `apps/mobile/src/data/sqlite/repositories/planRepository.ts`
+  - `getPlanDay(database, localDate)` → día del plan con entradas y resumen por comida.
+  - `addPlanEntry(database, { localDate, mealType, food, grams })` → inserta entrada con snapshot de macros.
+  - `updatePlanEntryGrams(database, entryId, grams)`.
+  - `movePlanEntry(database, entryId, targetLocalDate, targetMealType)`.
+  - `deletePlanEntry(database, entryId)`.
+  - `copyPlanToDiary(database, localDate)` → dentro de una transacción, copia cada entrada del plan al diario usando `addEntry`.
+  - Validaciones con `gramsSchema` y `nutrientsPer100gSchema` de `@jfood/core`.
+
+#### Tarea 2 — Hook y modal de añadir
+
+- `apps/mobile/src/features/plan/hooks/usePlanDay.ts`
+  - Fecha local controlada por la pantalla; recarga al enfocar; refresco silencioso tras mutaciones.
+- `apps/mobile/src/app/diary/add-food.tsx`
+  - Lee el parámetro `target` (`'diary'` por defecto o `'plan'`).
+  - En modo `plan` usa `addPlanEntry`; en modo `diary` mantiene el comportamiento actual con `addEntry`.
+
+#### Tarea 3 — Interfaz del planificador
+
+- `apps/mobile/src/app/(tabs)/planner.tsx` reemplaza el `FeaturePlaceholder`:
+  - Cabecera con navegación de días (Anterior, Hoy, Siguiente) y fecha formateada.
+  - `MealList` variante `detailed` con las comidas del plan.
+  - Acciones por entrada: editar gramos, mover de comida, eliminar con confirmación.
+  - Botón «Copiar al diario» con confirmación; notifica al completar.
+  - Estados vacíos y de error en español.
+
+#### Tarea 4 — Pruebas, calidad y cierre
+
+- Tests de utilidades de fecha puras (`addDays`) en `apps/mobile/test/date.test.ts`.
+- Verificación manual:
+  - Añadir alimentos al plan de varias comidas.
+  - Editar gramos, mover entre comidas y eliminar.
+  - Copiar el día al diario y comprobar totales.
+  - Persistencia tras cerrar y abrir la app.
+- Checklist completo de calidad.
+- Actualizar `README.md` y `PLAN.md`.
+
+**Fuera de alcance:** plantillas o planes recurrentes, semanas predefinidas, sincronización o cuentas, compartir planes, exportar.
+
+**Criterios de aceptación:**
+
+- Añadir, editar y eliminar entradas del plan actualiza la vista inmediatamente.
+- Los datos del plan persisten tras cerrar y reabrir la app.
+- Copiar un día al diario duplica las entradas sin borrar el plan.
+- No se requiere red ni clave de Gemini.
+- Todas las comprobaciones de calidad en verde.
 
 ### Fase 5 — Escáner con Gemini (propuesta)
 
@@ -297,12 +357,12 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
    ```text
    Estoy retomando JfooD en una sesión nueva. Antes de hacer nada, lee
    PLAN.md, README.md y apps/mobile/AGENTS.md. Confirma el estado real
-   con las comprobaciones del documento e implementa la Fase 1
-   (diario completo y catálogo local) siguiendo el plan detallado de
-   PLAN.md §6 "Fase 1 — Diario completo y catálogo local".
+   con las comprobaciones del documento e implementa la Fase 5
+   (escáner con Gemini) siguiendo el plan detallado de
+   PLAN.md §6 "Fase 5 — Escáner con Gemini".
 
-   No hagas operaciones Git sin mi aprobación. No avances a la Fase 3
-   hasta que revise y apruebe la Fase 1. No añadas dependencias
+   No hagas operaciones Git sin mi aprobación. No avances a la Fase 6
+   hasta que revise y apruebe la Fase 5. No añadas dependencias
    innecesarias ni funciones fuera del alcance acordado.
    ```
 

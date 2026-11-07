@@ -17,6 +17,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
+import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
 import { toLocalDate } from '@/features/diary/utils/date';
 import {
   createFood,
@@ -33,11 +34,16 @@ type Step = 'search' | 'create' | 'quantity';
 
 export default function AddFoodScreen() {
   const database = useSQLiteContext();
-  const { date, meal } = useLocalSearchParams<{ date?: string; meal?: string }>();
+  const { date, meal, target } = useLocalSearchParams<{
+    date?: string;
+    meal?: string;
+    target?: string;
+  }>();
   const localDate = date ?? toLocalDate(new Date());
   const initialMeal = (MEALS.map((m) => m.type).includes(meal as MealType)
     ? meal
     : 'breakfast') as MealType;
+  const isPlanTarget = target === 'plan';
 
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
@@ -195,12 +201,21 @@ export default function AddFoodScreen() {
     setSaving(true);
 
     try {
-      await addEntry(database, {
-        localDate,
-        mealType: targetMeal,
-        food: selectedFood,
-        grams: parsedGrams,
-      });
+      if (isPlanTarget) {
+        await addPlanEntry(database, {
+          localDate,
+          mealType: targetMeal,
+          food: selectedFood,
+          grams: parsedGrams,
+        });
+      } else {
+        await addEntry(database, {
+          localDate,
+          mealType: targetMeal,
+          food: selectedFood,
+          grams: parsedGrams,
+        });
+      }
       router.back();
     } catch {
       setSaving(false);

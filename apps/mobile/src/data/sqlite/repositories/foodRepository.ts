@@ -113,15 +113,19 @@ export async function getRecentFoods(
   limit = 10,
 ): Promise<Food[]> {
   const rows = await database.getAllAsync<FoodRow>(
-    `SELECT f.*
+    `SELECT f.*, MAX(latest.last_used) AS last_used
      FROM foods f
      INNER JOIN (
        SELECT food_id, MAX(created_at) AS last_used
-       FROM diary_entries
-       WHERE food_id IS NOT NULL
+       FROM (
+         SELECT food_id, created_at FROM diary_entries WHERE food_id IS NOT NULL
+         UNION ALL
+         SELECT food_id, created_at FROM plan_entries WHERE food_id IS NOT NULL
+       )
        GROUP BY food_id
      ) latest ON latest.food_id = f.id
-     ORDER BY latest.last_used DESC
+     GROUP BY f.id
+     ORDER BY last_used DESC
      LIMIT ?`,
     [limit],
   );

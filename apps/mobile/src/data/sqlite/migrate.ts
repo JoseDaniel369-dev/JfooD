@@ -1,8 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { initialMigration } from './migrations/001_initial';
+import { planMigration } from './migrations/002_plan';
 
-const migrations = [{ version: 1, sql: initialMigration }] as const;
+const migrations = [
+  { version: 1, sql: initialMigration },
+  { version: 2, sql: planMigration },
+] as const;
 
 export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   await database.execAsync(`

@@ -37,3 +37,10 @@ export function formatLocalDate(localDate: string): string {
 
   return `${weekday}, ${date.getDate()} de ${monthName}`;
 }
+
+export function addDays(localDate: string, days: number): string {
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  date.setDate(date.getDate() + days);
+  return toLocalDate(date);
+}
