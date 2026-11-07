@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -27,14 +27,23 @@ export function useWeightLogs() {
     loading: true,
     error: null,
   });
+  const hasLoaded = useRef(false);
 
   const load = useCallback(async () => {
-    setState((current) => ({ ...current, loading: true, error: null }));
+    const isFirstLoad = !hasLoaded.current;
+
+    if (isFirstLoad) {
+      setState({ logs: [], loading: true, error: null });
+    } else {
+      setState((current) => ({ ...current, error: null }));
+    }
 
     try {
       const logs = await getWeightLogs(database, 100);
+      hasLoaded.current = true;
       setState({ logs, loading: false, error: null });
     } catch {
+      hasLoaded.current = true;
       setState((current) => ({
         ...current,
         loading: false,

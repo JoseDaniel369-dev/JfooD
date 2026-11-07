@@ -45,6 +45,10 @@ export async function upsertWeightLog(
     throw new Error('El peso debe ser un número mayor que 0.');
   }
 
+  if (input.weightKg > 300) {
+    throw new Error('El peso no puede superar los 300 kg.');
+  }
+
   const now = new Date().toISOString();
 
   await database.runAsync(
