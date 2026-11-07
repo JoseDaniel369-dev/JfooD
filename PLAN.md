@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 7 de noviembre de 2026
-**Estado:** Fases 0, 1, 2, 3 y 4 completadas. Fase 4 (planificador) implementada con planificación de comidas a partir del catálogo local y copia de un día planificado al diario.
+**Estado:** Fases 0, 1, 2, 3, 4 y 4.5 completadas. Fase 4.5 (refinamiento visual y de interacción) actualiza el sistema de diseño y todas las pantallas antes de la Fase 5.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -312,6 +312,77 @@ Archivos nuevos:
 - Los datos del plan persisten tras cerrar y reabrir la app.
 - Copiar un día al diario duplica las entradas sin borrar el plan.
 - No se requiere red ni clave de Gemini.
+- Todas las comprobaciones de calidad en verde.
+
+### Fase 4.5 — Refinamiento visual y de interacción ✅ COMPLETADA
+
+**Objetivo:** transformar la app de prototipo funcional a producto pulido, manteniendo la lógica de datos intacta.
+
+**Decisiones de diseño aprobadas:**
+
+- Upgrade antes de la Fase 5 para que el escáner herede un sistema de diseño estable.
+- Alcance: toda la app (Diario, Plan, Inicio, Progreso, Perfil).
+- Dependencias del ecosistema Expo permitidas: `react-native-svg` (gráfico de tendencia) y `@react-native-community/datetimepicker` (selector de fecha), instaladas con `npx expo install`.
+- Diario con navegación de días Anterior/Hoy/Siguiente, igual que el Plan.
+
+#### Tarea 0 — Sistema de diseño
+
+- `apps/mobile/src/theme/index.ts` ampliado con `shadows` y `typography`.
+- Componentes reutilizables:
+  - `Button` (variantes primary/secondary/danger/ghost, icono, loading, escala al pulsar).
+  - `ActionSheet` (bottom sheet propio, reemplaza `Alert` de opciones).
+  - `ConfirmDialog` (diálogo de confirmación coherente).
+  - `EmptyState` (icono + título + mensaje + acción).
+  - `DayNavigator` (Anterior/Hoy/Siguiente + Volver a hoy).
+  - `SectionHeader` (título + caption + acción opcional).
+- `Card` con sombra sutil.
+
+#### Tarea 1 — Diario
+
+- `useDiaryDay` permite fecha controlable y refresca "hoy" automáticamente.
+- `diary.tsx`: navegación de días, tarjeta de kcal con progreso, `ActionSheet` para entradas, macros P/C/G por alimento.
+- `MealList` mejora filas de entradas, muestra macros y permite pulsar comidas del resumen.
+
+#### Tarea 2 — Planificador
+
+- `planner.tsx`: `DayNavigator`, totales del día planificado (kcal + macros), `EmptyState` para días vacíos, "Copiar al diario" con `ConfirmDialog`.
+
+#### Tarea 3 — Inicio
+
+- Comidas del resumen pulsables (abren añadir alimento para esa comida).
+- Accesos rápidos: Peso, Planificar, Escanear.
+
+#### Tarea 4 — Progreso
+
+- Selector de fecha nativo en lugar del input `AAAA-MM-DD`.
+- Mini-gráfico de barras de los últimos 7 días con `react-native-svg`.
+- Historial sin scroll anidado; confirmación con `ConfirmDialog`.
+
+#### Tarea 5 — Perfil
+
+- Formulario agrupado en secciones con `SectionHeader` y `Button`.
+- `useProfile` expone los objetivos calculados.
+- Tarjeta resumen de objetivos diarios tras guardar.
+
+#### Tarea 6 — Coherencia global
+
+- `add-food.tsx` y `scanner.tsx` usan `Button` y componentes unificados.
+- Estados vacíos consistentes.
+- Revisión de accesibilidad (tamaños táctiles, labels).
+
+#### Tarea 7 — Cierre
+
+- Checklist completo de calidad.
+- Actualizar `README.md` y `PLAN.md`.
+
+**Fuera de alcance:** nuevas funciones, cambios en modelo de datos o lógica nutricional.
+
+**Criterios de aceptación:**
+
+- Toda la app comparte el mismo sistema de botones, diálogos y tarjetas.
+- Diario y Plan permiten navegar días y gestionar entradas de forma coherente.
+- Progreso usa selector de fecha nativo y muestra tendencia visual.
+- Perfil muestra objetivos tras guardar.
 - Todas las comprobaciones de calidad en verde.
 
 ### Fase 5 — Escáner con Gemini (propuesta)

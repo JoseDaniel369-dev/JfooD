@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -15,54 +15,80 @@ interface DiaryDayState {
 
 const ERROR_MESSAGE = 'No se ha podido cargar el diario local.';
 
-export function useDiaryDay() {
+export function useDiaryDay(initialDate?: string) {
   const database = useSQLiteContext();
-  const [localDate, setLocalDate] = useState(() => toLocalDate(new Date()));
+  const todayAtMount = toLocalDate(new Date());
+  const [localDate, setLocalDate] = useState(initialDate ?? todayAtMount);
   const [state, setState] = useState<DiaryDayState>({
     day: null,
     error: null,
     loading: true,
   });
 
+  const localDateRef = useRef(localDate);
+  const lastTodayRef = useRef(todayAtMount);
+
+  useEffect(() => {
+    localDateRef.current = localDate;
+  }, [localDate]);
+
   const loadDay = useCallback(
-    () => getDiaryDay(database, localDate),
-    [database, localDate],
+    () => getDiaryDay(database, localDateRef.current),
+    [database],
   );
 
   const reload = useCallback(async () => {
+    const date = localDateRef.current;
+
     setState((current) => ({
       ...current,
       error: null,
-      // Solo mostramos el spinner si todavía no hay datos cargados.
-      // Las recargas posteriores (cambio de pestaña, nueva fecha) son silenciosas
-      // para evitar el parpadeo completo de la pantalla.
       loading: current.day === null,
     }));
 
     try {
       const day = await loadDay();
-      setState({ day, error: null, loading: false });
+      if (localDateRef.current === date) {
+        setState({ day, error: null, loading: false });
+      }
     } catch {
-      setState({ day: null, error: ERROR_MESSAGE, loading: false });
+      if (localDateRef.current === date) {
+        setState({ day: null, error: ERROR_MESSAGE, loading: false });
+      }
     }
   }, [loadDay]);
 
   const refresh = useCallback(async () => {
+    const date = localDateRef.current;
+
     try {
       const day = await loadDay();
-      setState({ day, error: null, loading: false });
+      if (localDateRef.current === date) {
+        setState({ day, error: null, loading: false });
+      }
     } catch {
-      setState({ day: null, error: ERROR_MESSAGE, loading: false });
+      if (localDateRef.current === date) {
+        setState({ day: null, error: ERROR_MESSAGE, loading: false });
+      }
     }
   }, [loadDay]);
 
   useEffect(() => {
     const refreshLocalDate = () => {
       const nextDate = toLocalDate(new Date());
+      const previousToday = lastTodayRef.current;
+
+      if (nextDate === previousToday) {
+        return;
+      }
+
+      lastTodayRef.current = nextDate;
+
       setLocalDate((currentDate) =>
-        currentDate === nextDate ? currentDate : nextDate,
+        currentDate === previousToday ? nextDate : currentDate,
       );
     };
+
     const appStateSubscription = AppState.addEventListener(
       'change',
       (nextAppState) => {
@@ -85,5 +111,5 @@ export function useDiaryDay() {
     }, [reload]),
   );
 
-  return { ...state, localDate, reload, refresh };
+  return { ...state, localDate, setLocalDate, reload, refresh };
 }

@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   ACTIVITY_LEVELS,
@@ -16,8 +10,10 @@ import {
   type UserProfile,
 } from '@jfood/core';
 
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { colors, radius, spacing } from '@/theme';
+import { SectionHeader } from '@/components/SectionHeader';
+import { colors, radius, spacing, typography } from '@/theme';
 
 interface ProfileFormProps {
   initial?: UserProfile | null;
@@ -84,6 +80,7 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
   return (
     <View style={styles.container}>
       <Card>
+        <SectionHeader title="Datos personales" />
         <Text style={styles.label}>Peso actual (kg)</Text>
         <TextInput
           keyboardType="decimal-pad"
@@ -121,6 +118,7 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
       </Card>
 
       <Card>
+        <SectionHeader title="Sexo y actividad" />
         <Text style={styles.label}>Sexo</Text>
         <View style={styles.optionsRow}>
           {MIFFLIN_VARIANTS.map((value) => (
@@ -153,20 +151,7 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
         ) : null}
       </Card>
 
-      <Pressable
-        accessibilityRole="button"
-        disabled={saving}
-        onPress={handleSubmit}
-        style={({ pressed }) => [
-          styles.button,
-          pressed && !saving && styles.buttonPressed,
-          saving && styles.buttonDisabled,
-        ]}
-      >
-        <Text style={styles.buttonText}>
-          {saving ? 'Guardando…' : 'Guardar perfil'}
-        </Text>
-      </Pressable>
+      <Button loading={saving} title="Guardar perfil" onPress={handleSubmit} />
     </View>
   );
 }
@@ -235,9 +220,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   label: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: spacing.xs,
   },
   input: {
@@ -288,29 +273,11 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   optionText: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   optionTextSelected: {
     color: colors.textOnPrimary,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    marginTop: spacing.sm,
-    padding: spacing.lg,
-  },
-  buttonPressed: {
-    opacity: 0.9,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: colors.textOnPrimary,
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

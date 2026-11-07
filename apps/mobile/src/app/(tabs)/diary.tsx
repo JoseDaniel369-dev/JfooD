@@ -1,14 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { ActionSheet } from '@/components/ActionSheet';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { DayNavigator } from '@/components/DayNavigator';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionHeader } from '@/components/SectionHeader';
+import { Button } from '@/components/Button';
 import {
   deleteEntry,
   moveEntry,
@@ -17,8 +21,8 @@ import {
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
-import { formatLocalDate } from '@/features/diary/utils/date';
-import { colors, radius, spacing } from '@/theme';
+import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { colors, spacing, typography } from '@/theme';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -30,8 +34,23 @@ const MEAL_LABELS: Record<MealType, string> = {
 
 export default function DiaryScreen() {
   const database = useSQLiteContext();
-  const { day, error, loading, localDate, reload, refresh } = useDiaryDay();
+  const { day, error, loading, localDate, setLocalDate, reload, refresh } =
+    useDiaryDay();
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const [activeEntry, setActiveEntry] = useState<DiaryEntry | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
+
+  const handlePreviousDay = () => {
+    setLocalDate((current) => addDays(current, -1));
+  };
+
+  const handleNextDay = () => {
+    setLocalDate((current) => addDays(current, 1));
+  };
+
+  const handleToday = () => {
+    setLocalDate(toLocalDate(new Date()));
+  };
 
   const handleAddFood = (mealType: MealType) => {
     router.push({
@@ -41,71 +60,39 @@ export default function DiaryScreen() {
   };
 
   const handleEntryPress = (entry: DiaryEntry) => {
-    Alert.alert(entry.foodName, '¿Qué quieres hacer?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Editar gramos',
-        onPress: () => setEditingEntry(entry),
-      },
-      {
-        text: 'Mover de comida',
-        onPress: () => showMoveOptions(entry),
-      },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: () => confirmDelete(entry),
-      },
-    ]);
+    setActiveEntry(entry);
   };
 
-  const showMoveOptions = (entry: DiaryEntry) => {
-    const options = (
-      Object.keys(MEAL_LABELS) as MealType[]
-    ).filter((type) => type !== entry.mealType);
-
-    Alert.alert(
-      'Mover a',
-      undefined,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        ...options.map((type) => ({
-          text: MEAL_LABELS[type],
-          onPress: async () => {
-            try {
-              await moveEntry(database, entry.id, localDate, type);
-              await refresh();
-            } catch {
-              Alert.alert('Error', 'No se ha podido mover la entrada.');
-            }
-          },
-        })),
-      ],
-      { cancelable: true },
-    );
+  const handleMove = (entry: DiaryEntry, targetMealType: MealType) => {
+    setActiveEntry(null);
+    void (async () => {
+      try {
+        await moveEntry(database, entry.id, localDate, targetMealType);
+        await refresh();
+      } catch {
+        Alert.alert('Error', 'No se ha podido mover la entrada.');
+      }
+    })();
   };
 
-  const confirmDelete = (entry: DiaryEntry) => {
-    Alert.alert(
-      'Eliminar entrada',
-      `¿Seguro que quieres eliminar "${entry.foodName}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteEntry(database, entry.id);
-              await refresh();
-            } catch {
-              Alert.alert('Error', 'No se ha podido eliminar la entrada.');
-            }
-          },
-        },
-      ],
-      { cancelable: true },
-    );
+  const handleDelete = (entry: DiaryEntry) => {
+    setActiveEntry(null);
+    setEntryToDelete(entry);
+  };
+
+  const confirmDelete = () => {
+    const entry = entryToDelete;
+    setEntryToDelete(null);
+    if (!entry) return;
+
+    void (async () => {
+      try {
+        await deleteEntry(database, entry.id);
+        await refresh();
+      } catch {
+        Alert.alert('Error', 'No se ha podido eliminar la entrada.');
+      }
+    })();
   };
 
   const handleSaveGrams = async (grams: number) => {
@@ -119,6 +106,36 @@ export default function DiaryScreen() {
       Alert.alert('Error', 'No se ha podido actualizar la cantidad.');
     }
   };
+
+  const moveOptions = activeEntry
+    ? (Object.keys(MEAL_LABELS) as MealType[])
+        .filter((type) => type !== activeEntry.mealType)
+        .map((type) => ({
+          label: MEAL_LABELS[type],
+          icon: 'arrow-forward-outline' as const,
+          onPress: () => handleMove(activeEntry, type),
+        }))
+    : [];
+
+  const actionOptions = activeEntry
+    ? [
+        {
+          label: 'Editar gramos',
+          icon: 'create-outline' as const,
+          onPress: () => {
+            setActiveEntry(null);
+            setEditingEntry(activeEntry);
+          },
+        },
+        ...moveOptions,
+        {
+          label: 'Eliminar',
+          icon: 'trash-outline' as const,
+          destructive: true,
+          onPress: () => handleDelete(activeEntry),
+        },
+      ]
+    : [];
 
   if (loading) {
     return (
@@ -139,22 +156,63 @@ export default function DiaryScreen() {
     );
   }
 
+  const consumedCalories = day.consumed.caloriesKcal;
+  const remainingCalories =
+    consumedCalories === null
+      ? null
+      : day.goals.caloriesKcal - consumedCalories;
+  const overGoal = remainingCalories !== null && remainingCalories < 0;
+
   return (
     <Screen>
       <ScreenHeader
         title="Diario nutricional"
-        subtitle={formatLocalDate(localDate)}
+        subtitle="Registra lo que comes cada día"
       />
+
       <Card>
-        <Text style={styles.totalLabel}>Total consumido</Text>
-        <Text style={styles.totalValue}>
-          {day.consumed.caloriesKcal === null
-            ? '—'
-            : Math.round(day.consumed.caloriesKcal)}
-          <Text style={styles.totalUnit}> kcal</Text>
-        </Text>
+        <DayNavigator
+          date={localDate}
+          onNext={handleNextDay}
+          onPrevious={handlePreviousDay}
+          onToday={handleToday}
+        />
       </Card>
+
+      <Card style={styles.calorieCard}>
+        <View style={styles.calorieHeader}>
+          <Text style={styles.cardLabel}>CALORÍAS</Text>
+        </View>
+        <View style={styles.calorieNumbers}>
+          <Text style={styles.calorieValue}>
+            {formatNumber(consumedCalories)}
+          </Text>
+          <Text style={styles.calorieGoal}>
+            / {formatNumber(day.goals.caloriesKcal)} kcal
+          </Text>
+        </View>
+        <View style={styles.calorieFooter}>
+          <Text style={styles.calorieFooterLabel}>
+            {overGoal ? 'Por encima del objetivo' : 'Restantes'}
+          </Text>
+          <Text style={styles.calorieFooterValue}>
+            {remainingCalories === null
+              ? '—'
+              : `${formatNumber(Math.abs(remainingCalories))} kcal`}
+          </Text>
+        </View>
+        {day.goalsAreDefault ? (
+          <Text style={styles.goalNotice}>
+            Objetivos provisionales: no calculados con tus datos personales.
+          </Text>
+        ) : null}
+      </Card>
+
       <Card>
+        <SectionHeader
+          title="Comidas"
+          caption={day.entries.length ? `${day.entries.length} alimento(s)` : undefined}
+        />
         <MealList
           meals={day.meals}
           variant="detailed"
@@ -163,23 +221,28 @@ export default function DiaryScreen() {
         />
       </Card>
 
-      <Pressable
-        accessibilityLabel="Añadir alimento rápidamente"
-        accessibilityRole="button"
+      <Button
+        icon="add-circle-outline"
+        title="Añadir alimento"
         onPress={() => handleAddFood('breakfast')}
-        style={({ pressed }) => [
-          styles.quickAddButton,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Ionicons color={colors.primary} name="add-circle-outline" size={22} />
-        <Text style={styles.quickAddText}>Añadir alimento</Text>
-      </Pressable>
+      />
 
-      <Text style={styles.localNote}>
-        Tu diario se guarda únicamente en este dispositivo y funciona sin
-        conexión.
-      </Text>
+      <ActionSheet
+        options={actionOptions}
+        title={activeEntry?.foodName}
+        visible={activeEntry !== null}
+        onClose={() => setActiveEntry(null)}
+      />
+
+      <ConfirmDialog
+        confirmLabel="Eliminar"
+        destructive
+        message={`¿Seguro que quieres eliminar "${entryToDelete?.foodName}"?`}
+        title="Eliminar entrada"
+        visible={entryToDelete !== null}
+        onClose={() => setEntryToDelete(null)}
+        onConfirm={confirmDelete}
+      />
 
       {editingEntry ? (
         <GramsEditorModal
@@ -195,43 +258,62 @@ export default function DiaryScreen() {
   );
 }
 
+function formatNumber(value: number | null): string {
+  return value === null ? '—' : String(Math.round(value));
+}
+
 const styles = StyleSheet.create({
-  totalLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
+  calorieCard: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  totalValue: {
-    color: colors.primary,
-    fontSize: 36,
-    fontWeight: '700',
-    letterSpacing: -1,
-  },
-  totalUnit: {
-    color: colors.textMuted,
-    fontSize: 15,
-    fontWeight: '400',
-  },
-  quickAddButton: {
+  calorieHeader: {
     alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
     flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'center',
-    padding: spacing.lg,
+    justifyContent: 'space-between',
   },
-  quickAddText: {
-    color: colors.primary,
+  cardLabel: {
+    color: colors.textOnPrimary,
+    fontSize: typography.label.fontSize,
+    fontWeight: '700',
+    letterSpacing: typography.label.letterSpacing,
+    opacity: 0.75,
+  },
+  calorieNumbers: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  calorieValue: {
+    color: colors.textOnPrimary,
+    fontSize: 44,
+    fontWeight: '700',
+    letterSpacing: -1.5,
+  },
+  calorieGoal: {
+    color: colors.textOnPrimary,
     fontSize: 15,
+    opacity: 0.7,
+  },
+  calorieFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  calorieFooterLabel: {
+    color: colors.textOnPrimary,
+    fontSize: 13,
+    opacity: 0.75,
+  },
+  calorieFooterValue: {
+    color: colors.textOnPrimary,
+    fontSize: 14,
     fontWeight: '700',
   },
-  localNote: {
-    color: colors.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.75,
+  goalNotice: {
+    color: colors.textOnPrimary,
+    fontSize: 11,
+    lineHeight: 16,
+    opacity: 0.7,
   },
 });

@@ -14,6 +14,7 @@ import {
 import { gramsSchema, nutrientsPer100gSchema } from '@jfood/core';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
@@ -294,17 +295,12 @@ export default function AddFoodScreen() {
             </>
           )}
 
-          <Pressable
-            accessibilityRole="button"
+          <Button
+            icon="create-outline"
+            title="Crear alimento nuevo"
+            variant="secondary"
             onPress={() => setStep('create')}
-            style={({ pressed }) => [
-              styles.createButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons color={colors.primary} name="create-outline" size={22} />
-            <Text style={styles.createButtonText}>Crear alimento nuevo</Text>
-          </Pressable>
+          />
         </>
       ) : null}
 
@@ -349,26 +345,12 @@ export default function AddFoodScreen() {
           </View>
 
           <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setStep('search')}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonText}>Volver</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={handleCreateFood}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.primaryButtonText}>Continuar</Text>
-            </Pressable>
+            <View style={styles.buttonFlex}>
+              <Button title="Volver" variant="secondary" onPress={() => setStep('search')} />
+            </View>
+            <View style={styles.buttonFlex}>
+              <Button title="Continuar" onPress={handleCreateFood} />
+            </View>
           </View>
         </>
       ) : null}
@@ -424,30 +406,17 @@ export default function AddFoodScreen() {
           </View>
 
           <View style={styles.buttonRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setStep('search')}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonText}>Volver</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canAdd || saving}
-              onPress={handleAddEntry}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                (!canAdd || saving) && styles.primaryButtonDisabled,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.primaryButtonText}>
-                {saving ? 'Añadiendo…' : 'Añadir'}
-              </Text>
-            </Pressable>
+            <View style={styles.buttonFlex}>
+              <Button title="Volver" variant="secondary" onPress={() => setStep('search')} />
+            </View>
+            <View style={styles.buttonFlex}>
+              <Button
+                disabled={!canAdd || saving}
+                loading={saving}
+                title="Añadir"
+                onPress={handleAddEntry}
+              />
+            </View>
           </View>
         </>
       ) : null}
@@ -652,20 +621,6 @@ const styles = StyleSheet.create({
   favoriteButton: {
     padding: spacing.xs,
   },
-  createButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  createButtonText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
   form: {
     gap: spacing.md,
   },
@@ -700,37 +655,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: 'auto',
   },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
+  buttonFlex: {
     flex: 1,
-    padding: spacing.lg,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.5,
-  },
-  primaryButtonText: {
-    color: colors.textOnPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flex: 1,
-    padding: spacing.lg,
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.75,
   },
   foodSummary: {
     backgroundColor: colors.surface,
@@ -764,5 +690,8 @@ const styles = StyleSheet.create({
   },
   mealOptionTextSelected: {
     color: colors.textOnPrimary,
+  },
+  pressed: {
+    opacity: 0.75,
   },
 });

@@ -1,26 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Fragment, useCallback, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionHeader } from '@/components/SectionHeader';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
 import {
   computeChange,
   computeWeeklyTrend,
 } from '@/features/progress/utils/trend';
 import { formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
 import type { WeightLog } from '@/data/sqlite/repositories/weightRepository';
 
 const MAX_WEIGHT_KG = 300;
@@ -35,6 +33,8 @@ export default function ProgressScreen() {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const resetForm = useCallback(() => {
     setDate(today);
@@ -88,29 +88,25 @@ export default function ProgressScreen() {
     }
   };
 
-  const handleDelete = () => {
+  const handleConfirmDelete = () => {
+    setShowDeleteConfirm(false);
     if (!editingDate) return;
 
-    Alert.alert(
-      'Eliminar registro',
-      `¿Seguro que quieres eliminar el peso del ${formatLocalDate(editingDate)}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await remove(editingDate);
-              resetForm();
-            } catch {
-              Alert.alert('Error', 'No se ha podido eliminar el registro.');
-            }
-          },
-        },
-      ],
-      { cancelable: true },
-    );
+    void (async () => {
+      try {
+        await remove(editingDate);
+        resetForm();
+      } catch {
+        // Error silencioso; useWeightLogs ya muestra banner.
+      }
+    })();
+  };
+
+  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setDate(toLocalDate(selectedDate));
+    }
   };
 
   if (loading && logs.length === 0) {
@@ -138,6 +134,7 @@ export default function ProgressScreen() {
     ? computeChange(latest.weightKg, previous?.weightKg ?? null)
     : null;
   const weeklyTrend = computeWeeklyTrend(sortedLogs);
+  const recentLogs = getRecentLogs(sortedLogs, 7);
 
   return (
     <Screen>
@@ -153,7 +150,7 @@ export default function ProgressScreen() {
       ) : null}
 
       {latest ? (
-        <Card style={styles.summaryCard}>
+        <Card>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Peso actual</Text>
@@ -209,10 +206,17 @@ export default function ProgressScreen() {
         </Card>
       ) : null}
 
+      {recentLogs.length > 1 ? (
+        <Card>
+          <SectionHeader title="Últimos 7 días" />
+          <WeightChart logs={recentLogs} selectedDate={editingDate} />
+        </Card>
+      ) : null}
+
       <Card>
-        <Text style={styles.sectionTitle}>
-          {editingDate ? 'Editar registro' : 'Registrar peso'}
-        </Text>
+        <SectionHeader
+          title={editingDate ? 'Editar registro' : 'Registrar peso'}
+        />
 
         <Text style={styles.label}>Fecha</Text>
         {editingDate ? (
@@ -220,13 +224,24 @@ export default function ProgressScreen() {
             <Text style={styles.lockedDateText}>{formatLocalDate(date)}</Text>
           </View>
         ) : (
-          <TextInput
-            onChangeText={setDate}
-            placeholder="AAAA-MM-DD"
-            style={styles.input}
-            value={date}
-          />
+          <Pressable
+            accessibilityLabel="Seleccionar fecha"
+            accessibilityRole="button"
+            onPress={() => setShowDatePicker(true)}
+            style={({ pressed }) => [styles.dateButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.dateButtonText}>{formatLocalDate(date)}</Text>
+            <Ionicons color={colors.primary} name="calendar-outline" size={18} />
+          </Pressable>
         )}
+
+        {showDatePicker && !editingDate ? (
+          <DateTimePicker
+            mode="date"
+            value={parseLocalDate(date) ?? new Date()}
+            onChange={handleDateChange}
+          />
+        ) : null}
 
         <Text style={styles.label}>Peso (kg)</Text>
         <TextInput
@@ -249,64 +264,40 @@ export default function ProgressScreen() {
 
         <View style={styles.buttonRow}>
           {editingDate ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={resetForm}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.secondaryButtonText}>Cancelar</Text>
-            </Pressable>
+            <View style={styles.secondaryButton}>
+              <Button title="Cancelar" variant="secondary" onPress={resetForm} />
+            </View>
           ) : null}
-          <Pressable
-            accessibilityRole="button"
-            disabled={saving}
-            onPress={handleSave}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && !saving && styles.pressed,
-              saving && styles.primaryButtonDisabled,
-            ]}
-          >
-            <Text style={styles.primaryButtonText}>
-              {saving ? 'Guardando…' : editingDate ? 'Guardar cambios' : 'Guardar'}
-            </Text>
-          </Pressable>
+          <View style={styles.primaryButton}>
+            <Button
+              loading={saving}
+              title={editingDate ? 'Guardar cambios' : 'Guardar'}
+              onPress={handleSave}
+            />
+          </View>
         </View>
 
         {editingDate ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleDelete}
-            style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons color={colors.danger} name="trash-outline" size={18} />
-            <Text style={styles.deleteButtonText}>Eliminar registro</Text>
-          </Pressable>
+          <Button
+            icon="trash-outline"
+            title="Eliminar registro"
+            variant="ghost"
+            onPress={() => setShowDeleteConfirm(true)}
+          />
         ) : null}
       </Card>
 
       <Card>
-        <Text style={styles.sectionTitle}>Historial</Text>
+        <SectionHeader title="Historial" />
         {logs.length === 0 ? (
-          <View style={styles.emptyHistory}>
-            <Ionicons color={colors.textMuted} name="scale-outline" size={36} />
-            <Text style={styles.emptyText}>
-              Aún no tienes registros de peso. Añade el primero arriba.
-            </Text>
-          </View>
+          <EmptyState
+            icon="scale-outline"
+            message="Añade tu primer registro de peso arriba."
+            title="Sin registros"
+          />
         ) : (
-          <ScrollView
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-            style={styles.historyList}
-          >
-            {logs.map((log) => (
+          <View style={styles.historyList}>
+            {sortedLogs.map((log) => (
               <Pressable
                 key={log.localDate}
                 accessibilityLabel={`Peso ${log.weightKg} kg el ${formatLocalDate(log.localDate)}`}
@@ -334,11 +325,90 @@ export default function ProgressScreen() {
                 </Text>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
         )}
       </Card>
+
+      <ConfirmDialog
+        confirmLabel="Eliminar"
+        destructive
+        message={`¿Seguro que quieres eliminar el peso del ${formatLocalDate(editingDate ?? '')}?`}
+        title="Eliminar registro"
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+      />
     </Screen>
   );
+}
+
+function getRecentLogs(logs: WeightLog[], days: number): WeightLog[] {
+  if (logs.length === 0) return [];
+  const latest = logs[logs.length - 1];
+  const cutoff = new Date(latest?.localDate ?? '');
+  cutoff.setDate(cutoff.getDate() - days + 1);
+  const cutoffString = toLocalDate(cutoff);
+  return logs.filter((log) => log.localDate >= cutoffString);
+}
+
+function WeightChart({
+  logs,
+  selectedDate,
+}: {
+  logs: WeightLog[];
+  selectedDate: string | null;
+}) {
+  const chartHeight = 120;
+  const barWidth = 24;
+  const gap = 8;
+  const weights = logs.map((log) => log.weightKg);
+  const minWeight = Math.min(...weights);
+  const maxWeight = Math.max(...weights);
+  const range = Math.max(maxWeight - minWeight, 1);
+  const paddingBottom = 20;
+
+  return (
+    <Svg
+      height={chartHeight + paddingBottom}
+      viewBox={`0 0 ${logs.length * (barWidth + gap)} ${chartHeight + paddingBottom}`}
+      width="100%"
+    >
+      {logs.map((log, index) => {
+        const x = index * (barWidth + gap) + gap / 2;
+        const barHeight =
+          ((log.weightKg - minWeight) / range) * (chartHeight - 24) + 8;
+        const y = chartHeight - barHeight;
+
+        return (
+          <Fragment key={log.localDate}>
+            <Rect
+              fill={colors.primary}
+              height={barHeight}
+              opacity={selectedDate === log.localDate ? 1 : 0.85}
+              rx={6}
+              width={barWidth}
+              x={x}
+              y={y}
+            />
+            <SvgText
+              fill={colors.textMuted}
+              fontSize={10}
+              textAnchor="middle"
+              x={x + barWidth / 2}
+              y={chartHeight + 14}
+            >
+              {formatChartDay(log.localDate)}
+            </SvgText>
+          </Fragment>
+        );
+      })}
+    </Svg>
+  );
+}
+
+function formatChartDay(localDate: string): string {
+  const [, , day] = localDate.split('-');
+  return day ?? '';
 }
 
 function parseWeight(value: string): number | null {
@@ -359,9 +429,23 @@ function isValidDate(value: string): boolean {
   );
 }
 
+function parseLocalDate(localDate: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return null;
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  if (
+    date.getFullYear() === year &&
+    date.getMonth() === (month ?? 1) - 1 &&
+    date.getDate() === day
+  ) {
+    return date;
+  }
+  return null;
+}
+
 const styles = StyleSheet.create({
   errorBanner: {
-    backgroundColor: 'rgba(164, 71, 61, 0.12)',
+    backgroundColor: colors.dangerLight,
     borderRadius: radius.md,
     padding: spacing.md,
   },
@@ -369,9 +453,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontSize: 13,
     textAlign: 'center',
-  },
-  summaryCard: {
-    gap: spacing.md,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -386,30 +467,30 @@ const styles = StyleSheet.create({
     width: 1,
   },
   summaryLabel: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
   },
   summaryValue: {
+    ...typography.title,
     color: colors.text,
     fontSize: 28,
-    fontWeight: '700',
   },
   summaryUnit: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 14,
     fontWeight: '400',
   },
   summaryDate: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
   },
   up: {
     color: colors.danger,
   },
   down: {
-    color: colors.primary,
+    color: colors.success,
   },
   neutral: {
     color: colors.textMuted,
@@ -423,21 +504,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   trendText: {
+    ...typography.caption,
     color: colors.primary,
-    fontSize: 13,
   },
   trendValue: {
     fontWeight: '700',
   },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
   label: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: spacing.xs,
   },
   input: {
@@ -449,6 +525,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: spacing.md,
     padding: spacing.md,
+  },
+  dateButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
+  dateButtonText: {
+    color: colors.text,
+    fontSize: 16,
   },
   lockedDate: {
     backgroundColor: colors.surfaceMuted,
@@ -472,59 +563,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   primaryButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
     flex: 1,
-    padding: spacing.lg,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: colors.textOnPrimary,
-    fontSize: 15,
-    fontWeight: '700',
   },
   secondaryButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
     flex: 1,
-    padding: spacing.lg,
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    padding: spacing.sm,
-  },
-  deleteButtonText: {
-    color: colors.danger,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyHistory: {
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.xl,
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
   },
   historyList: {
-    maxHeight: 280,
+    gap: spacing.sm,
   },
   historyRow: {
     alignItems: 'center',
@@ -532,7 +577,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.sm,
     padding: spacing.md,
   },
   historyRowActive: {
@@ -544,22 +588,22 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   historyDate: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   historyNote: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
   },
   historyWeight: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 16,
     fontWeight: '700',
   },
   historyUnit: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
     fontWeight: '400',
   },
   pressed: {

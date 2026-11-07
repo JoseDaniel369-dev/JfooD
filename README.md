@@ -18,6 +18,8 @@ La Fase 3 convierte la pantalla de Progreso en un registro de peso funcional: pe
 
 La Fase 4 implementa el planificador semanal: permite añadir alimentos del catálogo local a cualquier día, editar gramos, mover entradas entre comidas, eliminarlas y copiar un día planificado completo al diario. Todo se guarda localmente y funciona sin conexión.
 
+La Fase 4.5 refina la interfaz y la experiencia de interacción: sistema de diseño unificado con `Button`, `ActionSheet`, `ConfirmDialog`, `EmptyState`, `DayNavigator` y `SectionHeader`; navegación de días en el Diario; totales y macros visibles en el Plan; accesos rápidos y comidas pulsables en Inicio; selector de fecha nativo y mini-gráfico de tendencia en Progreso; resumen de objetivos y formulario por secciones en Perfil.
+
 El escáner sigue mostrando un estado informativo hasta su fase; no simula funciones todavía no implementadas.
 
 La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`56 + inset inferior`) y un suelo de 64 dp para la zona de navegación, evitando que la barra del sistema se solape con los iconos o etiquetas incluso en dispositivos que infrarreportan el inset inferior. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.

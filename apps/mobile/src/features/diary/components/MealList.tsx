@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, shadows, spacing, typography } from '@/theme';
 import {
   MEALS,
   type DiaryEntry,
@@ -14,6 +14,7 @@ interface MealListProps {
   variant?: 'summary' | 'detailed';
   onAddFood?: (mealType: MealType) => void;
   onEntryPress?: (entry: DiaryEntry) => void;
+  onMealPress?: (mealType: MealType) => void;
 }
 
 const MEAL_ICONS: Record<MealType, keyof typeof Ionicons.glyphMap> = {
@@ -28,6 +29,7 @@ export function MealList({
   variant = 'summary',
   onAddFood,
   onEntryPress,
+  onMealPress,
 }: MealListProps) {
   return (
     <View style={styles.list}>
@@ -35,11 +37,21 @@ export function MealList({
         const meal = meals[type];
         const calories = meal.nutrients.caloriesKcal;
         const isDetailed = variant === 'detailed';
+        const isPressable = variant === 'summary' && onMealPress;
 
         return (
           <View key={type}>
             {index > 0 ? <View style={styles.separator} /> : null}
-            <View style={styles.row}>
+            <Pressable
+              accessibilityLabel={label}
+              accessibilityRole={isPressable ? 'button' : 'header'}
+              disabled={!isPressable}
+              onPress={() => onMealPress?.(type)}
+              style={({ pressed }) => [
+                styles.row,
+                isPressable && pressed && styles.pressed,
+              ]}
+            >
               <View style={styles.iconContainer}>
                 <Ionicons
                   color={colors.primary}
@@ -77,7 +89,7 @@ export function MealList({
                   </Pressable>
                 ) : null}
               </View>
-            </View>
+            </Pressable>
 
             {isDetailed ? (
               <View style={styles.entries}>
@@ -115,6 +127,26 @@ export function MealList({
                       <View style={styles.entryMain}>
                         <Text style={styles.entryName}>{entry.foodName}</Text>
                         <Text style={styles.entryGrams}>{entry.grams} g</Text>
+                        <View style={styles.entryMacros}>
+                          <MacroBadge
+                            color={colors.protein}
+                            label="P"
+                            value={entry.per100g.proteinGrams}
+                            grams={entry.grams}
+                          />
+                          <MacroBadge
+                            color={colors.carbohydrates}
+                            label="C"
+                            value={entry.per100g.carbohydrateGrams}
+                            grams={entry.grams}
+                          />
+                          <MacroBadge
+                            color={colors.fat}
+                            label="G"
+                            value={entry.per100g.fatGrams}
+                            grams={entry.grams}
+                          />
+                        </View>
                       </View>
                       <Text style={styles.entryCalories}>
                         {entry.per100g.caloriesKcal === null
@@ -133,6 +165,30 @@ export function MealList({
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function MacroBadge({
+  label,
+  value,
+  color,
+  grams,
+}: {
+  label: string;
+  value: number | null;
+  color: string;
+  grams: number;
+}) {
+  if (value === null) return null;
+
+  const amount = Math.round((value * grams) / 100);
+  return (
+    <View style={styles.macroBadge}>
+      <View style={[styles.macroDot, { backgroundColor: color }]} />
+      <Text style={styles.macroBadgeText}>
+        {label} {amount}g
+      </Text>
     </View>
   );
 }
@@ -164,26 +220,26 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   mealName: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   mealDetails: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
   },
   mealActions: {
     alignItems: 'flex-end',
     gap: spacing.xs,
   },
   calories: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 15,
     fontWeight: '700',
   },
   unit: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 11,
     fontWeight: '400',
   },
   addButton: {
@@ -206,23 +262,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
+    ...shadows.sm,
   },
   entryMain: {
     flex: 1,
     gap: 2,
   },
   entryName: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   entryGrams: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
+  },
+  entryMacros: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  macroBadge: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  macroDot: {
+    borderRadius: radius.pill,
+    height: 6,
+    width: 6,
+  },
+  macroBadgeText: {
+    fontSize: 11,
+    color: colors.textMuted,
   },
   entryCalories: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
     fontWeight: '700',
   },
   emptyEntry: {
@@ -240,7 +317,7 @@ const styles = StyleSheet.create({
   emptyEntryText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   pressed: {
     opacity: 0.75,

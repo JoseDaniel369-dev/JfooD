@@ -4,14 +4,17 @@ import { useSQLiteContext } from 'expo-sqlite';
 
 import type { NutritionGoals } from '@jfood/core';
 
+import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
 import {
   getProfileFormData,
   saveProfile,
   type ProfileFormData,
 } from '@/data/sqlite/repositories/profileRepository';
+import { toLocalDate } from '@/features/diary/utils/date';
 
 interface ProfileState {
   profile: ProfileFormData | null;
+  goals: NutritionGoals | null;
   error: string | null;
   loading: boolean;
 }
@@ -23,19 +26,27 @@ export function useProfile() {
   const database = useSQLiteContext();
   const [state, setState] = useState<ProfileState>({
     profile: null,
+    goals: null,
     error: null,
     loading: true,
   });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setState({ profile: null, error: null, loading: true });
+    setState({ profile: null, goals: null, error: null, loading: true });
 
     try {
       const profile = await getProfileFormData(database);
-      setState({ profile, error: null, loading: false });
+      let goals: NutritionGoals | null = null;
+
+      if (profile) {
+        const latest = await getLatestGoals(database, toLocalDate(new Date()));
+        goals = latest.goals;
+      }
+
+      setState({ profile, goals, error: null, loading: false });
     } catch {
-      setState({ profile: null, error: LOAD_ERROR, loading: false });
+      setState({ profile: null, goals: null, error: LOAD_ERROR, loading: false });
     }
   }, [database]);
 
@@ -45,11 +56,7 @@ export function useProfile() {
 
       try {
         const goals = await saveProfile(database, data);
-        setState((current) => ({
-          ...current,
-          profile: data,
-          error: null,
-        }));
+        setState({ profile: data, goals, error: null, loading: false });
         return goals;
       } catch (error) {
         const message =

@@ -6,10 +6,12 @@ import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
+import { SectionHeader } from '@/components/SectionHeader';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { formatLocalDate } from '@/features/diary/utils/date';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
+import type { MealType } from '@/features/diary/types';
 
 export default function HomeScreen() {
   const { day, error, loading, localDate, reload } = useDiaryDay();
@@ -39,6 +41,13 @@ export default function HomeScreen() {
       ? null
       : day.goals.caloriesKcal - consumedCalories;
 
+  const handleMealPress = (mealType: MealType) => {
+    router.push({
+      pathname: '/diary/add-food',
+      params: { date: localDate, meal: mealType },
+    });
+  };
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -49,11 +58,6 @@ export default function HomeScreen() {
           <Text style={styles.brand}>JfooD</Text>
         </View>
         <Text style={styles.date}>{formatLocalDate(localDate)}</Text>
-      </View>
-
-      <View style={styles.welcome}>
-        <Text style={styles.title}>Tu día, de un vistazo.</Text>
-        <Text style={styles.subtitle}>Nutrición sencilla, datos bajo tu control.</Text>
       </View>
 
       <Card style={styles.calorieCard}>
@@ -70,10 +74,10 @@ export default function HomeScreen() {
           </Text>
         </View>
         <ProgressBar
+          color={colors.accent}
           maximum={day.goals.caloriesKcal}
           trackColor="rgba(255,255,255,0.18)"
           value={consumedCalories}
-          color={colors.accent}
         />
         <View style={styles.calorieFooter}>
           <Text style={styles.calorieFooterLabel}>
@@ -95,7 +99,7 @@ export default function HomeScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.sectionTitle}>Macronutrientes</Text>
+        <SectionHeader title="Macronutrientes" />
         <MacroRow
           color={colors.protein}
           consumed={day.consumed.proteinGrams}
@@ -116,30 +120,61 @@ export default function HomeScreen() {
         />
       </Card>
 
-      <Pressable
-        accessibilityLabel="Abrir escáner de alimentos"
-        accessibilityRole="button"
-        onPress={() => router.push('/scanner')}
-        style={({ pressed }) => [styles.scannerButton, pressed && styles.pressed]}
-      >
-        <View style={styles.scannerIcon}>
-          <Ionicons color={colors.primary} name="camera-outline" size={26} />
+      <Card>
+        <SectionHeader title="Accesos rápidos" />
+        <View style={styles.shortcuts}>
+          <ShortcutButton
+            icon="scale-outline"
+            label="Peso"
+            onPress={() => router.push('/(tabs)/progress')}
+          />
+          <ShortcutButton
+            icon="calendar-outline"
+            label="Planificar"
+            onPress={() => router.push('/(tabs)/planner')}
+          />
+          <ShortcutButton
+            icon="camera-outline"
+            label="Escanear"
+            onPress={() => router.push('/scanner')}
+          />
         </View>
-        <View style={styles.scannerCopy}>
-          <Text style={styles.scannerTitle}>Escanear una comida</Text>
-          <Text style={styles.scannerSubtitle}>Fotografía y revisión asistida</Text>
-        </View>
-        <Ionicons color={colors.primary} name="arrow-forward" size={21} />
-      </Pressable>
+      </Card>
 
       <Card>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Comidas de hoy</Text>
-          <Text style={styles.sectionCaption}>Resumen diario</Text>
-        </View>
-        <MealList meals={day.meals} />
+        <SectionHeader
+          actionLabel="Ver diario"
+          caption="Toca una comida para añadir"
+          title="Comidas de hoy"
+          onAction={() => router.push('/(tabs)/diary')}
+        />
+        <MealList meals={day.meals} onMealPress={handleMealPress} />
       </Card>
     </Screen>
+  );
+}
+
+function ShortcutButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}
+    >
+      <View style={styles.shortcutIcon}>
+        <Ionicons color={colors.primary} name={icon} size={22} />
+      </View>
+      <Text style={styles.shortcutLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -195,23 +230,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
   },
   date: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 13,
     textTransform: 'capitalize',
-  },
-  welcome: {
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 29,
-    fontWeight: '700',
-    letterSpacing: -0.8,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 14,
   },
   calorieCard: {
     backgroundColor: colors.primary,
@@ -224,9 +245,9 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     color: colors.textOnPrimary,
-    fontSize: 11,
+    fontSize: typography.label.fontSize,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: typography.label.letterSpacing,
     opacity: 0.75,
   },
   calorieNumbers: {
@@ -258,7 +279,7 @@ const styles = StyleSheet.create({
   calorieFooterValue: {
     color: colors.textOnPrimary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   goalNotice: {
     color: colors.textOnPrimary,
@@ -266,51 +287,30 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     opacity: 0.7,
   },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  sectionCaption: {
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-  scannerButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
+  shortcuts: {
     flexDirection: 'row',
     gap: spacing.md,
-    padding: spacing.lg,
   },
-  scannerIcon: {
+  shortcut: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    flex: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  shortcutIcon: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    height: 48,
+    borderRadius: radius.pill,
+    height: 44,
     justifyContent: 'center',
-    width: 48,
+    width: 44,
   },
-  scannerCopy: {
-    flex: 1,
-    gap: 3,
-  },
-  scannerTitle: {
-    color: colors.primary,
-    fontSize: 15,
+  shortcutLabel: {
+    ...typography.caption,
+    color: colors.text,
     fontWeight: '700',
-  },
-  scannerSubtitle: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  pressed: {
-    opacity: 0.75,
   },
   macroRow: {
     gap: spacing.sm,
@@ -331,16 +331,20 @@ const styles = StyleSheet.create({
     width: 8,
   },
   macroLabel: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 14,
   },
   macroValue: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   macroGoal: {
+    ...typography.caption,
     color: colors.textMuted,
     fontWeight: '400',
+  },
+  pressed: {
+    opacity: 0.75,
   },
 });
