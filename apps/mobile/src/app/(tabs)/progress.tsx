@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Fragment, useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -17,7 +17,7 @@ import {
   computeChange,
   computeWeeklyTrend,
 } from '@/features/progress/utils/trend';
-import { formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
+import { addDays, formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { WeightLog } from '@/data/sqlite/repositories/weightRepository';
 
@@ -97,7 +97,7 @@ export default function ProgressScreen() {
         await remove(editingDate);
         resetForm();
       } catch {
-        // Error silencioso; useWeightLogs ya muestra banner.
+        Alert.alert('Error', 'No se ha podido eliminar el registro.');
       }
     })();
   };
@@ -345,9 +345,11 @@ export default function ProgressScreen() {
 function getRecentLogs(logs: WeightLog[], days: number): WeightLog[] {
   if (logs.length === 0) return [];
   const latest = logs[logs.length - 1];
-  const cutoff = new Date(latest?.localDate ?? '');
-  cutoff.setDate(cutoff.getDate() - days + 1);
-  const cutoffString = toLocalDate(cutoff);
+  if (!latest) return [];
+
+  // Pure date-string arithmetic: parsing local dates with `new Date` would
+  // shift the window in timezones behind UTC.
+  const cutoffString = addDays(latest.localDate, -days + 1);
   return logs.filter((log) => log.localDate >= cutoffString);
 }
 

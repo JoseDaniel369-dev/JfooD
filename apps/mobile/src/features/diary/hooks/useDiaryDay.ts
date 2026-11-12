@@ -73,6 +73,19 @@ export function useDiaryDay(initialDate?: string) {
     }
   }, [loadDay]);
 
+  // Reload the day whenever the selected date changes (day navigation or the
+  // midnight rollover). The first run is skipped because the focus effect
+  // below already loads the day on mount.
+  const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      return;
+    }
+    void reload();
+  }, [localDate, reload]);
+
   useEffect(() => {
     const refreshLocalDate = () => {
       const nextDate = toLocalDate(new Date());

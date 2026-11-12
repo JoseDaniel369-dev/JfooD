@@ -20,7 +20,17 @@ const birthDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((value) => isRealCalendarDate(value), {
     message: 'Fecha de nacimiento no válida.',
+  })
+  .refine((value) => value <= currentLocalDateString(), {
+    message: 'La fecha de nacimiento no puede estar en el futuro.',
   });
+
+function currentLocalDateString(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 function isRealCalendarDate(value: string): boolean {
   const [yearStr, monthStr, dayStr] = value.split('-');

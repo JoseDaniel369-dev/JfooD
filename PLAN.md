@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 7 de noviembre de 2026
-**Estado:** Fases 0, 1, 2, 3, 4 y 4.5 completadas. Fase 4.5 (refinamiento visual y de interacción) actualiza el sistema de diseño y todas las pantallas antes de la Fase 5.
+**Última actualización:** 12 de noviembre de 2026
+**Estado:** Fases 0, 1, 2, 3, 4 y 4.5 completadas. Tras una auditoría del código existente, el proyecto está listo para planificar la Fase 5 (escáner con Gemini).
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -70,9 +70,16 @@ Monorepo con npm workspaces:
    - `apps/mobile/test/date.test.ts`: fecha local y formato español sin conversión UTC.
    - `apps/api/test/env.test.ts`: configuración sin clave, con clave vacía y con clave válida.
 
+6. **Correcciones de la auditoría (12 de noviembre de 2026)**
+   - **Recarga al cambiar de día:** `useDiaryDay` y `usePlanDay` ahora recargan el día cuando cambia la fecha seleccionada (navegación Anterior/Hoy/Siguiente y cambio de día con la app abierta). Antes solo se recargaba al enfocar la pantalla, mostrando datos de otro día con la fecha nueva.
+   - **Fecha de nacimiento futura rechazada:** `birthDateSchema` en `packages/core` valida que la fecha no sea futura (evita objetivos calculados con edad 0).
+   - **Ventana del gráfico de 7 días:** `progress.tsx` usa aritmética de cadenas de fecha (`addDays`) en lugar de `new Date(...)`, que desplazaba la ventana en zonas horarias detrás de UTC.
+   - **Error al eliminar peso visible:** la pantalla de Progreso muestra un aviso si falla la eliminación de un registro (antes se ignoraba en silencio).
+   - **Versiones parche de Expo actualizadas** con `npx expo install --fix` (expo, expo-constants, expo-linking, expo-router, expo-sqlite, expo-status-bar) y se añadió el plugin `expo-status-bar` a `app.json`.
+
 ### 3.3 Verificación del estado actual
 
-- 34/34 pruebas superadas (5 API, 14 móvil, 15 core).
+- 38/38 pruebas superadas (5 API, 17 móvil, 16 core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
