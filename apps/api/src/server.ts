@@ -10,7 +10,7 @@ if (existsSync(environmentPath)) {
 }
 
 const environment = loadEnvironment();
-const app = buildApp();
+const app = buildApp({ environment });
 
 try {
   await app.listen({

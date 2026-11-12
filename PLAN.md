@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 12 de noviembre de 2026
-**Estado:** Fases 0, 1, 2, 3, 4 y 4.5 completadas. Tras una auditoría del código existente, el proyecto está listo para planificar la Fase 5 (escáner con Gemini).
+**Estado:** Fases 0, 1, 2, 3, 4, 4.5 y 5 completadas. El proyecto está listo para planificar la Fase 6 (pulido y release) tras revisión y aprobación de la Fase 5.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -71,6 +71,14 @@ Monorepo con npm workspaces:
    - `apps/api/test/env.test.ts`: configuración sin clave, con clave vacía y con clave válida.
 
 6. **Correcciones de la auditoría (12 de noviembre de 2026)**
+7. **Correcciones post-Fase 5 (auditoría del escáner)**
+   - URL del backend en móvil: se deriva de `Constants.expoConfig.hostUri` en desarrollo en lugar de `localhost`, haciendo que el escáner funcione en dispositivo físico y emulador.
+   - Límite de cuerpo de Fastify aumentado a 10 MiB para evitar que fotos reales sean rechazadas con `413`.
+   - Se conserva el objeto `Food` completo del catálogo local al añadir una coincidencia, en lugar de reconstruirlo con macros nulos.
+   - Matching del escáner restringido a coincidencia exacta o prefijo (`manzana` → `manzana golden`, pero no `zumo de manzana` ni `manzanilla`).
+   - El input de gramos en la pantalla de revisión ya no revierte al valor anterior al confirmar.
+   - "Probar otra foto" en resultados vacíos vuelve al paso de cámara en lugar de salir del escáner.
+   - Llamada a Gemini con timeout de 30 s y tolerancia a fences markdown; errores de red devuelven `502` en lugar de `500`.
    - **Recarga al cambiar de día:** `useDiaryDay` y `usePlanDay` ahora recargan el día cuando cambia la fecha seleccionada (navegación Anterior/Hoy/Siguiente y cambio de día con la app abierta). Antes solo se recargaba al enfocar la pantalla, mostrando datos de otro día con la fecha nueva.
    - **Fecha de nacimiento futura rechazada:** `birthDateSchema` en `packages/core` valida que la fecha no sea futura (evita objetivos calculados con edad 0).
    - **Ventana del gráfico de 7 días:** `progress.tsx` usa aritmética de cadenas de fecha (`addDays`) en lugar de `new Date(...)`, que desplazaba la ventana en zonas horarias detrás de UTC.
@@ -79,7 +87,7 @@ Monorepo con npm workspaces:
 
 ### 3.3 Verificación del estado actual
 
-- 38/38 pruebas superadas (5 API, 17 móvil, 16 core).
+- 57/57 pruebas superadas (12 API, 29 móvil, 16 core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
@@ -97,8 +105,10 @@ Monorepo con npm workspaces:
 - `apps/mobile/src/app/(tabs)/diary.tsx`: diario del día y comidas.
 - `apps/mobile/src/app/(tabs)/profile.tsx`: formulario de datos personales y objetivos calculados.
 - `apps/mobile/src/app/(tabs)/planner.tsx`, `progress.tsx`: estados informativos pendientes.
-- `apps/mobile/src/app/scanner.tsx`: entrada al futuro escáner.
-- `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario.
+- `apps/mobile/src/app/scanner.tsx`: escáner con captura, análisis y revisión de alimentos.
+- `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario; acepta `name` prellenado desde el escáner.
+- `apps/mobile/src/features/scanner/`: tipos, API, hook de image picker y utilidad de coincidencia con el catálogo local.
+- `apps/mobile/src/config/api.ts`: resolución de la URL del backend para desarrollo.
 - `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha, lista de comidas y modal de edición de gramos.
 - `apps/mobile/src/features/foods/`: tipos, normalización de nombres y utilidades del catálogo local.
 - `apps/mobile/src/features/progress/`: repositorio, hook, utilidades de tendencia y pantalla de progreso.
@@ -110,9 +120,10 @@ Monorepo con npm workspaces:
 
 ### API
 
-- `apps/api/src/app.ts`: creación de Fastify, `/health`, 404 y manejo de errores.
+- `apps/api/src/app.ts`: creación de Fastify, `/health`, `/recognize`, 404 y manejo de errores.
 - `apps/api/src/server.ts`: carga de `.env` y arranque.
 - `apps/api/src/config/env.ts`: validación de entorno con Zod.
+- `apps/api/src/features/recognition/`: servicio de llamada a Gemini y ruta `POST /recognize`.
 
 ### Núcleo
 
@@ -392,13 +403,112 @@ Archivos nuevos:
 - Perfil muestra objetivos tras guardar.
 - Todas las comprobaciones de calidad en verde.
 
-### Fase 5 — Escáner con Gemini (propuesta)
+### Fase 5 — Escáner con Gemini ✅ COMPLETADA
 
-- Endpoint de reconocimiento en `apps/api` con la clave solo en el backend.
-- La respuesta se valida con `foodRecognitionSchema`: nombre, gramos estimados y confianza; nunca nutrientes.
-- Captura o selección de imagen en la app, pantalla de revisión y confirmación.
-- Los alimentos reconocidos se resuelven contra el catálogo local o se crean como alimento de usuario.
-- Fallback manual si la red o Gemini fallan.
+**Objetivo:** permitir al usuario fotografiar su comida, recibir una identificación asistida por Gemini y añadir los alimentos reconocidos al diario tras revisión.
+
+**Decisiones de diseño aprobadas:**
+
+- La clave de Gemini vive únicamente en el backend; la app solo envía la imagen.
+- Gemini devuelve únicamente nombre, gramos estimados y confianza; los nutrientes se toman del catálogo local o quedan como desconocidos.
+- Flujo de revisión obligatorio: el usuario confirma o corrige gramos y comida destino antes de guardar.
+- Si no hay coincidencia en el catálogo local, el alimento se crea como alimento de usuario con macros desconocidos; se ofrece un fallback manual para introducir los datos nutricionales.
+- La URL del backend en desarrollo se deriva automáticamente de `Constants.expoConfig.hostUri` para funcionar en dispositivo físico y emulador.
+
+#### Tarea 1 — Endpoint de reconocimiento
+
+Archivos nuevos:
+
+- `apps/api/src/features/recognition/service.ts`
+  - `recognizeFood({ apiKey, model, imageBase64 })` llama a la API REST de Gemini (`v1beta/models/{model}:generateContent`).
+  - Prompt estricto que fuerza JSON con `foods` y `warnings`.
+  - Parseo y validación con `foodRecognitionSchema` de `@jfood/core`.
+  - Manejo de errores de red y respuestas malformadas.
+- `apps/api/src/features/recognition/route.ts`
+  - Ruta `POST /recognize`.
+  - Devuelve 503 si `GEMINI_API_KEY` no está configurado.
+  - Devuelve 400 si falta la imagen.
+  - Devuelve 502 si Gemini falla o la respuesta no valida.
+
+Modificaciones:
+
+- `apps/api/src/app.ts`: recibe `environment` opcional y registra la ruta `/recognize` cuando está presente.
+- `apps/api/src/server.ts`: pasa el entorno cargado a `buildApp`.
+
+Tests:
+
+- `apps/api/test/recognize.test.ts`: respuesta exitosa, Gemini no configurado, payload inválido, errores de Gemini y respuesta malformada (mock de `fetch` global).
+
+#### Tarea 2 — Captura y selección de imagen
+
+Dependencia añadida con `npx expo install`:
+
+- `expo-image-picker` (~58.0.10).
+
+Configuración:
+
+- Plugin añadido a `apps/mobile/app.json` con mensajes de permiso en español para cámara y galería.
+
+Archivos nuevos:
+
+- `apps/mobile/src/features/scanner/hooks/useImagePicker.ts`
+  - `launchCamera()` y `launchLibrary()` con solicitud de permisos.
+  - Opciones: edición, aspecto 4:3, calidad 0.8, `base64: true`.
+  - Devuelve URI, imagen base64 con prefijo `data:{mimeType};base64,` y dimensiones.
+- `apps/mobile/src/features/scanner/types.ts`
+  - Tipos `RecognizedFood`, `RecognitionResult`, `RecognizedFoodMatch`.
+- `apps/mobile/src/config/api.ts`
+  - `buildApiBaseUrl(hostUri)` construye la URL a partir de la IP de desarrollo.
+  - `getApiBaseUrl()` obtiene `hostUri` de `expo-constants` en la app; en tests o entornos sin módulo nativo cae a `localhost`.
+- `apps/mobile/src/features/scanner/api/recognize.ts`
+  - `recognizeImage(imageBase64)` hace `POST` a la URL resuelta por `getApiBaseUrl()`.
+  - Parseo defensivo de errores y respuestas inesperadas.
+- `apps/mobile/src/features/scanner/utils/matchFood.ts`
+  - `selectFoodMatch(foods, recognizedName)` función pura: exacta o prefijo (`manzana` → `manzana golden`, no `zumo de manzana` ni `manzanilla`).
+  - `findLocalFoodMatch(database, recognized)` busca en el catálogo local y delega en `selectFoodMatch`.
+
+Tests:
+
+- `apps/mobile/test/scanner/recognize.test.ts`: respuesta exitosa, error con mensaje del servidor y respuesta inesperada.
+
+#### Tarea 3 — Pantalla de escáner y revisión
+
+`apps/mobile/src/app/scanner.tsx` reemplaza el estado informativo:
+
+- Paso inicial: botones "Hacer foto" y "Elegir de galería" con aviso sobre cantidades aproximadas.
+- Paso preview: muestra la imagen y botón "Analizar".
+- Paso analizando: indicador de carga.
+- Paso resultados:
+  - Lista de alimentos reconocidos con nombre, coincidencia local, gramos editables, confianza y advertencias.
+  - Selector de comida destino (Desayuno, Almuerzo, Merienda, Cena).
+  - Botón "Añadir al diario".
+  - Si un alimento no coincide con el catálogo local, se muestra un icono para crearlo manualmente (abre `diary/add-food` con el nombre prellenado).
+- Paso error: mensaje descriptivo, botón "Intentar de nuevo" y fallback "Crear alimento manualmente".
+
+#### Tarea 4 — Integración con catálogo local y diario
+
+- Para cada alimento reconocido se busca en el catálogo local.
+- Si hay coincidencia: se usa el alimento existente con los gramos revisados.
+- Si no hay coincidencia: se crea un alimento de usuario con macros `null` y se añade al diario.
+- Todos los alimentos se guardan en la comida destino seleccionada.
+
+#### Tarea 5 — Pruebas, calidad y cierre
+
+- Tests nuevos en backend y frontend.
+- Checklist completo de calidad en verde.
+- `README.md` y `PLAN.md` actualizados.
+
+**Fuera de alcance:** edición de alimentos del catálogo, importación de bases de datos externas, códigos de barras, sincronización o cuentas.
+
+**Criterios de aceptación:**
+
+- El backend responde `POST /recognize` validando la imagen y la respuesta de Gemini.
+- La app puede capturar o seleccionar una imagen y enviarla al backend.
+- Los resultados muestran nombre, gramos estimados y confianza; nunca nutrientes generados por Gemini.
+- Los alimentos reconocidos se resuelven contra el catálogo local (solo exacta/prefijo) o se crean como alimento de usuario.
+- El fallback manual permite introducir datos nutricionales si la red o Gemini fallan.
+- El escáner funciona en dispositivo físico y emulador sin hardcodear `localhost`.
+- Todas las comprobaciones de calidad en verde.
 
 ### Fase 6 — Pulido y release (propuesta)
 

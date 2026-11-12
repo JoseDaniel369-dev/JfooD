@@ -35,18 +35,20 @@ type Step = 'search' | 'create' | 'quantity';
 
 export default function AddFoodScreen() {
   const database = useSQLiteContext();
-  const { date, meal, target } = useLocalSearchParams<{
+  const { date, meal, target, name } = useLocalSearchParams<{
     date?: string;
     meal?: string;
     target?: string;
+    name?: string;
   }>();
   const localDate = date ?? toLocalDate(new Date());
   const initialMeal = (MEALS.map((m) => m.type).includes(meal as MealType)
     ? meal
     : 'breakfast') as MealType;
   const isPlanTarget = target === 'plan';
+  const prefillName = name?.trim();
 
-  const [step, setStep] = useState<Step>('search');
+  const [step, setStep] = useState<Step>(prefillName ? 'create' : 'search');
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Food[]>([]);
@@ -57,7 +59,7 @@ export default function AddFoodScreen() {
   const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
   const [saving, setSaving] = useState(false);
 
-  const [createName, setCreateName] = useState('');
+  const [createName, setCreateName] = useState(prefillName ?? '');
   const [createBrand, setCreateBrand] = useState('');
   const [createCalories, setCreateCalories] = useState('');
   const [createProtein, setCreateProtein] = useState('');
