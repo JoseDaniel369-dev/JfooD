@@ -22,7 +22,16 @@ La Fase 4.5 refina la interfaz y la experiencia de interacción: sistema de dise
 
 La Fase 5 implementa el escáner con Gemini: endpoint `POST /recognize` en el backend que recibe una imagen base64, llama a la API de Gemini y devuelve solo nombre, gramos estimados y confianza; pantalla de escáner con captura de cámara o selección de galería (`expo-image-picker`), preview, análisis, revisión de resultados, edición de gramos, selección de comida destino y añadido al diario; resolución de alimentos reconocidos contra el catálogo local (solo coincidencia exacta o prefijo), creación automática como alimento de usuario cuando no hay coincidencia, y fallback manual para introducir los datos nutricionales. La clave de Gemini se mantiene únicamente en el backend.
 
-La app deriva automáticamente la URL del backend en desarrollo a partir de la IP que sirve el bundle de Metro (`Constants.expoConfig.hostUri`), por lo que el escáner funciona en dispositivo físico y emulador sin configuración adicional. Para builds de producción se necesitará apuntar la URL al servidor desplegado (ver Fase 6).
+La Fase 6 prepara la app para producción a coste cero:
+
+- La API se despliega en **Render Free**; el modelo por defecto es `gemini-3.5-flash-lite` (2.5-flash está deprecado) y `/recognize` tiene rate limiting (10 req/min por IP).
+- La URL del backend en producción se inyecta en build mediante `EXPO_PUBLIC_API_URL`.
+- Se generan **dos APKs** desde el mismo código con EAS Build:
+  - **estable**: 100 % offline, sin escáner; funciona sin red.
+  - **experimental**: con escáner por Gemini apuntando a la API pública.
+- Ambas APKs pueden convivir en el mismo móvil porque tienen `applicationId` distinto.
+
+La app deriva automáticamente la URL del backend en desarrollo a partir de la IP que sirve el bundle de Metro (`Constants.expoConfig.hostUri`), por lo que el escáner funciona en dispositivo físico y emulador sin configuración adicional.
 
 La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`56 + inset inferior`) y un suelo de 64 dp para la zona de navegación, evitando que la barra del sistema se solape con los iconos o etiquetas incluso en dispositivos que infrarreportan el inset inferior. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
 
@@ -50,7 +59,42 @@ Para el backend:
 npm run start:api
 ```
 
-El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vacía se interpreta como no configurada, de modo que la API arranca sin ella. Cuando se implemente el escáner, copia `.env.example` como `apps/api/.env` y configura `GEMINI_API_KEY` solo en el backend. Nunca uses variables `EXPO_PUBLIC_*` para secretos.
+El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vacía se interpreta como no configurada, de modo que la API arranca sin ella. Copia `.env.example` como `apps/api/.env` y configura `GEMINI_API_KEY` solo en el backend. Nunca uses variables `EXPO_PUBLIC_*` para secretos.
+
+## Despliegue y builds de distribución
+
+### API en Render Free
+
+1. Crea un servicio web en [Render](https://render.com) desde tu repositorio de GitHub.
+2. Selecciona el directorio raíz y el comando de arranque: `npm run start:api`.
+3. Añade una variable de entorno `GEMINI_API_KEY` con tu clave de Gemini.
+4. Render inyecta `PORT` automáticamente; el servidor lo usa como fallback de `API_PORT`.
+5. Para evitar el cold start de ~1 min, crea un monitor gratuito en [UptimeRobot](https://uptimerobot.com) que haga ping a `https://TU_API.onrender.com/health` cada 5 min.
+
+### Builds de la app con EAS
+
+Edita `apps/mobile/eas.json` y reemplaza `https://TU_API.onrender.com` por la URL real de tu API:
+
+```json
+"env": {
+  "EXPO_PUBLIC_API_URL": "https://TU_API.onrender.com"
+}
+```
+
+Genera las APKs:
+
+```sh
+cd apps/mobile
+npx eas-cli@latest build --profile estable        # APK 100 % offline
+npx eas-cli@latest build --profile experimental   # APK con escáner Gemini
+```
+
+Ambos perfiles usan `distribution: internal` y generan un APK que puedes compartir directamente por sideload. La versión experimental se instala como `JfooD Experimental` (`com.jfood.app.experimental`) para que no sobrescriba la estable.
+
+### Variables de entorno del móvil
+
+- `EXPO_PUBLIC_API_URL`: URL pública y HTTPS de la API. Si no está definida, la app funciona en modo offline (versión estable).
+- En desarrollo, sin esta variable, la app usa `Constants.expoConfig.hostUri` para conectar con tu máquina.
 
 ## Comprobaciones
 

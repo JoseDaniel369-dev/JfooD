@@ -12,6 +12,7 @@ import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { formatLocalDate } from '@/features/diary/utils/date';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { MealType } from '@/features/diary/types';
+import { isScannerEnabled } from '@/config/api';
 
 export default function HomeScreen() {
   const { day, error, loading, localDate, reload } = useDiaryDay();
@@ -133,11 +134,13 @@ export default function HomeScreen() {
             label="Planificar"
             onPress={() => router.push('/(tabs)/planner')}
           />
-          <ShortcutButton
-            icon="camera-outline"
-            label="Escanear"
-            onPress={() => router.push('/scanner')}
-          />
+          {isScannerEnabled() ? (
+            <ShortcutButton
+              icon="camera-outline"
+              label="Escanear"
+              onPress={() => router.push('/scanner')}
+            />
+          ) : null}
         </View>
       </Card>
 

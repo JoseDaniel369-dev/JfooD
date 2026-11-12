@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
+import { isScannerEnabled } from '@/config/api';
 import { createFood } from '@/data/sqlite/repositories/foodRepository';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { toLocalDate } from '@/features/diary/utils/date';
@@ -31,6 +32,7 @@ import { colors, radius, spacing, typography } from '@/theme';
 type ScannerStep = 'camera' | 'preview' | 'analyzing' | 'results' | 'error';
 
 export default function ScannerScreen() {
+  const scannerEnabled = isScannerEnabled();
   const database = useSQLiteContext();
   const { date, meal } = useLocalSearchParams<{
     date?: string;
@@ -210,16 +212,22 @@ export default function ScannerScreen() {
   return (
     <Screen>
       <ScreenHeader
-        subtitle="Fotografía tu comida y Gemini identificará los alimentos."
-        title="Escáner"
+        subtitle={
+          scannerEnabled ?
+            'Fotografía tu comida y Gemini identificará los alimentos.'
+          : 'Añade alimentos manualmente a tu diario sin depender de la red.'
+        }
+        title={scannerEnabled ? 'Escáner' : 'Añadir alimento'}
       />
 
       {step === 'camera' ? (
-        <CameraStep
-          loading={picking}
-          onCamera={handleCamera}
-          onLibrary={handleLibrary}
-        />
+        scannerEnabled ?
+          <CameraStep
+            loading={picking}
+            onCamera={handleCamera}
+            onLibrary={handleLibrary}
+          />
+        : <ManualOnlyStep onManual={() => handleManualCreate('')} />
       ) : null}
 
       {step === 'preview' && imageUri ? (
@@ -313,6 +321,18 @@ function CameraStep({
         </Text>
       </View>
     </View>
+  );
+}
+
+function ManualOnlyStep({ onManual }: { onManual: () => void }) {
+  return (
+    <EmptyState
+      actionLabel="Añadir alimento manualmente"
+      icon="create-outline"
+      message="Esta versión funciona sin conexión. Puedes añadir alimentos manualmente al diario."
+      title="Escáner no disponible"
+      onAction={onManual}
+    />
   );
 }
 

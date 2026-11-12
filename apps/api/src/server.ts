@@ -15,7 +15,7 @@ const app = buildApp({ environment });
 try {
   await app.listen({
     host: environment.API_HOST,
-    port: environment.API_PORT,
+    port: environment.PORT ?? environment.API_PORT,
   });
 } catch (error) {
   app.log.error(error);

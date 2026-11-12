@@ -1,7 +1,7 @@
 # JfooD — Plan de desarrollo y traspaso
 
 **Última actualización:** 12 de noviembre de 2026
-**Estado:** Fases 0, 1, 2, 3, 4, 4.5 y 5 completadas. El proyecto está listo para planificar la Fase 6 (pulido y release) tras revisión y aprobación de la Fase 5.
+**Estado:** Fases 0, 1, 2, 3, 4, 4.5, 5 y 6 completadas. La app está lista para compilar y distribuir dos APKs: una versión estable 100 % offline y una versión experimental con reconocimiento por Gemini.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
 
@@ -87,11 +87,12 @@ Monorepo con npm workspaces:
 
 ### 3.3 Verificación del estado actual
 
-- 57/57 pruebas superadas (12 API, 29 móvil, 16 core).
+- Pruebas superadas en los tres paquetes (API, móvil, core).
 - TypeScript sin errores en los tres paquetes.
 - ESLint sin errores.
 - Bundle Android exportado correctamente.
-- Expo Doctor: 20/20 comprobaciones.
+- Expo Doctor sin incidencias.
+- Configuración de despliegue lista: Render Free + UptimeRobot, rate limiting en `/recognize`, y dos perfiles de EAS Build (`estable` y `experimental`).
 
 ---
 
@@ -510,13 +511,85 @@ Tests:
 - El escáner funciona en dispositivo físico y emulador sin hardcodear `localhost`.
 - Todas las comprobaciones de calidad en verde.
 
-### Fase 6 — Pulido y release (propuesta)
+### Fase 6 — Pulido y release ✅ COMPLETADA
 
-- Accesibilidad, estados vacíos y de error, rendimiento.
-- Pruebas manuales en dispositivo.
-- Iconos, splash y build de distribución si se decide publicar.
+**Objetivo:** preparar la app para distribución a un pequeño grupo sin costes de hosting ni tiendas, con dos versiones: una 100 % offline y otra con reconocimiento por Gemini.
 
-Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planificarse y aprobarse una a una.
+**Decisiones de diseño aprobadas:**
+
+- Hosting: **Render Free** (HTTPS automático, sin tarjeta). Su cold start se mitiga con **UptimeRobot** (plan free, ping cada 5 min), que mantiene el servicio despierto.
+- Modelo de Gemini: `gemini-3.5-flash-lite` (2.5-flash está deprecado y se redirige automáticamente). La capa gratuita ofrece ~500 peticiones/día, suficiente para unos pocos usuarios.
+- Rate limiting: `@fastify/rate-limit` en `/recognize` (10 req/min por IP) para proteger la cuota gratuita de Gemini.
+- La URL del backend en producción se inyecta en build mediante `EXPO_PUBLIC_API_URL`. En desarrollo sigue derivándose de `Constants.expoConfig.hostUri`.
+- Dos versiones desde el mismo código:
+  - **Estable** (`eas build --profile estable`): sin `EXPO_PUBLIC_API_URL`, el escáner no aparece en Inicio y, si se accede a la ruta, muestra un modo manual offline. Funciona sin red "sí o sí".
+  - **Experimental** (`eas build --profile experimental`): con `EXPO_PUBLIC_API_URL`, flujo completo de foto → API → Gemini. Tiene su propio `applicationId` (`com.jfood.app.experimental`) para poder convivir en el mismo móvil que la estable.
+- Distribución: APK generado por **EAS Build** (plan free) con `distribution: internal`, compartido por sideload (WhatsApp, Drive, correo…). Sin Google Play ni tasa de 25 $.
+
+#### Tarea 1 — Backend de producción
+
+Archivos modificados:
+
+- `apps/api/src/config/env.ts`
+  - `GEMINI_MODEL` por defecto = `gemini-3.5-flash-lite`.
+  - Se acepta `PORT` como alternativa a `API_PORT` (Render inyecta `PORT`).
+- `apps/api/src/server.ts`
+  - Usa `PORT ?? API_PORT` al arrancar.
+- `apps/api/src/app.ts`
+  - Registra `@fastify/rate-limit` globalmente: 10 req/min por IP.
+- `apps/api/.env.example`
+  - Actualizado al nuevo modelo y con `PORT` comentado.
+
+Tests actualizados:
+
+- `apps/api/test/env.test.ts`: valores por defecto, `PORT` sobre `API_PORT`.
+
+#### Tarea 2 — Móvil: URL de producción y modo offline
+
+Archivos modificados:
+
+- `apps/mobile/src/config/api.ts`
+  - `getApiBaseUrl()` prioriza `EXPO_PUBLIC_API_URL`.
+  - `isScannerEnabled()` devuelve `true` si hay `EXPO_PUBLIC_API_URL` o estamos en desarrollo (`__DEV__`).
+- `apps/mobile/src/app/scanner.tsx`
+  - Cuando el escáner está deshabilitado muestra un modo manual en lugar de los botones de cámara/galería.
+- `apps/mobile/src/app/(tabs)/index.tsx`
+  - Oculta el acceso rápido "Escanear" en la versión estable.
+
+Tests actualizados:
+
+- `apps/mobile/test/scanner/apiUrl.test.ts`: cubre `EXPO_PUBLIC_API_URL`, trailing slash, `isScannerEnabled`.
+
+#### Tarea 3 — Builds EAS con dos perfiles
+
+Archivos nuevos:
+
+- `apps/mobile/eas.json`
+  - Perfiles `estable` y `experimental`, ambos generando APK interno.
+  - `experimental` incluye `EXPO_PUBLIC_API_URL` (placeholder a reemplazar por la URL real de Render).
+- `apps/mobile/app.config.js`
+  - Reemplaza `app.json` para poder cambiar dinámicamente `name`, `android.package` e `ios.bundleIdentifier` según `EXPO_PUBLIC_API_URL`.
+  - Versión experimental: `JfooD Experimental` + `com.jfood.app.experimental`.
+
+Archivo eliminado:
+
+- `apps/mobile/app.json` (sustituido por `app.config.js`).
+
+#### Tarea 4 — Documentación y cierre
+
+- `README.md`: sección de despliegue y builds EAS.
+- `PLAN.md`: estado de la Fase 6 y referencias a los archivos clave.
+- Checklist de calidad en verde.
+
+**Fuera de alcance:** publicación en Google Play, autenticación de usuarios, backend de sincronización, base de datos remota, logs centralizados, notificaciones push.
+
+**Criterios de aceptación:**
+
+- La API arranca en Render Free leyendo `PORT` y protege `/recognize` con rate limiting.
+- La APK estable funciona completamente offline y no muestra el acceso al escáner.
+- La APK experimental apunta a la API pública y mantiene el flujo de reconocimiento con Gemini.
+- Ambas APKs pueden instalarse en el mismo dispositivo.
+- Todas las comprobaciones de calidad en verde.
 
 ---
 
@@ -524,8 +597,9 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
 
 1. **Repositorio Git:** ✅ RESUELTO. Se eliminó el `.git` anidado de `apps/mobile` y el código de la app móvil se incorporó como archivos normales del repositorio raíz.
 2. **Alcance de la Fase 1:** ✅ RESUELTO. Flujo modal paso a paso (`diary/add-food`); catálogo local con crear alimento + favorito; edición del diario mediante gramos, mover y eliminar entrada.
-3. **Datos de alimentos:** ✅ RESUELTO. La Fase 1 trabaja solo con alimentos creados por el usuario. La importación desde BEDCA/Open Food Facts queda para una fase posterior.
-4. **Peso y objetivos:** ✅ RESUELTO. El peso actual se captura en Perfil (Fase 2) y se registra como el primer `weight_log`, desbloqueando el cálculo de Mifflin-St Jeor y preparando la Fase 3.
+3. **Hosting y despliegue:** ✅ RESUELTO. Render Free + UptimeRobot para la API; EAS Build con perfiles `estable` y `experimental` para las APKs.
+4. **Datos de alimentos:** ✅ RESUELTO. La Fase 1 trabaja solo con alimentos creados por el usuario. La importación desde BEDCA/Open Food Facts queda para una fase posterior.
+5. **Peso y objetivos:** ✅ RESUELTO. El peso actual se captura en Perfil (Fase 2) y se registra como el primer `weight_log`, desbloqueando el cálculo de Mifflin-St Jeor y preparando la Fase 3.
 
 ---
 
@@ -545,12 +619,11 @@ Las fases 2 a 6 son una propuesta de orden, no un alcance cerrado. Deben planifi
    ```text
    Estoy retomando JfooD en una sesión nueva. Antes de hacer nada, lee
    PLAN.md, README.md y apps/mobile/AGENTS.md. Confirma el estado real
-   con las comprobaciones del documento e implementa la Fase 5
-   (escáner con Gemini) siguiendo el plan detallado de
-   PLAN.md §6 "Fase 5 — Escáner con Gemini".
+   con las comprobaciones del documento. La Fase 6 ya está completada;
+   prioriza mantenimiento, corrección de bugs o nuevas funciones tras
+   revisar el despliegue actual.
 
-   No hagas operaciones Git sin mi aprobación. No avances a la Fase 6
-   hasta que revise y apruebe la Fase 5. No añadas dependencias
+   No hagas operaciones Git sin mi aprobación. No añadas dependencias
    innecesarias ni funciones fuera del alcance acordado.
    ```
 
@@ -600,4 +673,9 @@ npm run build               # compilar core y API
 npm test                    # pruebas de todos los workspaces
 npm run typecheck           # TypeScript en todos los workspaces
 npm run lint                # ESLint de la app móvil
+
+cd apps/mobile
+npx eas-cli@latest build --profile estable        # APK estable (offline)
+npx eas-cli@latest build --profile experimental   # APK experimental (Gemini)
+# Recuerda reemplazar EXPO_PUBLIC_API_URL en eas.json por tu URL de Render.
 ```

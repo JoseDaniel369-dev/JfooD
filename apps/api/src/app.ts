@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 
 import type { ApiEnvironment } from './config/env.js';
 import { recognizeRoute } from './features/recognition/route.js';
@@ -14,6 +15,11 @@ export function buildApp(options: BuildAppOptions = {}) {
     bodyLimit: 10 * 1024 * 1024,
   });
   const environment = options.environment;
+
+  app.register(rateLimit, {
+    max: 10,
+    timeWindow: '1 minute',
+  });
 
   app.get('/health', async () => ({
     service: 'jfood-api',
