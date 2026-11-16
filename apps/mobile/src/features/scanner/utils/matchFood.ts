@@ -34,6 +34,6 @@ export async function findLocalFoodMatch(
     return null;
   }
 
-  const results = await searchFoods(database, normalized, 10);
+  const results = await searchFoods(database, normalized, 50);
   return selectFoodMatch(results, recognized.name);
 }

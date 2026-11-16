@@ -1,8 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Fragment, useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Rect, Text as SvgText } from 'react-native-svg';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import Svg, {
+  Circle,
+  Defs,
+  Line,
+  LinearGradient,
+  Path,
+  Stop,
+  Text as SvgText,
+} from 'react-native-svg';
+
+import { computeBmi, type BmiResult } from '@jfood/core';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
@@ -12,19 +30,41 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
+import { useToast } from '@/components/Toast';
+import { addDays, formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
+import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
+import { FadeInView } from '@/features/motion/FadeInView';
+import { animateNextLayout } from '@/features/motion/motion';
+import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
 import {
   computeChange,
   computeWeeklyTrend,
 } from '@/features/progress/utils/trend';
-import { addDays, formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
-import { colors, radius, spacing, typography } from '@/theme';
+import {
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  type ThemeColors,
+} from '@/theme';
 import type { WeightLog } from '@/data/sqlite/repositories/weightRepository';
 
 const MAX_WEIGHT_KG = 300;
 
+const PERIOD_OPTIONS = [
+  { label: '7 días', value: 7 },
+  { label: '14 días', value: 14 },
+  { label: '30 días', value: 30 },
+  { label: '90 días', value: 90 },
+] as const;
+
 export default function ProgressScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const { logs, loading, error, load, save, remove } = useWeightLogs();
+  const profile = useProfile();
   const today = toLocalDate(new Date());
 
   const [date, setDate] = useState(today);
@@ -35,6 +75,7 @@ export default function ProgressScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState<number>(7);
 
   const resetForm = useCallback(() => {
     setDate(today);
@@ -79,6 +120,8 @@ export default function ProgressScreen() {
         weightKg: parsedWeight,
         note: note.trim() || null,
       });
+      hapticSuccess();
+      showToast(editingDate ? 'Peso actualizado.' : 'Peso guardado.');
       resetForm();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido.';
@@ -94,7 +137,10 @@ export default function ProgressScreen() {
 
     void (async () => {
       try {
+        animateNextLayout();
         await remove(editingDate);
+        hapticWarning();
+        showToast('Registro eliminado.');
         resetForm();
       } catch {
         Alert.alert('Error', 'No se ha podido eliminar el registro.');
@@ -134,7 +180,12 @@ export default function ProgressScreen() {
     ? computeChange(latest.weightKg, previous?.weightKg ?? null)
     : null;
   const weeklyTrend = computeWeeklyTrend(sortedLogs);
-  const recentLogs = getRecentLogs(sortedLogs, 7);
+  const chartLogs = getRecentLogs(sortedLogs, chartPeriod);
+
+  const bmi: BmiResult | null =
+    latest && profile.profile?.heightCm
+      ? computeBmi(latest.weightKg, profile.profile.heightCm)
+      : null;
 
   return (
     <Screen>
@@ -144,9 +195,9 @@ export default function ProgressScreen() {
       />
 
       {error && logs.length > 0 ? (
-        <View style={styles.errorBanner}>
+        <Card style={styles.errorBanner}>
           <Text style={styles.errorBannerText}>{error}</Text>
-        </View>
+        </Card>
       ) : null}
 
       {latest ? (
@@ -188,28 +239,40 @@ export default function ProgressScreen() {
               </Text>
             </View>
           </View>
-          {weeklyTrend !== null ? (
-            <View style={styles.trendRow}>
-              <Ionicons
-                color={colors.primary}
-                name="scale-outline"
-                size={18}
-              />
-              <Text style={styles.trendText}>
-                Media de los últimos 7 días:{' '}
-                <Text style={styles.trendValue}>
-                  {weeklyTrend.toFixed(1)} kg
+
+          <View style={styles.chipRow}>
+            {weeklyTrend !== null ? (
+              <View style={styles.trendChip}>
+                <Ionicons color={colors.primary} name="scale-outline" size={18} />
+                <Text style={styles.trendChipText}>
+                  Media 7 días:{' '}
+                  <Text style={styles.trendChipValue}>
+                    {weeklyTrend.toFixed(1)} kg
+                  </Text>
                 </Text>
-              </Text>
-            </View>
-          ) : null}
+              </View>
+            ) : null}
+            {bmi ? <BmiChip bmi={bmi} /> : null}
+          </View>
         </Card>
       ) : null}
 
-      {recentLogs.length > 1 ? (
+      {chartLogs.length > 1 ? (
         <Card>
-          <SectionHeader title="Últimos 7 días" />
-          <WeightChart logs={recentLogs} selectedDate={editingDate} />
+          <SectionHeader title="Evolución" />
+          <View style={styles.periodSelector}>
+            {PERIOD_OPTIONS.map(({ label, value }) => (
+              <PeriodButton
+                key={label}
+                active={chartPeriod === value}
+                label={label}
+                onPress={() => setChartPeriod(value)}
+              />
+            ))}
+          </View>
+          <FadeInView key={chartPeriod}>
+            <WeightLineChart logs={chartLogs} />
+          </FadeInView>
         </Card>
       ) : null}
 
@@ -245,17 +308,21 @@ export default function ProgressScreen() {
 
         <Text style={styles.label}>Peso (kg)</Text>
         <TextInput
+          accessibilityLabel="Peso en kilogramos"
           keyboardType="decimal-pad"
           onChangeText={setWeight}
           placeholder="Ej. 70,5"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={weight}
         />
 
         <Text style={styles.label}>Nota (opcional)</Text>
         <TextInput
+          accessibilityLabel="Nota opcional del registro"
           onChangeText={setNote}
           placeholder="Ej. después de entrenar"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={note}
         />
@@ -296,10 +363,11 @@ export default function ProgressScreen() {
             title="Sin registros"
           />
         ) : (
-          <View style={styles.historyList}>
-            {sortedLogs.map((log) => (
+          <FlatList
+            data={sortedLogs}
+            keyExtractor={(item) => item.localDate}
+            renderItem={({ item: log }) => (
               <Pressable
-                key={log.localDate}
                 accessibilityLabel={`Peso ${log.weightKg} kg el ${formatLocalDate(log.localDate)}`}
                 accessibilityRole="button"
                 onPress={() => handleSelectLog(log)}
@@ -324,8 +392,9 @@ export default function ProgressScreen() {
                   <Text style={styles.historyUnit}> kg</Text>
                 </Text>
               </Pressable>
-            ))}
-          </View>
+            )}
+            scrollEnabled={false}
+          />
         )}
       </Card>
 
@@ -342,75 +411,204 @@ export default function ProgressScreen() {
   );
 }
 
-function getRecentLogs(logs: WeightLog[], days: number): WeightLog[] {
-  if (logs.length === 0) return [];
-  const latest = logs[logs.length - 1];
-  if (!latest) return [];
-
-  // Pure date-string arithmetic: parsing local dates with `new Date` would
-  // shift the window in timezones behind UTC.
-  const cutoffString = addDays(latest.localDate, -days + 1);
-  return logs.filter((log) => log.localDate >= cutoffString);
-}
-
-function WeightChart({
-  logs,
-  selectedDate,
+function PeriodButton({
+  active,
+  label,
+  onPress,
 }: {
-  logs: WeightLog[];
-  selectedDate: string | null;
+  active: boolean;
+  label: string;
+  onPress: () => void;
 }) {
-  const chartHeight = 120;
-  const barWidth = 24;
-  const gap = 8;
-  const weights = logs.map((log) => log.weightKg);
-  const minWeight = Math.min(...weights);
-  const maxWeight = Math.max(...weights);
-  const range = Math.max(maxWeight - minWeight, 1);
-  const paddingBottom = 20;
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <Svg
-      height={chartHeight + paddingBottom}
-      viewBox={`0 0 ${logs.length * (barWidth + gap)} ${chartHeight + paddingBottom}`}
-      width="100%"
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={() => {
+        hapticSuccess();
+        onPress();
+      }}
+      style={[styles.periodButton, active && styles.periodButtonActive]}
     >
-      {logs.map((log, index) => {
-        const x = index * (barWidth + gap) + gap / 2;
-        const barHeight =
-          ((log.weightKg - minWeight) / range) * (chartHeight - 24) + 8;
-        const y = chartHeight - barHeight;
-
-        return (
-          <Fragment key={log.localDate}>
-            <Rect
-              fill={colors.primary}
-              height={barHeight}
-              opacity={selectedDate === log.localDate ? 1 : 0.85}
-              rx={6}
-              width={barWidth}
-              x={x}
-              y={y}
-            />
-            <SvgText
-              fill={colors.textMuted}
-              fontSize={10}
-              textAnchor="middle"
-              x={x + barWidth / 2}
-              y={chartHeight + 14}
-            >
-              {formatChartDay(log.localDate)}
-            </SvgText>
-          </Fragment>
-        );
-      })}
-    </Svg>
+      <Text
+        style={[
+          styles.periodButtonText,
+          active && styles.periodButtonTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
-function formatChartDay(localDate: string): string {
+function BmiChip({ bmi }: { bmi: BmiResult }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  return (
+    <View style={styles.bmiChip}>
+      <Ionicons color={colors.primary} name="body-outline" size={18} />
+      <Text style={styles.bmiChipText}>
+        IMC{' '}
+        <Text style={styles.bmiChipValue}>
+          {bmi.value} · {bmi.label}
+        </Text>
+      </Text>
+    </View>
+  );
+}
+
+function WeightLineChart({ logs }: { logs: WeightLog[] }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [tooltipWidth, setTooltipWidth] = useState(0);
+
+  const width = 300;
+  const height = 140;
+  const padding = { top: 24, bottom: 24, left: 8, right: 8 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const weights = logs.map((log) => log.weightKg);
+  const minWeight = Math.min(...weights);
+  const maxWeight = Math.max(...weights);
+  const range = Math.max(maxWeight - minWeight, 0.5);
+
+  const points = logs.map((log, index) => {
+    const x =
+      logs.length <= 1
+        ? chartWidth / 2
+        : (index / (logs.length - 1)) * chartWidth;
+    const y =
+      chartHeight -
+      ((log.weightKg - minWeight) / range) * (chartHeight - 16) -
+      8;
+    return { ...log, x, y };
+  });
+
+  const linePath = points
+    .map((point, index) =>
+      index === 0
+        ? `M ${point.x} ${point.y}`
+        : `L ${point.x} ${point.y}`,
+    )
+    .join(' ');
+
+  const areaPath = `${linePath} L ${points[points.length - 1]?.x ?? 0} ${chartHeight} L ${points[0]?.x ?? 0} ${chartHeight} Z`;
+
+  const selected = selectedIndex !== null ? points[selectedIndex] : null;
+
+  return (
+    <View style={styles.chartContainer}>
+      <Svg height={height} viewBox={`0 0 ${width} ${height}`} width="100%">
+        <Defs>
+          <LinearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">
+            <Stop offset="0" stopColor={colors.primary} stopOpacity={0.25} />
+            <Stop offset="1" stopColor={colors.primary} stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Path d={areaPath} fill="url(#areaFill)" />
+        <Path
+          d={linePath}
+          fill="none"
+          stroke={colors.primary}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+        />
+        <Line
+          stroke={colors.border}
+          strokeDasharray="4 4"
+          strokeWidth={1}
+          x1={padding.left}
+          x2={width - padding.right}
+          y1={chartHeight + padding.top}
+          y2={chartHeight + padding.top}
+        />
+        {points.map((point, index) => (
+          <Circle
+            key={point.localDate}
+            cx={point.x + padding.left}
+            cy={point.y + padding.top}
+            fill={selectedIndex === index ? colors.accent : colors.surface}
+            onPress={() => setSelectedIndex(index)}
+            r={selectedIndex === index ? 6 : 4}
+            stroke={colors.primary}
+            strokeWidth={2}
+          />
+        ))}
+        {points[0] ? (
+          <SvgText
+            fill={colors.textMuted}
+            fontSize={10}
+            textAnchor="start"
+            x={padding.left}
+            y={height - 4}
+          >
+            {formatShortDay(points[0].localDate)}
+          </SvgText>
+        ) : null}
+        {(() => {
+          const lastPoint = points.at(-1);
+          return lastPoint ? (
+            <SvgText
+              fill={colors.textMuted}
+              fontSize={10}
+              textAnchor="end"
+              x={width - padding.right}
+              y={height - 4}
+            >
+              {formatShortDay(lastPoint.localDate)}
+            </SvgText>
+          ) : null;
+        })()}
+      </Svg>
+
+      {selected ? (
+        <FadeInView
+          key={selected.localDate}
+          onLayout={(event) => setTooltipWidth(event.nativeEvent.layout.width)}
+          style={[
+            styles.tooltip,
+            {
+              left: Math.min(
+                Math.max(selected.x + padding.left - tooltipWidth / 2, 0),
+                width - tooltipWidth,
+              ),
+            },
+          ]}
+        >
+          <Text style={styles.tooltipText}>
+            {selected.weightKg.toFixed(1)} kg
+          </Text>
+          <Text style={styles.tooltipDate}>
+            {formatShortDay(selected.localDate)}
+          </Text>
+        </FadeInView>
+      ) : null}
+    </View>
+  );
+}
+
+function formatShortDay(localDate: string): string {
   const [, , day] = localDate.split('-');
   return day ?? '';
+}
+
+function getRecentLogs(logs: WeightLog[], days: number): WeightLog[] {
+  if (days <= 0) return logs;
+  if (logs.length === 0) return [];
+
+  const latest = logs[logs.length - 1];
+  if (!latest) return [];
+
+  const cutoffString = addDays(latest.localDate, -days + 1);
+  return logs.filter((log) => log.localDate >= cutoffString);
 }
 
 function parseWeight(value: string): number | null {
@@ -445,170 +643,247 @@ function parseLocalDate(localDate: string): Date | null {
   return null;
 }
 
-const styles = StyleSheet.create({
-  errorBanner: {
-    backgroundColor: colors.dangerLight,
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  errorBannerText: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  summaryItem: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  summaryDivider: {
-    backgroundColor: colors.border,
-    width: 1,
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  summaryValue: {
-    ...typography.title,
-    color: colors.text,
-    fontSize: 28,
-  },
-  summaryUnit: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '400',
-  },
-  summaryDate: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  up: {
-    color: colors.danger,
-  },
-  down: {
-    color: colors.success,
-  },
-  neutral: {
-    color: colors.textMuted,
-  },
-  trendRow: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  trendText: {
-    ...typography.caption,
-    color: colors.primary,
-  },
-  trendValue: {
-    fontWeight: '700',
-  },
-  label: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 16,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  dateButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  dateButtonText: {
-    color: colors.text,
-    fontSize: 16,
-  },
-  lockedDate: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  lockedDateText: {
-    color: colors.text,
-    fontSize: 16,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-    marginBottom: spacing.md,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  primaryButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    flex: 1,
-  },
-  historyList: {
-    gap: spacing.sm,
-  },
-  historyRow: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  historyRowActive: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  historyMain: {
-    flex: 1,
-    gap: 2,
-  },
-  historyDate: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  historyNote: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  historyWeight: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  historyUnit: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '400',
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    errorBanner: {
+      backgroundColor: colors.dangerLight,
+    },
+    errorBannerText: {
+      color: colors.danger,
+      fontSize: 13,
+      textAlign: 'center',
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    summaryItem: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    summaryDivider: {
+      backgroundColor: colors.border,
+      width: 1,
+    },
+    summaryLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    summaryValue: {
+      ...typography.title,
+      color: colors.text,
+      fontSize: 28,
+    },
+    summaryUnit: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '400',
+    },
+    summaryDate: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    up: {
+      color: colors.danger,
+    },
+    down: {
+      color: colors.success,
+    },
+    neutral: {
+      color: colors.textMuted,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    trendChip: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    trendChipText: {
+      ...typography.caption,
+      color: colors.primary,
+    },
+    trendChipValue: {
+      fontWeight: '700',
+    },
+    bmiChip: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    bmiChipText: {
+      ...typography.caption,
+      color: colors.text,
+    },
+    bmiChipValue: {
+      fontWeight: '700',
+    },
+    periodSelector: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    periodButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flex: 1,
+      paddingVertical: spacing.sm,
+    },
+    periodButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    periodButtonText: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    periodButtonTextActive: {
+      color: colors.textOnPrimary,
+    },
+    chartContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tooltip: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      elevation: 3,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      position: 'absolute',
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      top: 0,
+    },
+    tooltipText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    tooltipDate: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    label: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+      marginBottom: spacing.xs,
+    },
+    input: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 16,
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    dateButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    dateButtonText: {
+      color: colors.text,
+      fontSize: 16,
+    },
+    lockedDate: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    lockedDateText: {
+      color: colors.text,
+      fontSize: 16,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+      marginBottom: spacing.md,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    primaryButton: {
+      flex: 1,
+    },
+    secondaryButton: {
+      flex: 1,
+    },
+    historyRow: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginBottom: spacing.sm,
+      padding: spacing.md,
+    },
+    historyRowActive: {
+      borderColor: colors.primary,
+      borderWidth: 2,
+    },
+    historyMain: {
+      flex: 1,
+      gap: 2,
+    },
+    historyDate: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    historyNote: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    historyWeight: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    historyUnit: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '400',
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

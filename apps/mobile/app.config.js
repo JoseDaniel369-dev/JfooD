@@ -9,8 +9,8 @@ module.exports = ({ config }) => {
     orientation: 'portrait',
     scheme: 'jfood',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'light',
-    backgroundColor: '#F6F7F2',
+    userInterfaceStyle: 'automatic',
+    backgroundColor: '#F3F8F4',
     ios: {
       supportsTablet: true,
       bundleIdentifier: experimental ? 'com.jfood.app.experimental' : 'com.jfood.app',
@@ -43,6 +43,7 @@ module.exports = ({ config }) => {
       ],
       '@react-native-community/datetimepicker',
       'expo-status-bar',
+      'expo-font',
     ],
     experiments: {
       typedRoutes: true,

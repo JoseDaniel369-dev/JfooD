@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { colors, radius, spacing } from '@/theme';
-import { StyleSheet, Text, View } from 'react-native';
+import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
 interface FeaturePlaceholderProps {
   title: string;
@@ -19,6 +20,9 @@ export function FeaturePlaceholder({
   description,
   icon,
 }: FeaturePlaceholderProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Screen>
       <ScreenHeader title={title} subtitle={subtitle} />
@@ -38,44 +42,46 @@ export function FeaturePlaceholder({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-    paddingVertical: spacing.xxxl,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
-    height: 68,
-    justifyContent: 'center',
-    width: 68,
-  },
-  copy: {
-    gap: spacing.sm,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  description: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 23,
-    textAlign: 'center',
-  },
-  badge: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  badgeText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    card: {
+      alignItems: 'center',
+      marginTop: spacing.xl,
+      paddingVertical: spacing.xxxl,
+    },
+    iconContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.lg,
+      height: 68,
+      justifyContent: 'center',
+      width: 68,
+    },
+    copy: {
+      gap: spacing.sm,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    description: {
+      color: colors.textMuted,
+      fontSize: 15,
+      lineHeight: 23,
+      textAlign: 'center',
+    },
+    badge: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    badgeText: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+  });
+}

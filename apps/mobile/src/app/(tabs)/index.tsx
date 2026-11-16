@@ -1,21 +1,65 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Svg, { Rect } from 'react-native-svg';
 
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Card } from '@/components/Card';
+import { Fab } from '@/components/Fab';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
+import { useToast } from '@/components/Toast';
+import { isScannerEnabled } from '@/config/api';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { formatLocalDate } from '@/features/diary/utils/date';
-import { colors, radius, spacing, typography } from '@/theme';
+import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
+import { durations, easings } from '@/features/motion/motion';
+import { useCountUp } from '@/features/motion/useCountUp';
+import { useDiaryStats } from '@/features/stats/hooks/useDiaryStats';
+import { StreakRing } from '@/features/stats/components/StreakRing';
+import { computeStreak, computeWeekStats } from '@/features/stats/utils/streak';
+import { useWaterDay } from '@/features/water/hooks/useWaterDay';
+import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
+import {
+  fonts,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  type ThemeColors,
+} from '@/theme';
 import type { MealType } from '@/features/diary/types';
-import { isScannerEnabled } from '@/config/api';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const BAR_HEIGHT = 72;
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const { day, error, loading, localDate, reload } = useDiaryDay();
+  const { stats, error: statsError } = useDiaryStats();
+  const water = useWaterDay();
+  const waterError = water.error;
+  const { goalMl: waterGoal } = useWaterGoal();
+
+  const streak = useMemo(() => {
+    const dates = stats?.loggedDates ?? [];
+    return computeStreak(dates, localDate);
+  }, [stats, localDate]);
+
+  const week = useMemo(() => {
+    return computeWeekStats(stats?.week ?? [], localDate);
+  }, [stats, localDate]);
 
   if (loading) {
     return (
@@ -27,7 +71,7 @@ export default function HomeScreen() {
 
   if (error || !day) {
     return (
-      <Screen>
+      <Screen fab>
         <ErrorState
           message={error ?? 'No hay datos disponibles.'}
           onRetry={() => void reload()}
@@ -49,49 +93,92 @@ export default function HomeScreen() {
     });
   };
 
+  const handleAddWater = async (amountMl: number) => {
+    const previousTotal = water.day?.totalMl ?? 0;
+    const added = await water.add(amountMl);
+    if (added) {
+      hapticSuccess();
+      if (previousTotal < waterGoal && previousTotal + amountMl >= waterGoal) {
+        showToast('¡Objetivo de agua conseguido!');
+      }
+    } else {
+      showToast('No se ha podido registrar el agua.', 'error');
+    }
+  };
+
+  const handleFabPress = () => {
+    router.push({
+      pathname: '/diary/add-food',
+      params: { date: localDate, meal: 'breakfast' },
+    });
+  };
+
   return (
-    <Screen>
+    <Screen fab>
       <View style={styles.header}>
         <View style={styles.brandRow}>
           <View style={styles.brandIcon}>
-            <Ionicons color={colors.primary} name="leaf" size={21} />
+            <Ionicons color={colors.textOnPrimary} name="leaf" size={21} />
           </View>
           <Text style={styles.brand}>JfooD</Text>
         </View>
         <Text style={styles.date}>{formatLocalDate(localDate)}</Text>
       </View>
 
-      <Card style={styles.calorieCard}>
-        <View style={styles.calorieHeader}>
-          <Text style={styles.cardLabel}>CALORÍAS DE HOY</Text>
-          <Ionicons color={colors.textOnPrimary} name="flame-outline" size={22} />
+      <Card animated delay={0} variant="hero">
+        <View style={styles.heroRow}>
+          <View style={styles.heroMain}>
+            <Text style={styles.cardLabel}>CALORÍAS DE HOY</Text>
+            <View style={styles.calorieNumbers}>
+              <AnimatedNumber
+                color={colors.onHero}
+                decimals={0}
+                style={styles.calorieValue}
+                value={consumedCalories}
+              />
+              <Text style={styles.calorieGoal}>
+                / {formatNumber(day.goals.caloriesKcal)} kcal
+              </Text>
+            </View>
+            <View style={styles.calorieFooter}>
+              <Text style={styles.calorieFooterLabel}>
+                {remainingCalories !== null && remainingCalories < 0
+                  ? 'Por encima del objetivo'
+                  : 'Restantes'}
+              </Text>
+              <Text style={styles.calorieFooterValue}>
+                {remainingCalories === null
+                  ? '—'
+                  : `${formatNumber(Math.abs(remainingCalories))} kcal`}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.streakColumn}>
+            <StreakRing maximum={7} size={92} strokeWidth={9} value={streak.current}>
+              <View style={styles.streakCenter}>
+                <Ionicons color={colors.accent} name="flame" size={18} />
+                <AnimatedNumber
+                  color={colors.onHero}
+                  style={styles.streakValue}
+                  value={streak.current}
+                />
+                <Text style={styles.streakLabel}>días</Text>
+              </View>
+            </StreakRing>
+            <Text style={styles.streakHint}>
+              {streak.best > 0 ? `Mejor: ${streak.best}` : 'Tu racha'}
+            </Text>
+          </View>
         </View>
-        <View style={styles.calorieNumbers}>
-          <Text style={styles.calorieValue}>
-            {formatNumber(consumedCalories)}
-          </Text>
-          <Text style={styles.calorieGoal}>
-            / {formatNumber(day.goals.caloriesKcal)} kcal
-          </Text>
-        </View>
+
         <ProgressBar
           color={colors.accent}
           maximum={day.goals.caloriesKcal}
           trackColor="rgba(255,255,255,0.18)"
           value={consumedCalories}
         />
-        <View style={styles.calorieFooter}>
-          <Text style={styles.calorieFooterLabel}>
-            {remainingCalories !== null && remainingCalories < 0
-              ? 'Por encima del objetivo'
-              : 'Restantes'}
-          </Text>
-          <Text style={styles.calorieFooterValue}>
-            {remainingCalories === null
-              ? '—'
-              : `${formatNumber(Math.abs(remainingCalories))} kcal`}
-          </Text>
-        </View>
+
         {day.goalsAreDefault ? (
           <Text style={styles.goalNotice}>
             Objetivos provisionales: no calculados con tus datos personales.
@@ -99,7 +186,21 @@ export default function HomeScreen() {
         ) : null}
       </Card>
 
-      <Card>
+      <Card animated delay={50}>
+        <SectionHeader
+          title="Esta semana"
+          caption={
+            statsError
+              ? 'No se han podido cargar las estadísticas'
+              : week.averageKcal !== null
+                ? `${week.loggedDays}/7 días · ${week.averageKcal} kcal de media`
+                : 'Sin registros aún'
+          }
+        />
+        <WeekBars days={week.days} />
+      </Card>
+
+      <Card animated delay={100}>
         <SectionHeader title="Macronutrientes" />
         <MacroRow
           color={colors.protein}
@@ -121,7 +222,42 @@ export default function HomeScreen() {
         />
       </Card>
 
-      <Card>
+      <Card animated delay={150}>
+        <SectionHeader
+          title="Agua"
+          caption={
+            waterError
+              ? 'No se ha podido cargar el agua'
+              : water.day
+                ? `${formatNumber(water.day.totalMl)} / ${waterGoal} ml`
+                : undefined
+          }
+        />
+        <ProgressBar
+          color={colors.water}
+          maximum={waterGoal}
+          value={water.day?.totalMl ?? 0}
+        />
+        <View style={styles.waterButtons}>
+          <ButtonChip
+            icon="add"
+            label="+250 ml"
+            onPress={() => void handleAddWater(250)}
+          />
+          <ButtonChip
+            icon="add"
+            label="+500 ml"
+            onPress={() => void handleAddWater(500)}
+          />
+          <ButtonChip
+            icon="water-outline"
+            label="Vaso"
+            onPress={() => void handleAddWater(250)}
+          />
+        </View>
+      </Card>
+
+      <Card animated delay={200}>
         <SectionHeader title="Accesos rápidos" />
         <View style={styles.shortcuts}>
           <ShortcutButton
@@ -144,7 +280,7 @@ export default function HomeScreen() {
         </View>
       </Card>
 
-      <Card>
+      <Card animated delay={250}>
         <SectionHeader
           actionLabel="Ver diario"
           caption="Toca una comida para añadir"
@@ -153,7 +289,137 @@ export default function HomeScreen() {
         />
         <MealList meals={day.meals} onMealPress={handleMealPress} />
       </Card>
+
+      <Fab accessibilityLabel="Añadir comida" onPress={handleFabPress} />
     </Screen>
+  );
+}
+
+function AnimatedNumber({
+  value,
+  color,
+  style,
+  decimals = 0,
+}: {
+  value: number | null;
+  color: string;
+  style?: object;
+  decimals?: number;
+}) {
+  const display = useCountUp(value ?? 0, 600, decimals);
+  return (
+    <Text style={[style, { color }]}>
+      {value === null ? '—' : String(display)}
+    </Text>
+  );
+}
+
+function ButtonChip({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
+      style={({ pressed }) => [styles.waterButton, pressed && styles.pressed]}
+    >
+      <Ionicons color={colors.water} name={icon} size={18} />
+      <Text style={styles.waterButtonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function WeekBars({
+  days,
+}: {
+  days: { localDate: string; caloriesKcal: number | null }[];
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const values = days.map((day) => day.caloriesKcal ?? 0);
+  const max = Math.max(...values, 1);
+
+  return (
+    <View style={styles.weekBars}>
+      {days.map((day, index) => {
+        const targetHeight =
+          day.caloriesKcal === null ? 4 : Math.max((day.caloriesKcal / max) * BAR_HEIGHT, 10);
+        const label = day.localDate.split('-')[2] ?? '';
+
+        return (
+          <View key={day.localDate} style={styles.weekBarColumn}>
+            <Svg height={BAR_HEIGHT} width={18}>
+              <AnimatedBar
+                color={colors.primary}
+                height={targetHeight}
+                opacity={day.caloriesKcal === null ? 0.25 : 1}
+              />
+            </Svg>
+            <Text style={styles.weekBarLabel}>
+              {index === days.length - 1 ? 'Hoy' : label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function AnimatedBar({
+  color,
+  height,
+  opacity,
+}: {
+  color: string;
+  height: number;
+  opacity: number;
+}) {
+  const [heightAnim] = useState(() => new Animated.Value(4));
+  const [yAnim] = useState(() => new Animated.Value(BAR_HEIGHT - 4));
+
+  useEffect(() => {
+    const animation = Animated.parallel([
+      Animated.timing(heightAnim, {
+        toValue: height,
+        duration: durations.slow,
+        useNativeDriver: false,
+        easing: (x) => easings.easeOutCubic(x),
+      }),
+      Animated.timing(yAnim, {
+        toValue: BAR_HEIGHT - height,
+        duration: durations.slow,
+        useNativeDriver: false,
+        easing: (x) => easings.easeOutCubic(x),
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [heightAnim, yAnim, height]);
+
+  return (
+    <AnimatedRect
+      fill={color}
+      height={heightAnim}
+      opacity={opacity}
+      rx={6}
+      width={18}
+      x={0}
+      y={yAnim}
+    />
   );
 }
 
@@ -166,11 +432,17 @@ function ShortcutButton({
   label: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
       style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}
     >
       <View style={styles.shortcutIcon}>
@@ -189,6 +461,9 @@ interface MacroRowProps {
 }
 
 function MacroRow({ label, consumed, goal, color }: MacroRowProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.macroRow}>
       <View style={styles.macroHeader}>
@@ -209,145 +484,206 @@ function formatNumber(value: number | null): string {
   return value === null ? '—' : String(Math.round(value));
 }
 
-const styles = StyleSheet.create({
-  header: {
-    gap: spacing.md,
-  },
-  brandRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  brandIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.sm,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  brand: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.8,
-  },
-  date: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textTransform: 'capitalize',
-  },
-  calorieCard: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  calorieHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cardLabel: {
-    color: colors.textOnPrimary,
-    fontSize: typography.label.fontSize,
-    fontWeight: '700',
-    letterSpacing: typography.label.letterSpacing,
-    opacity: 0.75,
-  },
-  calorieNumbers: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  calorieValue: {
-    color: colors.textOnPrimary,
-    fontSize: 48,
-    fontWeight: '700',
-    letterSpacing: -1.5,
-  },
-  calorieGoal: {
-    color: colors.textOnPrimary,
-    fontSize: 15,
-    opacity: 0.7,
-  },
-  calorieFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  calorieFooterLabel: {
-    color: colors.textOnPrimary,
-    fontSize: 13,
-    opacity: 0.75,
-  },
-  calorieFooterValue: {
-    color: colors.textOnPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  goalNotice: {
-    color: colors.textOnPrimary,
-    fontSize: 11,
-    lineHeight: 16,
-    opacity: 0.7,
-  },
-  shortcuts: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  shortcut: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    flex: 1,
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  shortcutIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  shortcutLabel: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  macroRow: {
-    gap: spacing.sm,
-  },
-  macroHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  macroLabelRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  macroDot: {
-    borderRadius: radius.pill,
-    height: 8,
-    width: 8,
-  },
-  macroLabel: {
-    ...typography.body,
-    color: colors.text,
-  },
-  macroValue: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  macroGoal: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '400',
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    header: {
+      gap: spacing.md,
+    },
+    brandRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    brandIcon: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: radius.sm,
+      height: 36,
+      justifyContent: 'center',
+      width: 36,
+    },
+    brand: {
+      color: colors.primary,
+      fontFamily: fonts.brand,
+      fontSize: 24,
+      letterSpacing: -0.8,
+    },
+    date: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textTransform: 'capitalize',
+    },
+    heroRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.lg,
+      justifyContent: 'space-between',
+    },
+    heroMain: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    cardLabel: {
+      color: colors.onHero,
+      fontSize: typography.label.fontSize,
+      fontWeight: '700',
+      letterSpacing: typography.label.letterSpacing,
+      opacity: 0.75,
+    },
+    calorieNumbers: {
+      alignItems: 'baseline',
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    calorieValue: {
+      fontSize: 44,
+      fontWeight: '700',
+      letterSpacing: -1.5,
+    },
+    calorieGoal: {
+      color: colors.onHero,
+      fontSize: 15,
+      opacity: 0.7,
+    },
+    calorieFooter: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    calorieFooterLabel: {
+      color: colors.onHero,
+      fontSize: 13,
+      opacity: 0.75,
+    },
+    calorieFooterValue: {
+      color: colors.onHero,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    goalNotice: {
+      color: colors.onHero,
+      fontSize: 11,
+      lineHeight: 16,
+      opacity: 0.7,
+    },
+    streakColumn: {
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    streakCenter: {
+      alignItems: 'center',
+    },
+    streakValue: {
+      fontSize: 24,
+      fontWeight: '800',
+      lineHeight: 26,
+    },
+    streakLabel: {
+      color: colors.onHero,
+      fontSize: 11,
+      opacity: 0.75,
+    },
+    streakHint: {
+      color: colors.onHero,
+      fontSize: 11,
+      opacity: 0.75,
+    },
+    weekBars: {
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+      gap: spacing.md,
+      justifyContent: 'space-between',
+    },
+    weekBarColumn: {
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    weekBarLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontSize: 10,
+    },
+    waterButtons: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    waterButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flex: 1,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      justifyContent: 'center',
+      minHeight: 48,
+      padding: spacing.md,
+    },
+    waterButtonText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    shortcuts: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    shortcut: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      flex: 1,
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    shortcutIcon: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      height: 44,
+      justifyContent: 'center',
+      width: 44,
+    },
+    shortcutLabel: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    macroRow: {
+      gap: spacing.sm,
+    },
+    macroHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    macroLabelRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    macroDot: {
+      borderRadius: radius.pill,
+      height: 8,
+      width: 8,
+    },
+    macroLabel: {
+      ...typography.body,
+      color: colors.text,
+    },
+    macroValue: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    macroGoal: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '400',
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

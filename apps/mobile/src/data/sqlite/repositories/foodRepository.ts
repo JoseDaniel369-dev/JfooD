@@ -124,7 +124,6 @@ export async function getRecentFoods(
        )
        GROUP BY food_id
      ) latest ON latest.food_id = f.id
-     GROUP BY f.id
      ORDER BY last_used DESC
      LIMIT ?`,
     [limit],
@@ -169,6 +168,89 @@ export async function toggleFavorite(
   );
 
   return row?.is_favorite === 1;
+}
+
+export async function getFoodById(
+  database: SQLiteDatabase,
+  foodId: string,
+): Promise<Food | null> {
+  const row = await database.getFirstAsync<FoodRow>(
+    `SELECT ${SELECT_FOOD_COLUMNS}
+     FROM foods
+     WHERE id = ?`,
+    [foodId],
+  );
+
+  return row ? mapFood(row) : null;
+}
+
+export interface UpdateFoodInput {
+  name: string;
+  brand?: string | null;
+  caloriesKcal?: number | null;
+  proteinGrams?: number | null;
+  carbohydrateGrams?: number | null;
+  fatGrams?: number | null;
+}
+
+export async function updateFood(
+  database: SQLiteDatabase,
+  foodId: string,
+  input: UpdateFoodInput,
+): Promise<Food | null> {
+  const name = input.name.trim();
+  if (!name) {
+    throw new Error('El nombre del alimento es obligatorio.');
+  }
+
+  const now = new Date().toISOString();
+
+  await database.runAsync(
+    `UPDATE foods
+     SET name = ?,
+         normalized_name = ?,
+         brand = ?,
+         calories_kcal = ?,
+         protein_grams = ?,
+         carbohydrate_grams = ?,
+         fat_grams = ?,
+         updated_at = ?
+     WHERE id = ?`,
+    [
+      name,
+      normalizeName(name),
+      input.brand?.trim() || null,
+      input.caloriesKcal ?? null,
+      input.proteinGrams ?? null,
+      input.carbohydrateGrams ?? null,
+      input.fatGrams ?? null,
+      now,
+      foodId,
+    ],
+  );
+
+  return getFoodById(database, foodId);
+}
+
+export async function deleteFood(
+  database: SQLiteDatabase,
+  foodId: string,
+): Promise<void> {
+  await database.runAsync('DELETE FROM foods WHERE id = ?', [foodId]);
+}
+
+export async function getFoodUsageCount(
+  database: SQLiteDatabase,
+  foodId: string,
+): Promise<number> {
+  const row = await database.getFirstAsync<{ count: number }>(
+    `SELECT
+       (SELECT COUNT(*) FROM diary_entries WHERE food_id = ?) +
+       (SELECT COUNT(*) FROM plan_entries WHERE food_id = ?) AS count`,
+    [foodId, foodId],
+  );
+
+  return row?.count ?? 0;
 }
 
 function mapFood(row: FoodRow): Food {

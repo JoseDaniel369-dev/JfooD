@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing, typography } from '@/theme';
+import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -15,9 +16,12 @@ export function SectionHeader({
   actionLabel,
   onAction,
 }: SectionHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.copy}>
         <Text style={styles.title}>{title}</Text>
         {caption ? <Text style={styles.caption}>{caption}</Text> : null}
       </View>
@@ -36,29 +40,35 @@ export function SectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-  },
-  caption: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  action: {
-    padding: spacing.xs,
-  },
-  actionText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    copy: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      ...typography.title,
+      color: colors.text,
+    },
+    caption: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    action: {
+      padding: spacing.xs,
+    },
+    actionText: {
+      ...typography.caption,
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

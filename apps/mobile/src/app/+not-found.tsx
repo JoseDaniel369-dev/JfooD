@@ -1,9 +1,13 @@
 import { Link } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing } from '@/theme';
+import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
 export default function NotFoundScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Esta pantalla no existe</Text>
@@ -16,27 +20,29 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    flex: 1,
-    gap: spacing.xl,
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    padding: spacing.lg,
-  },
-  buttonText: {
-    color: colors.textOnPrimary,
-    fontWeight: '600',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      flex: 1,
+      gap: spacing.xl,
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '700',
+    },
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+    },
+    buttonText: {
+      color: colors.textOnPrimary,
+      fontWeight: '600',
+    },
+  });
+}

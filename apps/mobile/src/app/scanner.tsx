@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Pressable,
   StyleSheet,
@@ -18,20 +19,32 @@ import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { useToast } from '@/components/Toast';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
 import { isScannerEnabled } from '@/config/api';
 import { createFood } from '@/data/sqlite/repositories/foodRepository';
+import { hapticSuccess } from '@/features/haptics/haptics';
+import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { toLocalDate } from '@/features/diary/utils/date';
 import { recognizeImage } from '@/features/scanner/api/recognize';
 import { useImagePicker } from '@/features/scanner/hooks/useImagePicker';
 import type { RecognizedFood, RecognizedFoodMatch } from '@/features/scanner/types';
 import { findLocalFoodMatch } from '@/features/scanner/utils/matchFood';
-import { colors, radius, spacing, typography } from '@/theme';
+import {
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  type ThemeColors,
+} from '@/theme';
 
 type ScannerStep = 'camera' | 'preview' | 'analyzing' | 'results' | 'error';
 
 export default function ScannerScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const scannerEnabled = isScannerEnabled();
   const database = useSQLiteContext();
   const { date, meal } = useLocalSearchParams<{
@@ -55,6 +68,7 @@ export default function ScannerScreen() {
   const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const analyzeRequestRef = useRef(0);
 
   const handleImage = useCallback(
     async (result: Awaited<ReturnType<typeof launchCamera>>) => {
@@ -95,11 +109,16 @@ export default function ScannerScreen() {
   const handleAnalyze = useCallback(async () => {
     if (!imageBase64) return;
 
+    analyzeRequestRef.current += 1;
+    const requestId = analyzeRequestRef.current;
+
     setStep('analyzing');
     setErrorMessage(null);
 
     try {
       const result = await recognizeImage(imageBase64);
+      if (requestId !== analyzeRequestRef.current) return;
+
       const resolved = await Promise.all(
         result.foods.map(async (food: RecognizedFood) => {
           const matched = await findLocalFoodMatch(database, food);
@@ -112,10 +131,13 @@ export default function ScannerScreen() {
         }),
       );
 
+      if (requestId !== analyzeRequestRef.current) return;
+
       setMatches(resolved);
       setWarnings(result.warnings);
       setStep('results');
     } catch (error) {
+      if (requestId !== analyzeRequestRef.current) return;
       setErrorMessage(
         error instanceof Error ?
           error.message
@@ -164,28 +186,32 @@ export default function ScannerScreen() {
 
     setSaving(true);
     try {
-      for (const match of matches) {
-        let food = match.food;
+      await database.withTransactionAsync(async () => {
+        for (const match of matches) {
+          let food = match.food;
 
-        if (!food) {
-          food = await createFood(database, {
-            name: match.recognized.name,
-            brand: null,
-            caloriesKcal: null,
-            proteinGrams: null,
-            carbohydrateGrams: null,
-            fatGrams: null,
+          if (!food) {
+            food = await createFood(database, {
+              name: match.recognized.name,
+              brand: null,
+              caloriesKcal: null,
+              proteinGrams: null,
+              carbohydrateGrams: null,
+              fatGrams: null,
+            });
+          }
+
+          await addEntry(database, {
+            localDate,
+            mealType: targetMeal,
+            food,
+            grams: match.grams,
           });
         }
+      });
 
-        await addEntry(database, {
-          localDate,
-          mealType: targetMeal,
-          food,
-          grams: match.grams,
-        });
-      }
-
+      hapticSuccess();
+      showToast('Añadido al diario.');
       router.back();
     } catch {
       setSaving(false);
@@ -201,6 +227,7 @@ export default function ScannerScreen() {
   };
 
   const reset = () => {
+    analyzeRequestRef.current += 1;
     setImageUri(null);
     setImageBase64(null);
     setMatches([]);
@@ -284,6 +311,9 @@ function CameraStep({
   onCamera: () => void;
   onLibrary: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.cameraStep}>
       <Card style={styles.cameraCard}>
@@ -345,9 +375,31 @@ function PreviewStep({
   onAnalyze: () => void;
   onRetake: () => void;
 }) {
+  const styles = useStyles();
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [scale] = useState(() => new Animated.Value(0.96));
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: durations.normal,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: durations.normal,
+        useNativeDriver: true,
+        easing: (x) => easings.easeOutBack(x),
+      }),
+    ]).start();
+  }, [opacity, scale]);
+
   return (
     <View style={styles.previewStep}>
-      <Image source={{ uri: imageUri }} style={styles.previewImage} />
+      <Animated.View style={{ opacity, transform: [{ scale }] }}>
+        <Image source={{ uri: imageUri }} style={styles.previewImage} />
+      </Animated.View>
       <View style={styles.previewButtons}>
         <View style={styles.buttonFlex}>
           <Button title="Otra foto" variant="secondary" onPress={onRetake} />
@@ -361,9 +413,44 @@ function PreviewStep({
 }
 
 function AnalyzingStep() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [shimmer] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [shimmer]);
+
   return (
     <View style={styles.centered}>
       <ActivityIndicator color={colors.primary} size="large" />
+      <Animated.View
+        style={[
+          styles.skeleton,
+          {
+            backgroundColor: colors.surfaceMuted,
+            opacity: shimmer.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.5, 1],
+            }),
+          },
+        ]}
+      />
       <Text style={styles.analyzingText}>Analizando imagen…</Text>
       <Text style={styles.analyzingSubtext}>
         Esto puede tardar unos segundos.
@@ -391,6 +478,9 @@ function ResultsStep({
   onManualCreate: (name: string) => void;
   onRetake: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (matches.length === 0) {
     return (
       <EmptyState
@@ -444,6 +534,8 @@ function ResultsStep({
           {MEALS.map(({ type, label }) => (
             <Pressable
               key={type}
+              accessibilityRole="button"
+              accessibilityState={{ selected: targetMeal === type }}
               onPress={() => onChangeMeal(type)}
               style={[
                 styles.mealOption,
@@ -485,6 +577,8 @@ function ResultRow({
   onCommitGrams: (index: number, grams: number) => void;
   onManualCreate: (name: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [text, setText] = useState(String(grams));
 
   const handleChange = (value: string) => {
@@ -517,6 +611,7 @@ function ResultRow({
 
       <View style={styles.resultActions}>
         <TextInput
+          accessibilityLabel={`Gramos de ${name}`}
           keyboardType="decimal-pad"
           onChangeText={handleChange}
           onEndEditing={handleEndEditing}
@@ -550,7 +645,7 @@ function ErrorStep({
   onRetry: () => void;
 }) {
   return (
-    <View style={styles.errorStep}>
+    <View style={useStyles().errorStep}>
       <EmptyState
         actionLabel="Intentar de nuevo"
         icon="alert-circle-outline"
@@ -571,187 +666,200 @@ function ErrorStep({
   );
 }
 
-const styles = StyleSheet.create({
-  cameraStep: {
-    gap: spacing.lg,
-  },
-  cameraCard: {
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
-    height: 84,
-    justifyContent: 'center',
-    width: 84,
-  },
-  cameraTitle: {
-    ...typography.title,
-    color: colors.text,
-    fontSize: 20,
-  },
-  cameraDescription: {
-    ...typography.body,
-    color: colors.textMuted,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  cameraButtons: {
-    gap: spacing.md,
-    width: '100%',
-  },
-  notice: {
-    alignItems: 'flex-start',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  noticeText: {
-    ...typography.caption,
-    color: colors.primary,
-    flex: 1,
-    lineHeight: 18,
-  },
-  previewStep: {
-    gap: spacing.lg,
-  },
-  previewImage: {
-    borderRadius: radius.lg,
-    height: 320,
-    resizeMode: 'cover',
-    width: '100%',
-  },
-  previewButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  buttonFlex: {
-    flex: 1,
-  },
-  centered: {
-    alignItems: 'center',
-    gap: spacing.md,
-    justifyContent: 'center',
-    minHeight: 240,
-  },
-  analyzingText: {
-    ...typography.title,
-    color: colors.text,
-  },
-  analyzingSubtext: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  resultsStep: {
-    gap: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.title,
-    color: colors.text,
-  },
-  warnings: {
-    gap: spacing.sm,
-  },
-  warningRow: {
-    alignItems: 'flex-start',
-    backgroundColor: `${colors.accent}15`,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  warningText: {
-    ...typography.caption,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 18,
-  },
-  matchList: {
-    gap: spacing.md,
-  },
-  resultRow: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  resultInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  resultName: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  resultMatch: {
-    color: colors.success,
-    fontSize: 12,
-  },
-  resultNoMatch: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  resultActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  gramsInput: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-    minWidth: 64,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    textAlign: 'center',
-  },
-  gramsLabel: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  manualButton: {
-    padding: spacing.xs,
-  },
-  mealOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  mealOption: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  mealOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  mealOptionText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  mealOptionTextSelected: {
-    color: colors.textOnPrimary,
-  },
-  saveRow: {
-    marginTop: 'auto',
-  },
-  errorStep: {
-    gap: spacing.md,
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    cameraStep: {
+      gap: spacing.lg,
+    },
+    cameraCard: {
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    iconContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.lg,
+      height: 84,
+      justifyContent: 'center',
+      width: 84,
+    },
+    cameraTitle: {
+      ...typography.title,
+      color: colors.text,
+      fontSize: 20,
+    },
+    cameraDescription: {
+      ...typography.body,
+      color: colors.textMuted,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    cameraButtons: {
+      gap: spacing.md,
+      width: '100%',
+    },
+    notice: {
+      alignItems: 'flex-start',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    noticeText: {
+      ...typography.caption,
+      color: colors.primary,
+      flex: 1,
+      lineHeight: 18,
+    },
+    previewStep: {
+      gap: spacing.lg,
+    },
+    previewImage: {
+      borderRadius: radius.lg,
+      height: 320,
+      resizeMode: 'cover',
+      width: '100%',
+    },
+    skeleton: {
+      borderRadius: radius.md,
+      height: 120,
+      marginTop: spacing.lg,
+      width: '100%',
+    },
+    previewButtons: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    buttonFlex: {
+      flex: 1,
+    },
+    centered: {
+      alignItems: 'center',
+      gap: spacing.md,
+      justifyContent: 'center',
+      minHeight: 240,
+    },
+    analyzingText: {
+      ...typography.title,
+      color: colors.text,
+    },
+    analyzingSubtext: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    resultsStep: {
+      gap: spacing.lg,
+    },
+    sectionTitle: {
+      ...typography.title,
+      color: colors.text,
+    },
+    warnings: {
+      gap: spacing.sm,
+    },
+    warningRow: {
+      alignItems: 'flex-start',
+      backgroundColor: `${colors.accent}15`,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    warningText: {
+      ...typography.caption,
+      color: colors.text,
+      flex: 1,
+      lineHeight: 18,
+    },
+    matchList: {
+      gap: spacing.md,
+    },
+    resultRow: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.md,
+      padding: spacing.md,
+    },
+    resultInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    resultName: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    resultMatch: {
+      color: colors.success,
+      fontSize: 12,
+    },
+    resultNoMatch: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    resultActions: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    gramsInput: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+      minWidth: 64,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      textAlign: 'center',
+    },
+    gramsLabel: {
+      color: colors.textMuted,
+      fontSize: 14,
+    },
+    manualButton: {
+      padding: spacing.xs,
+    },
+    mealOptions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    mealOption: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    mealOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    mealOptionText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    mealOptionTextSelected: {
+      color: colors.textOnPrimary,
+    },
+    saveRow: {
+      marginTop: 'auto',
+    },
+    errorStep: {
+      gap: spacing.md,
+    },
+  });
+}

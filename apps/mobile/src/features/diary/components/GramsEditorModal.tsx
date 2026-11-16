@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 
 import { Card } from '@/components/Card';
-import { colors, radius, spacing } from '@/theme';
+import { hapticSelection } from '@/features/haptics/haptics';
+import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
 interface GramsEditorModalProps {
   visible: boolean;
@@ -26,6 +27,8 @@ export function GramsEditorModal({
   onClose,
   onSave,
 }: GramsEditorModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [value, setValue] = useState(() => String(initialGrams));
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +63,7 @@ export function GramsEditorModal({
           <Text style={styles.subtitle}>{foodName}</Text>
 
           <TextInput
+            accessibilityLabel="Cantidad en gramos"
             keyboardType="decimal-pad"
             onChangeText={setValue}
             selectTextOnFocus
@@ -71,7 +75,10 @@ export function GramsEditorModal({
           <View style={styles.buttons}>
             <Pressable
               accessibilityRole="button"
-              onPress={onClose}
+              onPress={() => {
+                hapticSelection();
+                onClose();
+              }}
               style={({ pressed }) => [
                 styles.button,
                 styles.buttonSecondary,
@@ -98,72 +105,74 @@ export function GramsEditorModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(24, 37, 31, 0.45)',
-    flex: 1,
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  dialog: {
-    gap: spacing.md,
-    width: '100%',
-  },
-  title: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  input: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 16,
-    padding: spacing.md,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  button: {
-    alignItems: 'center',
-    borderRadius: radius.md,
-    flex: 1,
-    padding: spacing.md,
-  },
-  buttonPrimary: {
-    backgroundColor: colors.primary,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  buttonPrimaryText: {
-    color: colors.textOnPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  buttonSecondaryText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: {
+      alignItems: 'center',
+      backgroundColor: colors.overlay,
+      flex: 1,
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    dialog: {
+      gap: spacing.md,
+      width: '100%',
+    },
+    title: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    subtitle: {
+      color: colors.textMuted,
+      fontSize: 14,
+    },
+    input: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 16,
+      padding: spacing.md,
+    },
+    inputError: {
+      borderColor: colors.danger,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 12,
+    },
+    buttons: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    button: {
+      alignItems: 'center',
+      borderRadius: radius.md,
+      flex: 1,
+      padding: spacing.md,
+    },
+    buttonPrimary: {
+      backgroundColor: colors.primary,
+    },
+    buttonSecondary: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    buttonPrimaryText: {
+      color: colors.textOnPrimary,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    buttonSecondaryText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    pressed: {
+      opacity: 0.8,
+    },
+  });
+}

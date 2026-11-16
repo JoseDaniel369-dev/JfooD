@@ -1,5 +1,8 @@
 import type { PropsWithChildren } from 'react';
+import { useMemo } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   type StyleProp,
@@ -7,33 +10,48 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/theme';
+import { spacing, useTheme, type ThemeColors } from '@/theme';
 
 interface ScreenProps extends PropsWithChildren {
   contentContainerStyle?: StyleProp<ViewStyle>;
+  fab?: boolean;
 }
 
-export function Screen({ children, contentContainerStyle }: ScreenProps) {
+export function Screen({ children, contentContainerStyle, fab = false }: ScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors, fab), [colors, fab]);
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={[styles.content, contentContainerStyle]}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
       >
-        {children}
-      </ScrollView>
+        <ScrollView
+          contentContainerStyle={[styles.content, contentContainerStyle]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  content: {
-    gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});
+function createStyles(colors: ThemeColors, fab: boolean) {
+  return StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    safeArea: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    content: {
+      gap: spacing.lg,
+      padding: spacing.xl,
+      paddingBottom: fab ? 96 : spacing.xxxl,
+    },
+  });
+}

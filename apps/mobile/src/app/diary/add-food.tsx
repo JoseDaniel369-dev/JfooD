@@ -1,6 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +23,9 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { StepIndicator } from '@/components/StepIndicator';
+import { useToast } from '@/components/Toast';
+import { FadeInView } from '@/features/motion/FadeInView';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
 import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
 import { toLocalDate } from '@/features/diary/utils/date';
@@ -27,13 +36,22 @@ import {
   searchFoods,
   toggleFavorite,
 } from '@/data/sqlite/repositories/foodRepository';
+import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { MEALS, type MealType } from '@/features/diary/types';
 import type { Food } from '@/features/foods/types';
-import { colors, radius, spacing } from '@/theme';
+import {
+  radius,
+  spacing,
+  useTheme,
+  type ThemeColors,
+} from '@/theme';
 
 type Step = 'search' | 'create' | 'quantity';
 
 export default function AddFoodScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const database = useSQLiteContext();
   const { date, meal, target, name } = useLocalSearchParams<{
     date?: string;
@@ -83,6 +101,7 @@ export default function AddFoodScreen() {
   );
 
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestQueryRef = useRef('');
 
   useEffect(() => {
     return () => {
@@ -104,16 +123,23 @@ export default function AddFoodScreen() {
       if (!trimmed) {
         setSearchResults([]);
         setSearching(false);
+        latestQueryRef.current = '';
         return;
       }
+
+      latestQueryRef.current = trimmed;
 
       searchTimeoutRef.current = setTimeout(async () => {
         setSearching(true);
         try {
           const results = await searchFoods(database, trimmed, 20);
-          setSearchResults(results);
+          if (latestQueryRef.current === trimmed) {
+            setSearchResults(results);
+          }
         } finally {
-          setSearching(false);
+          if (latestQueryRef.current === trimmed) {
+            setSearching(false);
+          }
         }
       }, 200);
     },
@@ -121,6 +147,7 @@ export default function AddFoodScreen() {
   );
 
   const handleSelectFood = (food: Food) => {
+    hapticSelection();
     setSelectedFood(food);
     setGrams('100');
     setStep('quantity');
@@ -179,6 +206,8 @@ export default function AddFoodScreen() {
         brand: createBrand.trim() || null,
         ...parsedMacros.data,
       });
+      hapticSuccess();
+      showToast('Alimento creado.');
       setSelectedFood(food);
       setGrams('100');
       setStep('quantity');
@@ -219,6 +248,8 @@ export default function AddFoodScreen() {
           grams: parsedGrams,
         });
       }
+      hapticSuccess();
+      showToast(isPlanTarget ? 'Añadido al plan.' : 'Añadido al diario.');
       router.back();
     } catch {
       setSaving(false);
@@ -232,10 +263,14 @@ export default function AddFoodScreen() {
     return gramsSchema.safeParse(parsed).success;
   }, [grams]);
 
+  const stepIndex = step === 'search' ? 0 : step === 'create' ? 1 : 2;
+
   return (
     <Screen>
+      <StepIndicator current={stepIndex} steps={3} />
+
       {step === 'search' ? (
-        <>
+        <FadeInView key="search" style={styles.step}>
           <ScreenHeader
             subtitle="Busca un alimento, crea uno nuevo o elige de tus favoritos."
             title="Añadir alimento"
@@ -247,6 +282,7 @@ export default function AddFoodScreen() {
               size={20}
             />
             <TextInput
+              accessibilityLabel="Buscar alimentos"
               autoFocus
               onChangeText={handleQueryChange}
               placeholder="Buscar alimentos..."
@@ -255,7 +291,10 @@ export default function AddFoodScreen() {
               value={query}
             />
             {query ? (
-              <Pressable hitSlop={8} onPress={() => setQuery('')}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setQuery('')}
+              >
                 <Ionicons
                   color={colors.textMuted}
                   name="close-circle"
@@ -303,11 +342,11 @@ export default function AddFoodScreen() {
             variant="secondary"
             onPress={() => setStep('create')}
           />
-        </>
+        </FadeInView>
       ) : null}
 
       {step === 'create' ? (
-        <>
+        <FadeInView key="create" style={styles.step}>
           <ScreenHeader
             subtitle="Introduce los datos del alimento por cada 100 g."
             title="Crear alimento"
@@ -348,17 +387,21 @@ export default function AddFoodScreen() {
 
           <View style={styles.buttonRow}>
             <View style={styles.buttonFlex}>
-              <Button title="Volver" variant="secondary" onPress={() => setStep('search')} />
+              <Button
+                title="Volver"
+                variant="secondary"
+                onPress={() => setStep('search')}
+              />
             </View>
             <View style={styles.buttonFlex}>
               <Button title="Continuar" onPress={handleCreateFood} />
             </View>
           </View>
-        </>
+        </FadeInView>
       ) : null}
 
       {step === 'quantity' && selectedFood ? (
-        <>
+        <FadeInView key="quantity" style={styles.step}>
           <ScreenHeader
             subtitle={`Valores por 100 g de ${selectedFood.name}`}
             title="Cantidad"
@@ -378,6 +421,7 @@ export default function AddFoodScreen() {
 
           <View style={styles.form}>
             <FormField
+              accessibilityLabel="Cantidad en gramos"
               label="Cantidad (g)"
               value={grams}
               onChange={setGrams}
@@ -388,7 +432,12 @@ export default function AddFoodScreen() {
               {MEALS.map(({ type, label }) => (
                 <Pressable
                   key={type}
-                  onPress={() => setTargetMeal(type)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: targetMeal === type }}
+                  onPress={() => {
+                    hapticSelection();
+                    setTargetMeal(type);
+                  }}
                   style={[
                     styles.mealOption,
                     targetMeal === type && styles.mealOptionSelected,
@@ -409,7 +458,11 @@ export default function AddFoodScreen() {
 
           <View style={styles.buttonRow}>
             <View style={styles.buttonFlex}>
-              <Button title="Volver" variant="secondary" onPress={() => setStep('search')} />
+              <Button
+                title="Volver"
+                variant="secondary"
+                onPress={() => setStep('search')}
+              />
             </View>
             <View style={styles.buttonFlex}>
               <Button
@@ -420,7 +473,7 @@ export default function AddFoodScreen() {
               />
             </View>
           </View>
-        </>
+        </FadeInView>
       ) : null}
     </Screen>
   );
@@ -439,6 +492,9 @@ function FoodSection({
   onSelect: (food: Food) => void;
   onToggleFavorite: (food: Food) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -481,6 +537,20 @@ function FoodSection({
                 size={22}
               />
             </Pressable>
+            {food.source === 'user' ? (
+              <Pressable
+                accessibilityLabel={`Editar ${food.name}`}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => router.push({ pathname: '/foods/[id]', params: { id: food.id } })}
+                style={({ pressed }) => [
+                  styles.editButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons color={colors.primary} name="create-outline" size={20} />
+              </Pressable>
+            ) : null}
           </View>
         ))
       )}
@@ -489,19 +559,26 @@ function FoodSection({
 }
 
 function FormField({
+  accessibilityLabel,
   label,
   value,
   onChange,
 }: {
+  accessibilityLabel?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
       <TextInput
+        accessibilityLabel={accessibilityLabel ?? label}
         onChangeText={onChange}
+        placeholderTextColor={colors.textMuted}
         style={styles.input}
         value={value}
       />
@@ -518,12 +595,16 @@ function MacroField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.macroField}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         keyboardType="decimal-pad"
         onChangeText={onChange}
+        placeholderTextColor={colors.textMuted}
         style={styles.input}
         value={value}
       />
@@ -552,148 +633,157 @@ function formatMacro(value: number | null, unit: string): string {
   return value === null ? `— ${unit}` : `${value} ${unit}`;
 }
 
-const styles = StyleSheet.create({
-  searchBar: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  searchInput: {
-    color: colors.text,
-    flex: 1,
-    fontSize: 16,
-    padding: spacing.sm,
-  },
-  centered: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 120,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionSpacer: {
-    height: spacing.xl,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
-  foodRow: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  foodInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  foodName: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  foodBrand: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  foodMacros: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  favoriteButton: {
-    padding: spacing.xs,
-  },
-  form: {
-    gap: spacing.md,
-  },
-  label: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 16,
-    padding: spacing.md,
-  },
-  macroRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  macroField: {
-    flex: 1,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: 'auto',
-  },
-  buttonFlex: {
-    flex: 1,
-  },
-  foodSummary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.xl,
-  },
-  mealOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  mealOption: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  mealOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  mealOptionText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  mealOptionTextSelected: {
-    color: colors.textOnPrimary,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    searchBar: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    searchInput: {
+      color: colors.text,
+      flex: 1,
+      fontSize: 16,
+      padding: spacing.sm,
+    },
+    centered: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      minHeight: 120,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    step: {
+      flex: 1,
+      gap: spacing.lg,
+    },
+    sectionSpacer: {
+      height: spacing.xl,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+      marginBottom: spacing.xs,
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      fontStyle: 'italic',
+    },
+    foodRow: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    foodInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    foodName: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    foodBrand: {
+      color: colors.textMuted,
+      fontSize: 13,
+    },
+    foodMacros: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    favoriteButton: {
+      padding: spacing.xs,
+    },
+    editButton: {
+      padding: spacing.xs,
+    },
+    form: {
+      gap: spacing.md,
+    },
+    label: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: spacing.xs,
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 16,
+      padding: spacing.md,
+    },
+    macroRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    macroField: {
+      flex: 1,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: 'auto',
+    },
+    buttonFlex: {
+      flex: 1,
+    },
+    foodSummary: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      gap: spacing.xs,
+      padding: spacing.xl,
+    },
+    mealOptions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    mealOption: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    mealOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    mealOptionText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    mealOptionTextSelected: {
+      color: colors.textOnPrimary,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useMemo, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   ACTIVITY_LEVELS,
@@ -13,12 +15,22 @@ import {
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { SectionHeader } from '@/components/SectionHeader';
-import { colors, radius, spacing, typography } from '@/theme';
+import { hapticSelection } from '@/features/haptics/haptics';
+import { useShake } from '@/features/motion/useShake';
+import { formatLocalDate } from '@/features/diary/utils/date';
+import {
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  type ThemeColors,
+} from '@/theme';
 
 interface ProfileFormProps {
   initial?: UserProfile | null;
   saving: boolean;
   onSubmit: (data: UserProfile) => void;
+  submitLabel?: string;
 }
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
@@ -34,7 +46,14 @@ const VARIANT_LABELS: Record<MifflinVariant, string> = {
   female: 'Mujer',
 };
 
-export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
+export function ProfileForm({
+  initial,
+  saving,
+  onSubmit,
+  submitLabel = 'Guardar perfil',
+}: ProfileFormProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [weight, setWeight] = useState(
     initial?.weightKg ? String(initial.weightKg) : '',
   );
@@ -49,6 +68,8 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
     initial?.activityLevel ?? null,
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const { translateX, shake } = useShake();
 
   const handleSubmit = () => {
     const parsed = userProfileSchema.safeParse({
@@ -68,6 +89,7 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
         }
       }
       setFieldErrors(errors);
+      shake();
       return;
     }
 
@@ -77,15 +99,26 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
 
   const errorFor = (key: keyof UserProfile) => fieldErrors[key];
 
+  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      setBirthDate(`${selectedDate.getFullYear()}-${month}-${day}`);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { transform: [{ translateX }] }]}>
       <Card>
         <SectionHeader title="Datos personales" />
         <Text style={styles.label}>Peso actual (kg)</Text>
         <TextInput
+          accessibilityLabel="Peso actual en kilogramos"
           keyboardType="decimal-pad"
           onChangeText={setWeight}
           placeholder="Ej. 70"
+          placeholderTextColor={colors.textMuted}
           style={[styles.input, errorFor('weightKg') && styles.inputError]}
           value={weight}
         />
@@ -95,9 +128,11 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
 
         <Text style={styles.label}>Altura (cm)</Text>
         <TextInput
+          accessibilityLabel="Altura en centímetros"
           keyboardType="decimal-pad"
           onChangeText={setHeight}
           placeholder="Ej. 175"
+          placeholderTextColor={colors.textMuted}
           style={[styles.input, errorFor('heightCm') && styles.inputError]}
           value={height}
         />
@@ -106,12 +141,30 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
         ) : null}
 
         <Text style={styles.label}>Fecha de nacimiento</Text>
-        <TextInput
-          onChangeText={setBirthDate}
-          placeholder="AAAA-MM-DD"
-          style={[styles.input, errorFor('birthDate') && styles.inputError]}
-          value={birthDate}
-        />
+        <Pressable
+          accessibilityLabel="Seleccionar fecha de nacimiento"
+          accessibilityRole="button"
+          onPress={() => setShowDatePicker(true)}
+          style={({ pressed }) => [
+            styles.dateButton,
+            errorFor('birthDate') && styles.inputError,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={birthDate ? styles.dateButtonText : styles.dateButtonPlaceholder}>
+            {birthDate ? formatLocalDate(birthDate) : 'Seleccionar fecha'}
+          </Text>
+          <Ionicons color={colors.primary} name="calendar-outline" size={18} />
+        </Pressable>
+        {showDatePicker ? (
+          <DateTimePicker
+            display="default"
+            maximumDate={new Date()}
+            mode="date"
+            value={parseLocalDate(birthDate) ?? new Date(2000, 0, 1)}
+            onChange={handleDateChange}
+          />
+        ) : null}
         {errorFor('birthDate') ? (
           <Text style={styles.errorText}>{errorFor('birthDate')}</Text>
         ) : null}
@@ -151,8 +204,8 @@ export function ProfileForm({ initial, saving, onSubmit }: ProfileFormProps) {
         ) : null}
       </Card>
 
-      <Button loading={saving} title="Guardar perfil" onPress={handleSubmit} />
-    </View>
+      <Button loading={saving} title={submitLabel} onPress={handleSubmit} />
+    </Animated.View>
   );
 }
 
@@ -169,9 +222,17 @@ function OptionButton({
   onPress,
   fullWidth = false,
 }: OptionButtonProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Pressable
-      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.option,
         fullWidth && styles.optionFullWidth,
@@ -194,6 +255,20 @@ function parseNumber(value: string): number {
   return Number.isFinite(parsed) && normalized.trim() !== '' ? parsed : NaN;
 }
 
+function parseLocalDate(localDate: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return null;
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  if (
+    date.getFullYear() === year &&
+    date.getMonth() === (month ?? 1) - 1 &&
+    date.getDate() === day
+  ) {
+    return date;
+  }
+  return null;
+}
+
 function getFieldErrorMessage(field: string, zodMessage: string): string {
   if (zodMessage.toLowerCase().includes('required')) {
     return 'Campo obligatorio.';
@@ -205,7 +280,7 @@ function getFieldErrorMessage(field: string, zodMessage: string): string {
     case 'heightCm':
       return 'Introduce una altura válida en centímetros.';
     case 'birthDate':
-      return 'Introduce la fecha en formato AAAA-MM-DD.';
+      return 'Selecciona una fecha de nacimiento válida.';
     case 'variant':
       return 'Selecciona una opción.';
     case 'activityLevel':
@@ -215,69 +290,96 @@ function getFieldErrorMessage(field: string, zodMessage: string): string {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.lg,
-  },
-  label: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 16,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 12,
-    marginBottom: spacing.sm,
-    marginTop: -spacing.sm,
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  optionsColumn: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  option: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flex: 1,
-    padding: spacing.md,
-  },
-  optionFullWidth: {
-    flex: 0,
-  },
-  optionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  optionPressed: {
-    opacity: 0.8,
-  },
-  optionText: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  optionTextSelected: {
-    color: colors.textOnPrimary,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      gap: spacing.lg,
+    },
+    label: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+      marginBottom: spacing.xs,
+    },
+    input: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 16,
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    inputError: {
+      borderColor: colors.danger,
+    },
+    dateButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    dateButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      textTransform: 'capitalize',
+    },
+    dateButtonPlaceholder: {
+      color: colors.textMuted,
+      fontSize: 16,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 12,
+      marginBottom: spacing.sm,
+      marginTop: -spacing.sm,
+    },
+    optionsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    optionsColumn: {
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    option: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flex: 1,
+      minHeight: 48,
+      justifyContent: 'center',
+      padding: spacing.md,
+    },
+    optionFullWidth: {
+      flex: 0,
+    },
+    optionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    optionPressed: {
+      opacity: 0.8,
+    },
+    optionText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    optionTextSelected: {
+      color: colors.textOnPrimary,
+    },
+    pressed: {
+      opacity: 0.8,
+    },
+  });
+}

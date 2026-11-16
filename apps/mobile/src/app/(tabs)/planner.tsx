@@ -1,19 +1,21 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Animated, StyleSheet, Text, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { ActionSheet } from '@/components/ActionSheet';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DayNavigator } from '@/components/DayNavigator';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
-import { Card } from '@/components/Card';
+import { Fab } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
-import { Button } from '@/components/Button';
+import { useToast } from '@/components/Toast';
 import {
   copyPlanToDiary,
   deletePlanEntry,
@@ -23,8 +25,11 @@ import {
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
 import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
+import { animateNextLayout } from '@/features/motion/motion';
+import { useSwipeDays } from '@/features/motion/useSwipeDays';
 import { usePlanDay } from '@/features/plan/hooks/usePlanDay';
-import { colors, radius, spacing, typography } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -35,6 +40,9 @@ const MEAL_LABELS: Record<MealType, string> = {
 };
 
 export default function PlannerScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { showToast } = useToast();
   const database = useSQLiteContext();
   const { day, error, loading, localDate, setLocalDate, reload, refresh } =
     usePlanDay();
@@ -43,17 +51,22 @@ export default function PlannerScreen() {
   const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
 
-  const handlePreviousDay = () => {
+  const handlePreviousDay = useCallback(() => {
     setLocalDate((current) => addDays(current, -1));
-  };
+  }, [setLocalDate]);
 
-  const handleNextDay = () => {
+  const handleNextDay = useCallback(() => {
     setLocalDate((current) => addDays(current, 1));
-  };
+  }, [setLocalDate]);
 
-  const handleToday = () => {
+  const handleToday = useCallback(() => {
     setLocalDate(toLocalDate(new Date()));
-  };
+  }, [setLocalDate]);
+
+  const swipe = useSwipeDays({
+    onPrev: handlePreviousDay,
+    onNext: handleNextDay,
+  });
 
   const handleAddFood = (mealType: MealType) => {
     router.push({
@@ -70,6 +83,7 @@ export default function PlannerScreen() {
     setActiveEntry(null);
     void (async () => {
       try {
+        animateNextLayout();
         await movePlanEntry(database, entry.id, localDate, targetMealType);
         await refresh();
       } catch {
@@ -90,8 +104,11 @@ export default function PlannerScreen() {
 
     void (async () => {
       try {
+        animateNextLayout();
         await deletePlanEntry(database, entry.id);
         await refresh();
+        hapticWarning();
+        showToast('Entrada eliminada del plan.');
       } catch {
         Alert.alert('Error', 'No se ha podido eliminar la entrada.');
       }
@@ -102,9 +119,12 @@ export default function PlannerScreen() {
     if (!editingEntry) return;
 
     try {
+      animateNextLayout();
       await updatePlanEntryGrams(database, editingEntry.id, grams);
       setEditingEntry(null);
       await refresh();
+      hapticSuccess();
+      showToast('Cantidad actualizada.');
     } catch {
       Alert.alert('Error', 'No se ha podido actualizar la cantidad.');
     }
@@ -116,7 +136,8 @@ export default function PlannerScreen() {
 
     try {
       await copyPlanToDiary(database, localDate);
-      Alert.alert('Listo', 'El día se ha copiado al diario.');
+      hapticSuccess();
+      showToast('El día se ha copiado al diario.');
     } catch {
       Alert.alert('Error', 'No se ha podido copiar el plan al diario.');
     }
@@ -154,7 +175,7 @@ export default function PlannerScreen() {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen fab>
         <LoadingState />
       </Screen>
     );
@@ -162,7 +183,7 @@ export default function PlannerScreen() {
 
   if (error || !day) {
     return (
-      <Screen>
+      <Screen fab>
         <ErrorState
           message={error ?? 'No hay datos disponibles.'}
           onRetry={() => void reload()}
@@ -172,81 +193,93 @@ export default function PlannerScreen() {
   }
 
   return (
-    <Screen>
+    <Screen fab>
       <ScreenHeader
         title="Planificador"
         subtitle="Organiza tus comidas por días"
       />
 
-      <Card>
-        <DayNavigator
-          date={localDate}
-          onNext={handleNextDay}
-          onPrevious={handlePreviousDay}
-          onToday={handleToday}
-        />
-      </Card>
+      <Animated.View
+        accessibilityHint="Desliza hacia los lados para cambiar de día"
+        style={[
+          styles.swipeContainer,
+          { opacity: swipe.opacity, transform: [{ translateX: swipe.translateX }] },
+        ]}
+        {...swipe.panHandlers}
+      >
+        <Card animated>
+          <DayNavigator
+            date={localDate}
+            onNext={handleNextDay}
+            onPrevious={handlePreviousDay}
+            onToday={handleToday}
+          />
+        </Card>
 
-      <Card>
-        <SectionHeader title="Totales del día" />
-        <View style={styles.totalRow}>
-          <TotalItem
-            color={colors.primary}
-            label="Calorías"
-            unit="kcal"
-            value={day.consumed.caloriesKcal}
-          />
-          <TotalItem
-            color={colors.protein}
-            label="Proteínas"
-            unit="g"
-            value={day.consumed.proteinGrams}
-          />
-          <TotalItem
-            color={colors.carbohydrates}
-            label="Carbos"
-            unit="g"
-            value={day.consumed.carbohydrateGrams}
-          />
-          <TotalItem
-            color={colors.fat}
-            label="Grasas"
-            unit="g"
-            value={day.consumed.fatGrams}
-          />
-        </View>
-      </Card>
+        <Card animated delay={50}>
+          <SectionHeader title="Totales del día" />
+          <View style={styles.totalRow}>
+            <TotalItem
+              color={colors.primary}
+              label="Calorías"
+              unit="kcal"
+              value={day.consumed.caloriesKcal}
+            />
+            <TotalItem
+              color={colors.protein}
+              label="Proteínas"
+              unit="g"
+              value={day.consumed.proteinGrams}
+            />
+            <TotalItem
+              color={colors.carbohydrates}
+              label="Carbos"
+              unit="g"
+              value={day.consumed.carbohydrateGrams}
+            />
+            <TotalItem
+              color={colors.fat}
+              label="Grasas"
+              unit="g"
+              value={day.consumed.fatGrams}
+            />
+          </View>
+        </Card>
 
-      <Card>
-        <SectionHeader
-          title="Comidas"
-          caption={day.entries.length ? `${day.entries.length} alimento(s)` : undefined}
-        />
-        {day.entries.length === 0 ? (
-          <EmptyState
-            actionLabel="Añadir alimento"
-            icon="restaurant-outline"
-            message="Planifica tu primer alimento para este día."
-            title="Día vacío"
-            onAction={() => handleAddFood('breakfast')}
+        <Card animated delay={100}>
+          <SectionHeader
+            title="Comidas"
+            caption={day.entries.length ? `${day.entries.length} alimento(s)` : undefined}
           />
-        ) : (
-          <MealList
-            meals={day.meals}
-            variant="detailed"
-            onAddFood={handleAddFood}
-            onEntryPress={handleEntryPress}
-          />
-        )}
-      </Card>
+          {day.entries.length === 0 ? (
+            <EmptyState
+              actionLabel="Añadir alimento"
+              icon="restaurant-outline"
+              message="Planifica tu primer alimento para este día."
+              title="Día vacío"
+              onAction={() => handleAddFood('breakfast')}
+            />
+          ) : (
+            <MealList
+              meals={day.meals}
+              variant="detailed"
+              onAddFood={handleAddFood}
+              onEntryPress={handleEntryPress}
+            />
+          )}
+        </Card>
 
-      {day.entries.length > 0 ? (
-        <Button
-          icon="copy-outline"
-          title="Copiar al diario"
-          onPress={() => setShowCopyConfirm(true)}
-        />
-      ) : null}
+        {day.entries.length > 0 ? (
+          <Button
+            icon="copy-outline"
+            title="Copiar al diario"
+            variant="accent"
+            onPress={() => setShowCopyConfirm(true)}
+          />
+        ) : null}
+      </Animated.View>
+
+      <Fab accessibilityLabel="Añadir alimento" onPress={() => handleAddFood('breakfast')} />
 
       <ActionSheet
         options={actionOptions}
@@ -299,6 +332,9 @@ function TotalItem({
   unit: string;
   color: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.totalItem}>
       <View style={[styles.totalDot, { backgroundColor: color }]} />
@@ -311,33 +347,38 @@ function TotalItem({
   );
 }
 
-const styles = StyleSheet.create({
-  totalRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  totalItem: {
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.xs,
-  },
-  totalDot: {
-    borderRadius: radius.pill,
-    height: 8,
-    width: 8,
-  },
-  totalLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  totalValue: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  totalUnit: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '400',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    swipeContainer: {
+      gap: spacing.lg,
+    },
+    totalRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    totalItem: {
+      alignItems: 'center',
+      flex: 1,
+      gap: spacing.xs,
+    },
+    totalDot: {
+      borderRadius: radius.pill,
+      height: 8,
+      width: 8,
+    },
+    totalLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    totalValue: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    totalUnit: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '400',
+    },
+  });
+}

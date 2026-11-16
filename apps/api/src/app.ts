@@ -19,6 +19,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.register(rateLimit, {
     max: 10,
     timeWindow: '1 minute',
+    allowList: (request) => (request.url ?? '').split('?')[0] === '/health',
   });
 
   app.get('/health', async () => ({

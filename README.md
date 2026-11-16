@@ -31,6 +31,23 @@ La Fase 6 prepara la app para producción a coste cero:
   - **experimental**: con escáner por Gemini apuntando a la API pública.
 - Ambas APKs pueden convivir en el mismo móvil porque tienen `applicationId` distinto.
 
+La Fase 7 ("JfooD Refresh") renueva la interfaz y añade funciones de usuario antes del lanzamiento:
+
+- **Modo oscuro** automático y persistente con tokens light/dark.
+- **Refresh visual:** paleta verde esmeralda + naranja, tipografía Nunito, gradientes, sombras y componentes unificados.
+- **Racha y estadísticas:** anillo de racha, barras semanales y resumen de adherencia en Inicio.
+- **Registro de agua:** tarjeta rápida en Inicio y objetivo configurable en Perfil.
+- **Gestión del catálogo:** edición y eliminación de alimentos locales con aviso de uso.
+- **Progreso mejorado:** gráfico de línea por periodos (7/14/30/90 días) e IMC.
+- **Onboarding:** flujo de primer arranque de 3 pasos.
+- **Haptics y toasts:** feedback táctil y mensajes contextuales.
+
+Tras la Fase 7 se aplicó un **rediseño animado e intuitivo** con la API `Animated` nativa (sin nuevas dependencias): transiciones suaves entre pantallas, entrada escalonada de tarjetas, barras y anillos animados, botones con escala al pulsar, swipe para cambiar de día en Diario y Planificador, FAB flotante para añadir alimentos, empty states accionables y feedback visual de errores (shake).
+
+Tras el rediseño se hizo una revisión de calidad que corrigió: carrera entre toasts, doble cierre de diálogos/modales, búsqueda con resultados obsoletos, guardado atómico en el escáner, onboarding robusto contra fallo de escritura del flag, rollover de medianoche en agua, errores visibles al eliminar alimentos, rate limit que excluye query strings en `/health`, peticiones cancelables del escáner, periodos completos en el gráfico de peso (7/14/30/90 días) y mejoras de accesibilidad en campos de texto.
+
+Una segunda auditoría post-Fase R corrigió: cierre fantasma de `ActionSheet`/`ConfirmDialog` al reabrir durante la animación de salida, timeout en el cliente de reconocimiento para evitar análisis colgados, gate de carga del tema para eliminar el flash de tema claro al arrancar, feedback de error si falla la persistencia del tema, `accessibilityLabel` en el input de agua, caption de error en la tarjeta de agua y SQL simplificado en `getRecentFoods`.
+
 La app deriva automáticamente la URL del backend en desarrollo a partir de la IP que sirve el bundle de Metro (`Constants.expoConfig.hostUri`), por lo que el escáner funciona en dispositivo físico y emulador sin configuración adicional.
 
 La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`56 + inset inferior`) y un suelo de 64 dp para la zona de navegación, evitando que la barra del sistema se solape con los iconos o etiquetas incluso en dispositivos que infrarreportan el inset inferior. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
@@ -103,6 +120,7 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+npx expo export --platform android
 ```
 
 Diagnóstico adicional de la app:
@@ -113,6 +131,6 @@ npm exec -w @jfood/mobile -- expo-doctor
 
 ## Modelo de datos
 
-La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso. La migración `002_plan` añade la tabla `plan_entries`. Las entradas del diario y del plan guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
+La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso. La migración `002_plan` añade la tabla `plan_entries`; `003_settings` añade `app_settings` para preferencias (tema, onboarding visto, objetivo de agua); `004_water` añade `water_logs`. Las entradas del diario y del plan guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
 
 Los objetivos iniciales de la interfaz son provisionales (2000 kcal) hasta completar su configuración en Perfil, y la pantalla de Inicio lo indica explícitamente. Todos los datos se almacenan localmente en `jfood.db`.

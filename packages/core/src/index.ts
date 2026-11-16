@@ -26,3 +26,9 @@ export {
   type FoodRecognition,
   type RecognizedFood,
 } from './schemas/recognition.js';
+export {
+  BMI_CATEGORY_LABELS,
+  computeBmi,
+  type BmiCategory,
+  type BmiResult,
+} from './nutrition/bmi.js';

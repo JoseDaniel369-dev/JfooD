@@ -1,9 +1,9 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 12 de noviembre de 2026
-**Estado:** Fases 0, 1, 2, 3, 4, 4.5, 5 y 6 completadas. La app está lista para compilar y distribuir dos APKs: una versión estable 100 % offline y una versión experimental con reconocimiento por Gemini.
+**Última actualización:** 16 de noviembre de 2026
+**Estado:** Fases 0, 1, 2, 3, 4, 4.5, 5, 6, 7 y R completadas; se han aplicado las correcciones de la segunda auditoría post-Fase R. La app cuenta con un refresh visual, modo oscuro, racha/estadísticas, registro de agua, gestión del catálogo de alimentos, gráfico de línea en Progreso, onboarding y un rediseño animado e intuitivo; está lista para compilar y distribuir dos APKs.
 
-Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`.
+Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`. La Fase R (rediseño animado) ya está completada.
 
 ---
 
@@ -94,30 +94,107 @@ Monorepo con npm workspaces:
 - Expo Doctor sin incidencias.
 - Configuración de despliegue lista: Render Free + UptimeRobot, rate limiting en `/recognize`, y dos perfiles de EAS Build (`estable` y `experimental`).
 
+### 3.4 Fase 7 — JfooD Refresh ✅ COMPLETADA
+
+- **Refresh visual atrevido:** paleta verde esmeralda + naranja, familia tipográfica Nunito, gradientes suaves, esquinas redondeadas consistentes, componentes base unificados (`Screen`, `Card`, `Button`, `ProgressBar`, `ScreenHeader`, `SectionHeader`, `EmptyState`, `ConfirmDialog`, `ActionSheet`, `DayNavigator`, `AsyncState`).
+- **Modo oscuro automático:** tokens light/dark en `apps/mobile/src/theme/tokens.ts`, `ThemeProvider` con `useColorScheme`, persistencia de preferencia en `app_settings` y componentes reactivos al tema. La barra de navegación del sistema se ajusta con `<NavigationBar style={...} />`.
+- **Racha y estadísticas:** cálculo de racha actual y récord en `features/stats/utils/streak.ts`; barras semanales y anillo de racha en Inicio.
+- **Registro de agua:** tabla `water_logs` (migración `004_water`), objetivo configurable (por defecto 2000 ml), tarjeta de agua en Inicio y selector rápido.
+- **Gestión del catálogo de alimentos:** pantalla `foods/[id].tsx` para ver, editar y eliminar alimentos del catálogo; acceso desde el buscador de `diary/add-food`. Añadidas funciones en `foodRepository.ts`: `getFoodById`, `updateFood`, `deleteFood`, `getFoodUsageCount`.
+- **BMI en el núcleo:** cálculo de IMC con categorías en español en `packages/core/src/nutrition/bmi.ts`; tests en `packages/core/test/bmi.test.ts`.
+- **Gráfico de línea en Progreso:** evolución del peso con selector de periodo (7/14/30/90 días), usando `react-native-svg`. Se conserva el historial editable.
+- **Onboarding:** flujo de 3 pasos en `onboarding.tsx`, persistencia en `app_settings` y gate de primer arranque en el layout de pestañas.
+- **Feedback táctil y toasts:** `expo-haptics` y componente `Toast` contextual para confirmaciones y errores.
+- **Tests nuevos:** `apps/mobile/test/theme/tokens.test.ts`, `apps/mobile/test/stats/streak.test.ts`, `apps/mobile/test/water/goal.test.ts`, `packages/core/test/bmi.test.ts`.
+
+### 3.5 Correcciones de auditoría post-Fase 7 (primera ronda)
+
+- **Hero cards legibles en modo oscuro:** se añadieron los tokens `onHero` y `toastSuccess`; el texto sobre hero cards ahora usa blanco en ambos temas; los tests de contraste verifican AA contra el gradiente y el fondo del toast.
+- **Racha real:** `statsRepository.getDiaryStats` cuenta solo fechas con al menos una entrada (`INNER JOIN diary_entries`).
+- **Objetivo de agua sincronizado:** nuevo hook `useWaterGoal` con recarga en foco; Inicio y Perfil comparten el mismo setting sin valores desfasados.
+- **Agua tras medianoche:** `useWaterDay` recarga cuando cambia `localDate`.
+- **Separadores de agua:** `parseWaterGoal` distingue miles (`2.000`, `2.500`) y decimales (`250,5`).
+- **Haptics robustos:** captura de rechazos de promesa.
+- **Onboarding:** muestra toast de error si `saveProfile` falla.
+- **Escáner:** límite de búsqueda ampliado a 50 para no perder el match exacto.
+- **Semana:** propagación de kcal `NULL` cuando alguna entrada tiene calorías desconocidas.
+
+### 3.6 Correcciones de auditoría post-Fase 7 (segunda ronda)
+
+- **Toast de error legible en modo oscuro:** en `Toast.tsx` el icono y el texto de los toasts de error usan `colors.onDanger` (oscuro sobre fondo rojo claro en dark, blanco en light), en lugar de blanco fijo que no cumplía contraste.
+- **Feedback al registrar agua:** `handleAddWater` en Inicio muestra un toast de error si `water.add()` devuelve `false`.
+- **Rate limit sin afectar `/health`:** `apps/api/src/app.ts` excluye la ruta `/health` del rate limit global mediante `allowList`, evitando que el ping de UptimeRobot consuma cuota.
+
+### 3.7 Rediseño animado e intuitivo (Fases R1–R5)
+
+Nueva iteración de UX/UI tras las correcciones de auditoría, manteniendo la identidad visual (verde esmeralda + naranja, Nunito) y sin añadir dependencias. Motor de animaciones: API `Animated` nativa + `LayoutAnimation` + `PanResponder`.
+
+- **R1 — Kit de animación:** `apps/mobile/src/features/motion/` con `motion.ts` (duraciones, curvas, springs, helpers), `FadeInView.tsx`, `usePressScale.ts`, `useCountUp.ts`, `useShake.ts` y `useSwipeDays.ts`.
+- **R2 — Componentes base animados:** `ProgressBar`, `Button`, `Card`, `StreakRing`, `DayNavigator`, `EmptyState`, `ActionSheet`, `ConfirmDialog`, `AsyncState`, `Fab`, `StepIndicator`.
+- **R3 — Pantallas animadas:** transiciones del Stack raíz, tab bar con escalado al foco, Inicio con hero animado/barras/anillo, Diario/Planificador con swipe entre días, `add-food.tsx` con wizard por pasos, `scanner.tsx` con preview y skeleton, `onboarding.tsx` con stagger, `progress.tsx` con tooltip/chart fade, `foods/[id].tsx` con `LayoutAnimation`, `ProfileForm` con shake de errores.
+- **R4 — UX estructural:** FAB flotante en Inicio/Diario/Planificador (`Fab.tsx` + prop `fab` en `Screen.tsx` para padding inferior), swipe horizontal para cambiar de día, empty states accionables (p. ej. Planificador) y mejoras de accesibilidad (`accessibilityLabel`, `accessibilityHint`, `accessibilityRole`).
+- **R5 — Verificación y documentación:** lint, typecheck, tests, `expo-doctor` y export Android en verde; `PLAN.md` y `README.md` actualizados.
+
+### 3.8 Correcciones de auditoría post-Fase R
+
+Revisión de calidad y robustez tras cerrar el rediseño animado:
+
+- **Carrera entre toasts (`Toast.tsx`):** el cierre de un toast ya no puede borrar un toast más nuevo; se rastrea el id activo y solo se limpia si sigue siendo el mismo.
+- **Doble cierre de `ActionSheet` y `ConfirmDialog`:** se añadió un flag `selfClosedRef` para que el efecto de `visible` no vuelva a animar el cierre ni a llamar a `onClose` cuando el componente ya ha iniciado su propia animación de salida.
+- **Búsqueda en `add-food.tsx` protegida contra resultados obsoletos:** se guarda la última query en una ref y se descartan respuestas que no coincidan con ella.
+- **Escáner atómico (`scanner.tsx`):** el guardado de varios alimentos reconocidos se envuelve en `withTransactionAsync` para evitar registros a medias si falla la inserción.
+- **Onboarding robusto (`onboarding.tsx`):** si no se puede guardar el flag `onboarding_done`, se muestra un error y no se navega; se evita el bucle infinito con el gate de pestañas.
+- **Rollover de medianoche en agua (`useWaterDay.ts`):** se añadió `lastTodayRef` e intervalo de 60 s (igual que diario/plan) para avanzar el día de agua cuando la app está abierta cruzando medianoche.
+- **Error al eliminar alimento (`foods/[id].tsx`):** el mensaje de error ya no queda oculto en modo vista; se muestra con `showToast(..., 'error')`.
+- **Rate limit sin query strings (`apps/api/src/app.ts`):** el `allowList` excluye `/health` aunque la URL incluya query string (`/health?x=1`).
+- **Peticiones del escáner cancelables (`scanner.tsx`):** se rastrea un request id para evitar `setState` en un componente desmontado si el usuario sale durante el análisis.
+- **Periodos del gráfico de peso (`progress.tsx`):** se restauraron 7/14/30/90 días para coincidir con la documentación de la Fase 7.
+- **Posicionamiento del tooltip del gráfico:** se mide el ancho del tooltip y se posiciona en píxeles reales evitando desbordamiento en pantallas estrechas.
+- **Accesibilidad:** se añadieron `accessibilityLabel` a los campos de texto principales (búsqueda, gramos, peso, notas, perfil, edición de alimentos) y `onLayout` a `FadeInView`.
+- **UX fina:** `MealList` no usa `Pressable` deshabilitado en la variante summary cuando no hay acción; `Button` no anima escala cuando está deshabilitado o cargando; `useSwipeDays` no se recrea en cada render gracias a `useCallback` en los handlers de día.
+
+### 3.9 Segunda auditoría post-Fase R
+
+Nueva revisión de los archivos que no se habían inspeccionado en la primera ronda y de las áreas susceptibles de carreras de animación/timeout:
+
+- **Cierre fantasma de `ActionSheet` y `ConfirmDialog`:** se añadió un token `closeTokenRef` que invalida el callback de la animación de cierre si el componente se vuelve a abrir antes de que termine, evitando que se cierre de nuevo justo después de reabrirse.
+- **Timeout en el cliente de reconocimiento (`apps/mobile/src/features/scanner/api/recognize.ts`):** el `fetch` ahora usa `AbortController` con un límite de 40 s, por lo que un análisis que no responde no deja la pantalla en "Analizando…" indefinidamente.
+- **Gate de carga del tema (`apps/mobile/src/theme/ThemeProvider.tsx`):** la app no pinta el árbol de navegación hasta haber leído la preferencia de tema, eliminando el flash de tema claro al arrancar cuando el usuario tiene modo oscuro guardado.
+- **Persistencia del tema robusta:** `setPreference` ahora devuelve una promesa; si el guardado en SQLite falla, el selector en Perfil muestra un toast de error.
+- **Accesibilidad:** el input de objetivo de agua en Perfil tiene `accessibilityLabel`.
+- **Feedback de error en tarjeta de agua (`apps/mobile/src/app/(tabs)/index.tsx`):** si falla la carga del registro de agua, la tarjeta muestra un caption de error en lugar de quedarse en 0/goal.
+- **SQL simplificado en `foodRepository.getRecentFoods`:** se eliminó el `GROUP BY f.id` externo porque el subquery `latest` ya devuelve una fila por alimento, haciendo la consulta más clara y portable.
+
 ---
 
 ## 4. Arquitectura y archivos clave
 
 ### Aplicación móvil
 
-- `apps/mobile/src/app/_layout.tsx`: proveedor SQLite, migración y Stack raíz.
-- `apps/mobile/src/app/(tabs)/_layout.tsx`: navegación por pestañas y área segura inferior.
-- `apps/mobile/src/app/(tabs)/index.tsx`: resumen del día, macronutrientes y accesos.
+- `apps/mobile/src/app/_layout.tsx`: proveedores de SQLite, tema, fuentes y toasts; Stack raíz.
+- `apps/mobile/src/app/(tabs)/_layout.tsx`: navegación por pestañas, área segura inferior y gate de onboarding.
+- `apps/mobile/src/app/(tabs)/index.tsx`: resumen del día con hero gradiente, racha, barras semanales, macros, agua y accesos rápidos.
 - `apps/mobile/src/app/(tabs)/diary.tsx`: diario del día y comidas.
-- `apps/mobile/src/app/(tabs)/profile.tsx`: formulario de datos personales y objetivos calculados.
-- `apps/mobile/src/app/(tabs)/planner.tsx`, `progress.tsx`: estados informativos pendientes.
+- `apps/mobile/src/app/(tabs)/profile.tsx`: formulario de datos personales, objetivos calculados, selector de tema y objetivo de agua.
+- `apps/mobile/src/app/(tabs)/planner.tsx`: planificador semanal con copia al diario.
+- `apps/mobile/src/app/(tabs)/progress.tsx`: registro de peso, historial, BMI y gráfico de línea por periodos.
 - `apps/mobile/src/app/scanner.tsx`: escáner con captura, análisis y revisión de alimentos.
-- `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario; acepta `name` prellenado desde el escáner.
+- `apps/mobile/src/app/diary/add-food.tsx`: modal paso a paso para añadir alimentos al diario o plan; acceso a edición del catálogo.
+- `apps/mobile/src/app/foods/[id].tsx`: detalle, edición y eliminación de alimentos del catálogo.
+- `apps/mobile/src/app/onboarding.tsx`: flujo de primer arranque.
 - `apps/mobile/src/features/scanner/`: tipos, API, hook de image picker y utilidad de coincidencia con el catálogo local.
+- `apps/mobile/src/features/stats/`: utilidades de racha, hook de estadísticas y componente `StreakRing`.
+- `apps/mobile/src/features/water/`: utilidades de objetivo, hooks `useWaterDay`/`useWaterGoal` y registro.
+- `apps/mobile/src/features/haptics/haptics.ts`: utilidades de retroalimentación táctil.
 - `apps/mobile/src/config/api.ts`: resolución de la URL del backend para desarrollo.
 - `apps/mobile/src/features/diary/`: tipos, hook de día, utilidades de fecha, lista de comidas y modal de edición de gramos.
 - `apps/mobile/src/features/foods/`: tipos, normalización de nombres y utilidades del catálogo local.
 - `apps/mobile/src/features/progress/`: repositorio, hook, utilidades de tendencia y pantalla de progreso.
 - `apps/mobile/src/features/profile/`: formulario, hook y tipos del perfil de usuario.
-- `apps/mobile/src/data/sqlite/migrations/`: migraciones versionadas.
-- `apps/mobile/src/data/sqlite/repositories/`: `diaryRepository.ts`, `goalsRepository.ts`, `profileRepository.ts` e `id.ts` (generador de ids locales).
-- `apps/mobile/src/components/`: `Screen`, `Card`, `ProgressBar`, estados de carga y error.
-- `apps/mobile/src/theme/index.ts`: colores, espaciados y radios.
+- `apps/mobile/src/data/sqlite/migrations/`: migraciones versionadas (`001_initial`, `002_plan`, `003_settings`, `004_water`).
+- `apps/mobile/src/data/sqlite/repositories/`: `diaryRepository.ts`, `goalsRepository.ts`, `profileRepository.ts`, `foodRepository.ts`, `settingsRepository.ts`, `statsRepository.ts`, `waterRepository.ts` e `id.ts`.
+- `apps/mobile/src/components/`: `Screen`, `Card`, `Button`, `ProgressBar`, `ScreenHeader`, `SectionHeader`, `EmptyState`, `ConfirmDialog`, `ActionSheet`, `DayNavigator`, `AsyncState`, `Toast`, `GramsEditorModal`, `MealList`.
+- `apps/mobile/src/theme/`: tokens light/dark (`tokens.ts`), `ThemeProvider`, fuentes, espaciados y radios.
 
 ### API
 
@@ -142,6 +219,8 @@ Monorepo con npm workspaces:
 - `user_profile`: fila única (`id = 1`) con altura, fecha de nacimiento, variante Mifflin y nivel de actividad.
 - `nutrition_goals`: historial de objetivos con `effective_from`; se usa el más reciente aplicable a la fecha.
 - `weight_logs`: un registro por fecha con peso y nota opcional.
+- `app_settings`: key/value para preferencias (tema, onboarding visto, objetivo de agua).
+- `water_logs`: cantidad de agua ingerida por fecha y hora.
 
 Los objetivos por defecto (2000 kcal) se usan solo mientras no exista una fila aplicable en `nutrition_goals`.
 
@@ -591,6 +670,155 @@ Archivo eliminado:
 - Ambas APKs pueden instalarse en el mismo dispositivo.
 - Todas las comprobaciones de calidad en verde.
 
+### Fase 7 — JfooD Refresh ✅ COMPLETADA
+
+**Objetivo:** pulir la interfaz y la experiencia de usuario antes del lanzamiento, añadiendo modo oscuro, racha/estadísticas, registro de agua, gestión del catálogo de alimentos, gráfico de línea en Progreso, onboarding y feedback táctil.
+
+**Decisiones de diseño aprobadas:**
+
+- **Refresh visual atrevido:** paleta liderada por verde esmeralda (`#047857`) con acento naranja (`#F97316`), tipografía Nunito, gradientes y sombras suaves, esquinas redondeadas consistentes.
+- **Modo oscuro automático:** basado en `useColorScheme`, con persistencia de preferencia en `app_settings` y ajuste de la barra de navegación del sistema.
+- **Racha y estadísticas:** racha actual y récord a partir de fechas con entradas en el diario; mantiene la racha activa si ayer tuvo registros y hoy aún no se registra.
+- **Registro de agua:** objetivo configurable (por defecto 2000 ml), añadido rápido en Inicio y ajuste en Perfil.
+- **Gestión del catálogo:** edición y eliminación de alimentos locales desde `foods/[id].tsx`; aviso si el alimento está en uso.
+- **BMI en el núcleo:** cálculo y categorías en español; usado en Progreso junto al peso.
+- **Gráfico de línea en Progreso:** periodos 7/14/30/90 días con `react-native-svg`; conserva el historial editable y el resumen.
+- **Onboarding:** 3 pasos de primer arranque, skipeable, persistente en `app_settings`.
+- **Haptics + toasts:** `expo-haptics` para acciones importantes; `Toast` contextual para confirmaciones y errores.
+
+#### Tarea 1 — Sistema de tema y componentes base
+
+- Dependencias: `expo-font`, `@expo-google-fonts/nunito`, `expo-linear-gradient`.
+- `apps/mobile/src/theme/tokens.ts`: tokens primitivos y semánticos para light/dark; contraste comprobado en tests.
+- `apps/mobile/src/theme/ThemeProvider.tsx`: proveedor de tema con persistencia y `useTheme()`.
+- Refactor de componentes base a `useTheme()` (`Screen`, `Card`, `Button`, `ProgressBar`, `ScreenHeader`, `SectionHeader`, `EmptyState`, `ConfirmDialog`, `ActionSheet`, `DayNavigator`, `AsyncState`, `GramsEditorModal`, `MealList`, `ProfileForm`).
+
+#### Tarea 2 — Racha y estadísticas
+
+- `apps/mobile/src/features/stats/utils/streak.ts`: `computeStreak` y `computeWeekStats`.
+- `apps/mobile/src/data/sqlite/repositories/statsRepository.ts`: fechas con entradas.
+- `apps/mobile/src/features/stats/hooks/useDiaryStats.ts`.
+- `apps/mobile/src/features/stats/components/StreakRing.tsx`: anillo SVG de racha.
+- Inicio: hero gradiente con racha, barras semanales y macros.
+
+#### Tarea 3 — Agua
+
+- Migración `004_water.ts`: tabla `water_logs`.
+- `apps/mobile/src/data/sqlite/repositories/waterRepository.ts`.
+- `apps/mobile/src/features/water/utils/goal.ts` y `hooks/useWaterDay.ts`.
+- Tarjeta de agua en Inicio y selector de objetivo en Perfil.
+
+#### Tarea 4 — Catálogo y BMI
+
+- `foodRepository.ts`: `getFoodById`, `updateFood`, `deleteFood`, `getFoodUsageCount`.
+- Pantalla `apps/mobile/src/app/foods/[id].tsx` con edición y eliminación.
+- Acceso al detalle desde `diary/add-food` (icono de lápiz en resultados).
+- `packages/core/src/nutrition/bmi.ts`: `computeBmi` con categorías en español; tests en `packages/core/test/bmi.test.ts`.
+
+#### Tarea 5 — Progreso con gráfico de línea
+
+- `progress.tsx`: selector de periodo, gráfico SVG con línea y puntos, BMI y meta (cuando exista), historial editable.
+
+#### Tarea 6 — Onboarding, haptics y toasts
+
+- `apps/mobile/src/app/onboarding.tsx`: 3 slides (bienvenida, objetivos diarios, registro).
+- Gate en `(tabs)/_layout.tsx`: redirige a onboarding si no se ha completado.
+- `apps/mobile/src/components/Toast.tsx` + `useToast()`.
+- `apps/mobile/src/features/haptics/haptics.ts`: `hapticSuccess`, `hapticWarning`, `hapticSelection`.
+- Integración de toasts/haptics en flujos clave (añadir/borrar entradas, copiar plan, guardar perfil, agua).
+
+#### Tarea 7 — Pruebas, calidad y cierre
+
+- Tests nuevos: tema, racha, agua, BMI.
+- Checklist completo de calidad en verde.
+- `README.md` y `PLAN.md` actualizados.
+
+**Fuera de alcance:** sincronización en la nube, notificaciones push, importación masiva de bases externas, cambios de modelo de datos no relacionados.
+
+**Criterios de aceptación:**
+
+- La app se ve coherente en modo claro y oscuro.
+- Inicio muestra racha, resumen semanal, macros y agua.
+- El usuario puede editar/borrar alimentos del catálogo.
+- Progreso muestra gráfico de línea por periodos y BMI.
+- Onboarding aparece solo en el primer arranque.
+- Haptics/toasts mejoran el feedback sin ser intrusivos.
+- Todas las comprobaciones de calidad en verde.
+
+### Fase R — Rediseño animado e intuitivo ✅ COMPLETADA
+
+**Objetivo:** hacer la app más fluida, intuitiva y agradable manteniendo la identidad visual de la Fase 7 y sin añadir dependencias.
+
+**Decisiones de diseño aprobadas:**
+
+- **Motor de animaciones:** API `Animated` nativa de React Native + `LayoutAnimation` + `PanResponder`. Sin `react-native-reanimated` ni librerías de terceros.
+- **Alcance:** animaciones de entrada/salida, escalado al pulsar, transiciones de pantalla, anillos/barras animados, swipe entre días, FAB flotante y empty states accionables. Sin cambiar lógica de datos ni repositorios.
+- **Identidad visual:** se conserva la paleta verde esmeralda + naranja y la tipografía Nunito.
+
+#### Tarea R1 — Kit de animación
+
+- `apps/mobile/src/features/motion/motion.ts`: duraciones, curvas de easing, springs, `animateNextLayout` y `configureScreenTransition`.
+- `apps/mobile/src/features/motion/FadeInView.tsx`: envoltorio con fade + desplazamiento vertical.
+- `apps/mobile/src/features/motion/usePressScale.ts`: hook de escala al pulsar.
+- `apps/mobile/src/features/motion/useCountUp.ts`: animación numérica de contadores.
+- `apps/mobile/src/features/motion/useShake.ts`: animación de sacudida para errores de formulario.
+- `apps/mobile/src/features/motion/useSwipeDays.ts`: swipe horizontal para cambiar de día.
+
+#### Tarea R2 — Componentes base animados
+
+- `ProgressBar`: animación del ancho de la barra.
+- `Button` y `Fab`: escala al pulsar mediante `usePressScale`.
+- `Card`: entrada animada opcional con `FadeInView`.
+- `EmptyState`: animación de entrada del icono y escala.
+- `ActionSheet` y `ConfirmDialog`: animaciones de entrada/salida con opacidad y desplazamiento/escala.
+- `AsyncState`: indicador de carga con fade.
+- `StepIndicator`: barras animadas al cambiar de paso.
+- `DayNavigator`: fecha con fade al cambiar de día.
+- `StreakRing`: progreso del anillo SVG animado.
+
+#### Tarea R3 — Pantallas animadas
+
+- Stack raíz (`apps/mobile/src/app/_layout.tsx`): transición de desplazamiento horizontal entre pantallas.
+- Tab bar (`apps/mobile/src/app/(tabs)/_layout.tsx`): iconos con escalado suave al enfocar.
+- Inicio: hero gradiente con entrada escalonada, barras semanales animadas, anillo de racha con contador numérico y tarjetas con fade.
+- Diario/Planificador: navegación por swipe entre días y FAB para añadir.
+- `diary/add-food.tsx`: wizard con `StepIndicator` y `FadeInView` por paso.
+- `scanner.tsx`: preview con fade/escala y skeleton con shimmer.
+- `onboarding.tsx`: slides con stagger y contadores animados.
+- `progress.tsx`: fade del tooltip/chart y `LayoutAnimation` al borrar registros.
+- `foods/[id].tsx`: `LayoutAnimation` al mostrar/ocultar acciones.
+- `ProfileForm`: shake de errores de validación.
+
+#### Tarea R4 — UX estructural
+
+- `Fab.tsx`: botón flotante circular con sombra y escala al pulsar.
+- `Screen.tsx`: prop `fab` para añadir padding inferior y evitar que el FAB tape contenido.
+- FAB en Inicio, Diario y Planificador para añadir alimentos rápidamente.
+- Swipe horizontal en Diario y Planificador para cambiar de día.
+- Empty state accionable en Planificador cuando el día está vacío.
+- Revisión de accesibilidad: labels, roles e hints en FAB, swipe, anillo de racha y diálogos.
+
+#### Tarea R5 — Verificación y documentación
+
+- Refactor para cumplir las reglas estrictas de ESLint sobre refs (`react-hooks/refs`) y `setState` en effects (`react-hooks/set-state-in-effect`).
+- Checklist completo de calidad en verde:
+  - `npm test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npx expo export --platform android`
+  - `npx expo-doctor`
+- `README.md` y `PLAN.md` actualizados con la nueva fase.
+
+**Fuera de alcance:** cambios en modelo de datos, lógica nutricional, nuevas funciones de negocio, dependencias de animación de terceros.
+
+**Criterios de aceptación:**
+
+- La app usa animaciones nativas fluidas sin nuevas dependencias.
+- El usuario puede cambiar de día deslizando en Diario y Planificador.
+- El FAB permite añadir alimentos desde Inicio, Diario y Planificador.
+- Los empty states ofrecen una acción clara.
+- Todas las comprobaciones de calidad en verde.
+
 ---
 
 ## 7. Decisiones pendientes
@@ -619,9 +847,13 @@ Archivo eliminado:
    ```text
    Estoy retomando JfooD en una sesión nueva. Antes de hacer nada, lee
    PLAN.md, README.md y apps/mobile/AGENTS.md. Confirma el estado real
-   con las comprobaciones del documento. La Fase 6 ya está completada;
-   prioriza mantenimiento, corrección de bugs o nuevas funciones tras
-   revisar el despliegue actual.
+    con las comprobaciones del documento. La Fase 7 (JfooD Refresh) y la
+    Fase R (rediseño animado e intuitivo) ya están completadas: modo
+    oscuro, racha/estadísticas, agua, gestión del catálogo, gráfico de
+    línea, onboarding, haptics, toasts, transiciones, swipe entre días,
+    FAB flotante y empty states accionables. Prioriza mantenimiento,
+    corrección de bugs o nuevas funciones tras revisar el despliegue
+    actual.
 
    No hagas operaciones Git sin mi aprobación. No añadas dependencias
    innecesarias ni funciones fuera del alcance acordado.
