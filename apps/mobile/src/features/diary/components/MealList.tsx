@@ -79,7 +79,7 @@ export function MealList({
                 <Pressable
                   accessibilityLabel={`Añadir alimento a ${label}`}
                   accessibilityRole="button"
-                  hitSlop={8}
+                  hitSlop={10}
                   onPress={() => {
                     hapticSelection();
                     onAddFood(type);

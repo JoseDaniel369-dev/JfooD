@@ -743,9 +743,17 @@ function createStyles(colors: ThemeColors) {
       fontSize: 12,
     },
     favoriteButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      minWidth: 48,
       padding: spacing.xs,
     },
     editButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      minWidth: 48,
       padding: spacing.xs,
     },
     form: {

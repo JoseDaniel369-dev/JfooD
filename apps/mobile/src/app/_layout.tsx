@@ -1,5 +1,5 @@
 import { Suspense, useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -13,6 +13,8 @@ import {
 import { ToastProvider } from '@/components/Toast';
 import { migrateDatabase } from '@/data/sqlite/migrate';
 import {
+  darkColors,
+  lightColors,
   ThemeProvider,
   useTheme,
   type ThemeColors,
@@ -101,10 +103,13 @@ function RootNavigator() {
   );
 }
 
+/** Shown before the saved theme is readable, so it follows the system scheme. */
 function AppLoading() {
+  const palette = useColorScheme() === 'dark' ? darkColors : lightColors;
+
   return (
-    <View style={stylesLoading.loading}>
-      <ActivityIndicator color="#047857" size="large" />
+    <View style={[stylesLoading.loading, { backgroundColor: palette.background }]}>
+      <ActivityIndicator color={palette.primary} size="large" />
     </View>
   );
 }
@@ -112,7 +117,6 @@ function AppLoading() {
 const stylesLoading = StyleSheet.create({
   loading: {
     alignItems: 'center',
-    backgroundColor: '#F3F8F4',
     flex: 1,
     justifyContent: 'center',
   },

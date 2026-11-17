@@ -920,6 +920,10 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     manualButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      minWidth: 48,
       padding: spacing.xs,
     },
     mealOptions: {

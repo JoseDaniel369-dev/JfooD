@@ -36,6 +36,7 @@ import { FadeInView } from '@/features/motion/FadeInView';
 import { animateNextLayout } from '@/features/motion/motion';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
+import { computeChartPoints, tooltipLeft } from '@/features/progress/utils/chart';
 import {
   computeChange,
   computeWeeklyTrend,
@@ -467,6 +468,7 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [tooltipWidth, setTooltipWidth] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   const width = 300;
   const height = 140;
@@ -474,22 +476,10 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const weights = logs.map((log) => log.weightKg);
-  const minWeight = Math.min(...weights);
-  const maxWeight = Math.max(...weights);
-  const range = Math.max(maxWeight - minWeight, 0.5);
-
-  const points = logs.map((log, index) => {
-    const x =
-      logs.length <= 1
-        ? chartWidth / 2
-        : (index / (logs.length - 1)) * chartWidth;
-    const y =
-      chartHeight -
-      ((log.weightKg - minWeight) / range) * (chartHeight - 16) -
-      8;
-    return { ...log, x, y };
-  });
+  // X is proportional to the calendar (a gap in the logs looks like a gap).
+  const points = computeChartPoints(logs, chartWidth, chartHeight);
+  // The SVG is scaled to the container, so tooltip pixels need the same scale.
+  const scale = containerWidth > 0 ? containerWidth / width : 1;
 
   const linePath = points
     .map((point, index) =>
@@ -504,7 +494,10 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
   const selected = selectedIndex !== null ? points[selectedIndex] : null;
 
   return (
-    <View style={styles.chartContainer}>
+    <View
+      onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+      style={styles.chartContainer}
+    >
       <Svg height={height} viewBox={`0 0 ${width} ${height}`} width="100%">
         <Defs>
           <LinearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">
@@ -576,9 +569,10 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
           style={[
             styles.tooltip,
             {
-              left: Math.min(
-                Math.max(selected.x + padding.left - tooltipWidth / 2, 0),
-                width - tooltipWidth,
+              left: tooltipLeft(
+                (selected.x + padding.left) * scale,
+                tooltipWidth,
+                containerWidth > 0 ? containerWidth : width,
               ),
             },
           ]}

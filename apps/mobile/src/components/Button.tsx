@@ -105,7 +105,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: spacing.md,
     },
     small: {
-      minHeight: 40,
+      minHeight: 48,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
     },

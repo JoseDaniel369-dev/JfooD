@@ -111,7 +111,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
           pointerEvents="none"
           style={[
             styles.toast,
-            { bottom: insets.bottom + 96, opacity, transform: [{ translateY }] },
+            { top: insets.top + 12, opacity, transform: [{ translateY }] },
             toast.variant === 'error' ? styles.toastError : styles.toastSuccess,
           ]}
         >

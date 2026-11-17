@@ -82,3 +82,21 @@ test('createFood and updateFood refuse physically impossible typed values', asyn
   await assert.rejects(() => updateFood(sqlite, ok.id, { name: 'Aceite', caloriesKcal: 9999 }), /950 kcal/);
   assert.equal((await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM foods'))?.c, 1);
 });
+
+test('searchFoods matches every word in any order and ranks prefixes first', async () => {
+  const db = await createMigratedDatabase();
+  const sqlite = db.asSqlite();
+  await createFood(sqlite, { name: 'Pollo con arroz' });
+  await createFood(sqlite, { name: 'Arroz blanco' });
+  await createFood(sqlite, { name: 'Arroz con pollo asado' });
+  await createFood(sqlite, { name: 'Pollo asado' });
+
+  const both = (await searchFoods(sqlite, 'arroz pollo')).map((f) => f.name).sort();
+  assert.deepEqual(both, ['Arroz con pollo asado', 'Pollo con arroz']);
+
+  const ranked = (await searchFoods(sqlite, 'arroz')).map((f) => f.name);
+  assert.ok(ranked.slice(0, 2).every((name) => name.toLowerCase().startsWith('arroz')));
+
+  assert.equal((await searchFoods(sqlite, '  ')).length, 4);
+  assert.equal((await searchFoods(sqlite, 'zanahoria')).length, 0);
+});

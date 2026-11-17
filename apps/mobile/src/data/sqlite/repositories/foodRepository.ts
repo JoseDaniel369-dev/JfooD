@@ -111,18 +111,29 @@ export async function searchFoods(
   limit = 20,
 ): Promise<Food[]> {
   const normalized = normalizeName(query);
-  const pattern = `%${escapeLike(normalized)}%`;
+  // Every word must appear, in any order: "arroz pollo" finds "pollo con arroz".
+  const tokens = normalized.split(' ').filter((token) => token !== '');
+  const patterns = tokens.length > 0 ? tokens.map(containsPattern) : ['%%'];
+  const where = patterns
+    .map(() => `normalized_name LIKE ? ESCAPE '\\'`)
+    .join(' AND ');
 
   const rows = await database.getAllAsync<FoodRow>(
     `SELECT ${SELECT_FOOD_COLUMNS}
      FROM foods
-     WHERE normalized_name LIKE ? ESCAPE '\\'
-     ORDER BY is_favorite DESC, name ASC
+     WHERE ${where}
+     ORDER BY is_favorite DESC,
+              CASE WHEN normalized_name LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
+              name ASC
      LIMIT ?`,
-    [pattern, limit],
+    [...patterns, `${escapeLike(tokens[0] ?? '')}%`, limit],
   );
 
   return rows.map(mapFood);
+}
+
+function containsPattern(token: string): string {
+  return `%${escapeLike(token)}%`;
 }
 
 function escapeLike(value: string): string {

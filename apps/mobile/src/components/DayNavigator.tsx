@@ -128,9 +128,9 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       backgroundColor: colors.primaryLight,
       borderRadius: radius.md,
-      height: 40,
+      height: 48,
       justifyContent: 'center',
-      width: 40,
+      width: 48,
     },
     dateInfo: {
       alignItems: 'center',
