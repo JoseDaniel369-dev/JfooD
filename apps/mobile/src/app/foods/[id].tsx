@@ -10,6 +10,7 @@ import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrient
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ServingsCard } from '@/features/foods/components/ServingsCard';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import {
@@ -240,6 +241,8 @@ export default function FoodDetailScreen() {
               }
             />
           </Card>
+
+          <ServingsCard foodId={food.id} />
 
           {isUserFood ? (
             <>

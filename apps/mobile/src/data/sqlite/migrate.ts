@@ -5,6 +5,7 @@ import { planMigration } from './migrations/002_plan';
 import { settingsMigration } from './migrations/003_settings';
 import { waterMigration } from './migrations/004_water';
 import { goalMigration } from './migrations/005_goal';
+import { servingsMigration } from './migrations/006_servings';
 
 const migrations = [
   { version: 1, sql: initialMigration },
@@ -12,6 +13,7 @@ const migrations = [
   { version: 3, sql: settingsMigration },
   { version: 4, sql: waterMigration },
   { version: 5, sql: goalMigration },
+  { version: 6, sql: servingsMigration },
 ] as const;
 
 /** Schema version produced by the last migration. */

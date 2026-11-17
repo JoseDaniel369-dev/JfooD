@@ -36,6 +36,7 @@ export const BACKUP_TABLES = {
     'id', 'effective_from', 'calories_kcal', 'protein_grams',
     'carbohydrate_grams', 'fat_grams', 'created_at',
   ],
+  food_servings: ['id', 'food_id', 'label', 'grams', 'created_at'],
   weight_logs: ['id', 'local_date', 'weight_kg', 'note', 'created_at'],
   water_logs: ['id', 'local_date', 'amount_ml', 'created_at'],
   app_settings: ['key', 'value'],
@@ -162,6 +163,7 @@ export function parseBackup(value: unknown, latestSchemaVersion: number): Backup
 }
 
 const DELETE_ORDER: BackupTable[] = [
+  'food_servings',
   'diary_entries',
   'diary_meals',
   'plan_entries',

@@ -8,6 +8,7 @@ const EXPECTED_TABLES = [
   'app_settings',
   'diary_entries',
   'diary_meals',
+  'food_servings',
   'foods',
   'nutrition_goals',
   'plan_entries',
@@ -31,7 +32,7 @@ test('migrations create every table from an empty database', async () => {
   const version = await db.getFirstAsync<{ user_version: number }>(
     'PRAGMA user_version',
   );
-  assert.equal(version?.user_version, 5);
+  assert.equal(version?.user_version, 6);
 });
 
 test('running migrations twice is idempotent and keeps user data', async () => {

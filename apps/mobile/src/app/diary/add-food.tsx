@@ -41,6 +41,7 @@ import {
   toggleFavorite,
 } from '@/data/sqlite/repositories/foodRepository';
 import { entryNutrients } from '@/features/diary/utils/totals';
+import { getServings, type Serving } from '@/data/sqlite/repositories/servingRepository';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isEditableSource, type Food } from '@/features/foods/types';
@@ -83,6 +84,7 @@ export default function AddFoodScreen() {
   const [favorites, setFavorites] = useState<Food[]>([]);
   const [recents, setRecents] = useState<Food[]>([]);
   const [frequents, setFrequents] = useState<Food[]>([]);
+  const [servings, setServings] = useState<Serving[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [grams, setGrams] = useState('100');
   const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
@@ -118,6 +120,23 @@ export default function AddFoodScreen() {
       cancelled = true;
     };
   }, [database, foodId]);
+
+  // Named portions of the chosen food ("1 unidad = 60 g") become quick amounts.
+  const selectedFoodId = selectedFood?.id ?? null;
+  useEffect(() => {
+    if (!selectedFoodId) return;
+    let cancelled = false;
+    void getServings(database, selectedFoodId)
+      .then((rows) => {
+        if (!cancelled) setServings(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setServings([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [database, selectedFoodId]);
 
   const loadLists = useCallback(async () => {
     const [favoriteRows, recentRows, frequentRows] = await Promise.all([
@@ -495,6 +514,34 @@ export default function AddFoodScreen() {
               value={grams}
               onChange={setGrams}
             />
+            {selectedFood && servings.some((s) => s.foodId === selectedFood.id) ? (
+              <View style={styles.mealOptions}>
+                {servings.filter((s) => s.foodId === selectedFood.id).map((serving) => (
+                  <Pressable
+                    key={serving.id}
+                    accessibilityLabel={`${serving.label}, ${serving.grams} gramos`}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      hapticSelection();
+                      setGrams(String(serving.grams));
+                    }}
+                    style={[
+                      styles.mealOption,
+                      grams === String(serving.grams) && styles.mealOptionSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.mealOptionText,
+                        grams === String(serving.grams) && styles.mealOptionTextSelected,
+                      ]}
+                    >
+                      {serving.label} ({serving.grams} g)
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
             <View style={styles.mealOptions}>
               {QUICK_GRAMS.map((amount) => (
                 <Pressable

@@ -13,6 +13,7 @@ import {
   parseBackup,
   restoreBackup,
 } from '../../src/features/backup/backup';
+import { LATEST_SCHEMA_VERSION } from '../../src/data/sqlite/migrate';
 import { createMigratedDatabase } from '../helpers/sqliteAdapter';
 
 const DATE = '2026-11-01';
@@ -51,7 +52,7 @@ test('export → JSON → restore reproduces every table and the same totals', a
   const json = JSON.parse(JSON.stringify(backup));
 
   const target = await createMigratedDatabase();
-  const parsed = parseBackup(json, 5);
+  const parsed = parseBackup(json, LATEST_SCHEMA_VERSION);
   const counts = await restoreBackup(target.asSqlite(), parsed);
 
   assert.equal(counts.foods, 2);
@@ -69,7 +70,7 @@ test('export → JSON → restore reproduces every table and the same totals', a
 
 test('restoring replaces existing data instead of merging', async () => {
   const source = await populated();
-  const backup = parseBackup(JSON.parse(JSON.stringify(await exportBackup(source.sqlite))), 5);
+  const backup = parseBackup(JSON.parse(JSON.stringify(await exportBackup(source.sqlite))), LATEST_SCHEMA_VERSION);
 
   const target = await createMigratedDatabase();
   await createFood(target.asSqlite(), { name: 'Alimento que debe desaparecer' });
@@ -89,7 +90,7 @@ test('an invalid row rolls everything back and keeps the current data', async ()
   const before = await exportBackup(target, new Date(0));
 
   await assert.rejects(
-    () => restoreBackup(target, parseBackup(good, 5)),
+    () => restoreBackup(target, parseBackup(good, LATEST_SCHEMA_VERSION)),
     (error: unknown) => error instanceof BackupError && /No se ha cambiado nada/.test(error.message),
   );
 
@@ -103,27 +104,27 @@ test('a broken reference (entry pointing to a missing meal) is rejected atomical
   bad.tables.diary_meals = [];
 
   const target = (await populated()).sqlite;
-  await assert.rejects(() => restoreBackup(target, parseBackup(bad, 5)), BackupError);
+  await assert.rejects(() => restoreBackup(target, parseBackup(bad, LATEST_SCHEMA_VERSION)), BackupError);
   assert.equal((await getDiaryDay(target, DATE)).entries.length, 2);
 });
 
 test('parseBackup rejects foreign, newer, malformed or hostile files', () => {
-  const base = { format: 'jfood-backup', version: 1, schemaVersion: 5, createdAt: '', tables: {} };
+  const base = { format: 'jfood-backup', version: 1, schemaVersion: 6, createdAt: '', tables: {} };
 
-  assert.doesNotThrow(() => parseBackup(base, 5));
-  assert.throws(() => parseBackup(null, 5), /no es una copia/);
-  assert.throws(() => parseBackup({ ...base, format: 'other' }, 5), /no es una copia/);
-  assert.throws(() => parseBackup({ ...base, version: 2 }, 5), /versión más nueva/);
-  assert.throws(() => parseBackup({ ...base, schemaVersion: 6 }, 5), /más nueva/);
-  assert.throws(() => parseBackup({ ...base, tables: [] }, 5), /no contiene datos/);
-  assert.throws(() => parseBackup({ ...base, tables: { users: [] } }, 5), /tabla desconocida/);
+  assert.doesNotThrow(() => parseBackup(base, LATEST_SCHEMA_VERSION));
+  assert.throws(() => parseBackup(null, LATEST_SCHEMA_VERSION), /no es una copia/);
+  assert.throws(() => parseBackup({ ...base, format: 'other' }, LATEST_SCHEMA_VERSION), /no es una copia/);
+  assert.throws(() => parseBackup({ ...base, version: 2 }, LATEST_SCHEMA_VERSION), /versión más nueva/);
+  assert.throws(() => parseBackup({ ...base, schemaVersion: LATEST_SCHEMA_VERSION + 1 }, LATEST_SCHEMA_VERSION), /más nueva/);
+  assert.throws(() => parseBackup({ ...base, tables: [] }, LATEST_SCHEMA_VERSION), /no contiene datos/);
+  assert.throws(() => parseBackup({ ...base, tables: { users: [] } }, LATEST_SCHEMA_VERSION), /tabla desconocida/);
   assert.throws(
-    () => parseBackup({ ...base, tables: { foods: [{ 'id); DROP TABLE foods; --': 'x' }] } }, 5),
+    () => parseBackup({ ...base, tables: { foods: [{ 'id); DROP TABLE foods; --': 'x' }] } }, LATEST_SCHEMA_VERSION),
     /Columna desconocida/,
   );
-  assert.throws(() => parseBackup({ ...base, tables: { foods: [{ id: {} }] } }, 5), /Valor no válido/);
-  assert.throws(() => parseBackup({ ...base, tables: { foods: [{ id: Infinity }] } }, 5), /Número no válido/);
-  assert.throws(() => parseBackup({ ...base, tables: { foods: 'x' } }, 5), /Datos no válidos/);
+  assert.throws(() => parseBackup({ ...base, tables: { foods: [{ id: {} }] } }, LATEST_SCHEMA_VERSION), /Valor no válido/);
+  assert.throws(() => parseBackup({ ...base, tables: { foods: [{ id: Infinity }] } }, LATEST_SCHEMA_VERSION), /Número no válido/);
+  assert.throws(() => parseBackup({ ...base, tables: { foods: 'x' } }, LATEST_SCHEMA_VERSION), /Datos no válidos/);
 });
 
 test('backups from an older schema without newer tables restore as empty tables', async () => {
@@ -133,7 +134,7 @@ test('backups from an older schema without newer tables restore as empty tables'
   delete json.tables.water_logs;
 
   const target = await createMigratedDatabase();
-  const counts = await restoreBackup(target.asSqlite(), parseBackup(json, 5));
+  const counts = await restoreBackup(target.asSqlite(), parseBackup(json, LATEST_SCHEMA_VERSION));
   assert.equal(counts.water_logs, 0);
   assert.equal(counts.foods, 2);
 });
@@ -148,7 +149,7 @@ test('a backup made before the weight goal existed restores with the default goa
   }
 
   const target = await createMigratedDatabase();
-  await restoreBackup(target.asSqlite(), parseBackup(json, 5));
+  await restoreBackup(target.asSqlite(), parseBackup(json, LATEST_SCHEMA_VERSION));
   const row = await target.getFirstAsync<{ goal_type: string; weekly_rate_kg: number }>(
     'SELECT goal_type, weekly_rate_kg FROM user_profile',
   );
