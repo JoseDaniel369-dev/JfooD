@@ -34,9 +34,13 @@ import { hapticSuccess } from '@/features/haptics/haptics';
 import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
-import { recognizeImage } from '@/features/scanner/api/recognize';
+import { recognizeImage, recognizeText } from '@/features/scanner/api/recognize';
 import { useImagePicker } from '@/features/scanner/hooks/useImagePicker';
-import type { RecognizedFood, RecognizedFoodMatch } from '@/features/scanner/types';
+import type {
+  RecognitionResult,
+  RecognizedFood,
+  RecognizedFoodMatch,
+} from '@/features/scanner/types';
 import { findLocalFoodMatch } from '@/features/scanner/utils/matchFood';
 import {
   radius,
@@ -51,7 +55,7 @@ type ScannerStep = 'camera' | 'preview' | 'analyzing' | 'results' | 'error';
 const PRIVACY_ACK_KEY = 'scanner_privacy_ack';
 
 const PRIVACY_MESSAGE =
-  'Para identificar los alimentos, la foto se envía a tu servidor de JfooD y de ahí a Google (Gemini). El servidor no la guarda. Según las condiciones de Google para el nivel gratuito, Google puede usar el contenido para mejorar sus productos. No hagas fotos de personas ni de documentos.';
+  'Para identificar los alimentos, la foto o el texto se envía a tu servidor de JfooD y de ahí a Google (Gemini). El servidor no lo guarda. Según las condiciones de Google para el nivel gratuito, Google puede usar el contenido para mejorar sus productos. No hagas fotos de personas ni de documentos.';
 
 export default function ScannerScreen() {
   const { colors } = useTheme();
@@ -82,8 +86,9 @@ export default function ScannerScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const analyzeRequestRef = useRef(0);
+  const [mealText, setMealText] = useState('');
   const [consentPending, setConsentPending] = useState<
-    'camera' | 'library' | null
+    'camera' | 'library' | 'text' | null
   >(null);
 
   const handleImage = useCallback(
@@ -112,6 +117,59 @@ export default function ScannerScreen() {
     [showToast],
   );
 
+  /** Runs a recognition request (photo or text) and resolves the foods against the catalog. */
+  const analyze = useCallback(
+    async (request: () => Promise<RecognitionResult>, fallback: string) => {
+      analyzeRequestRef.current += 1;
+      const requestId = analyzeRequestRef.current;
+
+      setStep('analyzing');
+      setErrorMessage(null);
+
+      try {
+        const result = await request();
+        if (requestId !== analyzeRequestRef.current) return;
+
+        const resolved = await Promise.all(
+          result.foods.map(async (food: RecognizedFood) => {
+            const matched = await findLocalFoodMatch(database, food);
+            return {
+              recognized: food,
+              food: matched,
+              grams: food.estimatedGrams,
+              confidence: food.confidence,
+            } satisfies RecognizedFoodMatch;
+          }),
+        );
+
+        if (requestId !== analyzeRequestRef.current) return;
+
+        setMatches(resolved);
+        setWarnings(result.warnings);
+        setStep('results');
+      } catch (error) {
+        if (requestId !== analyzeRequestRef.current) return;
+        setErrorMessage(error instanceof Error ? error.message : fallback);
+        setStep('error');
+      }
+    },
+    [database],
+  );
+
+  const handleAnalyze = useCallback(async () => {
+    if (!imageBase64) return;
+    await analyze(
+      () => recognizeImage(imageBase64),
+      'No se ha podido analizar la imagen.',
+    );
+  }, [analyze, imageBase64]);
+
+  const handleAnalyzeText = useCallback(async () => {
+    const text = mealText.trim();
+    if (text.length < 2) return;
+    await analyze(() => recognizeText(text), 'No se ha podido interpretar el texto.');
+  }, [analyze, mealText]);
+
   const startCamera = useCallback(async () => {
     const result = await launchCamera();
     await handleImage(result);
@@ -122,9 +180,18 @@ export default function ScannerScreen() {
     await handleImage(result);
   }, [launchLibrary, handleImage]);
 
+  const runSource = useCallback(
+    async (source: 'camera' | 'library' | 'text') => {
+      if (source === 'camera') await startCamera();
+      else if (source === 'library') await startLibrary();
+      else await handleAnalyzeText();
+    },
+    [startCamera, startLibrary, handleAnalyzeText],
+  );
+
   // The first photo is only sent after the person has read where it goes.
   const requestPick = useCallback(
-    async (source: 'camera' | 'library') => {
+    async (source: 'camera' | 'library' | 'text') => {
       let acknowledged: string | null = null;
       try {
         acknowledged = await getSetting(database, PRIVACY_ACK_KEY);
@@ -133,16 +200,17 @@ export default function ScannerScreen() {
       }
 
       if (acknowledged === '1') {
-        await (source === 'camera' ? startCamera() : startLibrary());
+        await runSource(source);
         return;
       }
       setConsentPending(source);
     },
-    [database, startCamera, startLibrary],
+    [database, runSource],
   );
 
   const handleCamera = useCallback(() => requestPick('camera'), [requestPick]);
   const handleLibrary = useCallback(() => requestPick('library'), [requestPick]);
+  const handleText = useCallback(() => requestPick('text'), [requestPick]);
 
   const handleConsentConfirm = async () => {
     const source = consentPending;
@@ -154,49 +222,8 @@ export default function ScannerScreen() {
     } catch {
       // Not persisting only means the notice is shown again next time.
     }
-    await (source === 'camera' ? startCamera() : startLibrary());
+    await runSource(source);
   };
-
-  const handleAnalyze = useCallback(async () => {
-    if (!imageBase64) return;
-
-    analyzeRequestRef.current += 1;
-    const requestId = analyzeRequestRef.current;
-
-    setStep('analyzing');
-    setErrorMessage(null);
-
-    try {
-      const result = await recognizeImage(imageBase64);
-      if (requestId !== analyzeRequestRef.current) return;
-
-      const resolved = await Promise.all(
-        result.foods.map(async (food: RecognizedFood) => {
-          const matched = await findLocalFoodMatch(database, food);
-          return {
-            recognized: food,
-            food: matched,
-            grams: food.estimatedGrams,
-            confidence: food.confidence,
-          } satisfies RecognizedFoodMatch;
-        }),
-      );
-
-      if (requestId !== analyzeRequestRef.current) return;
-
-      setMatches(resolved);
-      setWarnings(result.warnings);
-      setStep('results');
-    } catch (error) {
-      if (requestId !== analyzeRequestRef.current) return;
-      setErrorMessage(
-        error instanceof Error ?
-          error.message
-        : 'No se ha podido analizar la imagen.',
-      );
-      setStep('error');
-    }
-  }, [database, imageBase64]);
 
   const updateGrams = (index: number, value: string) => {
     setMatches((prev) => {
@@ -315,7 +342,10 @@ export default function ScannerScreen() {
         scannerEnabled ?
           <CameraStep
             loading={picking}
+            mealText={mealText}
+            onAnalyzeText={handleText}
             onCamera={handleCamera}
+            onChangeText={setMealText}
             onLibrary={handleLibrary}
           />
         : <ManualOnlyStep onManual={() => handleManualCreate('')} />
@@ -365,7 +395,7 @@ export default function ScannerScreen() {
       <ConfirmDialog
         confirmLabel="Entendido, continuar"
         message={PRIVACY_MESSAGE}
-        title="Antes de enviar la foto"
+        title="Antes de enviar la foto o el texto"
         visible={consentPending !== null}
         onClose={() => setConsentPending(null)}
         onConfirm={() => void handleConsentConfirm()}
@@ -376,11 +406,17 @@ export default function ScannerScreen() {
 
 function CameraStep({
   loading,
+  mealText,
+  onAnalyzeText,
   onCamera,
+  onChangeText,
   onLibrary,
 }: {
   loading: boolean;
+  mealText: string;
+  onAnalyzeText: () => void;
   onCamera: () => void;
+  onChangeText: (text: string) => void;
   onLibrary: () => void;
 }) {
   const { colors } = useTheme();
@@ -413,6 +449,27 @@ function CameraStep({
             onPress={onLibrary}
           />
         </View>
+      </Card>
+
+      <Card style={styles.cameraCard}>
+        <Text style={styles.cameraTitle}>O descríbela con texto</Text>
+        <TextInput
+          accessibilityLabel="Describe lo que has comido"
+          maxLength={500}
+          multiline
+          onChangeText={onChangeText}
+          placeholder="Ej. 2 huevos revueltos y un café con leche"
+          placeholderTextColor={colors.textMuted}
+          style={styles.textArea}
+          value={mealText}
+        />
+        <Button
+          disabled={loading || mealText.trim().length < 2}
+          icon="sparkles-outline"
+          title="Interpretar texto"
+          variant="secondary"
+          onPress={onAnalyzeText}
+        />
       </Card>
 
       <View style={styles.notice}>
@@ -884,6 +941,17 @@ function createStyles(colors: ThemeColors) {
       color: colors.text,
       fontSize: 15,
       fontWeight: '600',
+    },
+    textArea: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 16,
+      minHeight: 88,
+      padding: spacing.md,
+      textAlignVertical: 'top',
     },
     resultConfidence: {
       color: colors.textMuted,

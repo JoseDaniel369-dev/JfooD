@@ -106,3 +106,31 @@ test('recognizeImage rejects out-of-range grams from the server', async () => {
 
   await assert.rejects(() => recognizeImage('abcd'), /Respuesta inesperada/);
 });
+
+test('recognizeText posts the description to /parse-meal and validates the contract', async () => {
+  const { recognizeText } = await import('../../src/features/scanner/api/recognize');
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let seenUrl = '';
+  let seenBody = '';
+  globalThis.fetch = async (url, init) => {
+    seenUrl = String(url);
+    seenBody = String((init as RequestInit).body);
+    return new Response(
+      JSON.stringify({ foods: [{ name: 'Huevo', estimatedGrams: 120, confidence: 0.8 }], warnings: [] }),
+      { status: 200 },
+    );
+  };
+
+  const result = await recognizeText('2 huevos');
+  assert.ok(seenUrl.endsWith('/parse-meal'));
+  assert.deepEqual(JSON.parse(seenBody), { text: '2 huevos' });
+  assert.equal(result.foods[0]?.name, 'Huevo');
+
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ foods: [{ name: 'X', estimatedGrams: 1, confidence: 1, fatGrams: 3 }], warnings: [] }), { status: 200 });
+  await assert.rejects(() => recognizeText('x'), /Respuesta inesperada/);
+});

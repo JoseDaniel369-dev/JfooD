@@ -11,8 +11,19 @@ export interface RecognitionError {
 
 const RECOGNIZE_TIMEOUT_MS = 40_000;
 
-export async function recognizeImage(
-  imageBase64: string,
+/** Identifies the foods in a photo (data URI or base64). */
+export function recognizeImage(imageBase64: string): Promise<RecognitionResult> {
+  return postRecognition('/recognize', { image: imageBase64 });
+}
+
+/** Extracts the foods mentioned in a free-text description of a meal. */
+export function recognizeText(text: string): Promise<RecognitionResult> {
+  return postRecognition('/parse-meal', { text });
+}
+
+async function postRecognition(
+  path: string,
+  payload: Record<string, string>,
 ): Promise<RecognitionResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -20,10 +31,10 @@ export async function recognizeImage(
   }, RECOGNIZE_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/recognize`, {
+    const response = await fetch(`${getApiBaseUrl()}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: imageBase64 }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
 

@@ -36,6 +36,9 @@ export {
 } from './nutrition/goals.js';
 export {
   MAX_IMAGE_BASE64_CHARS,
+  MAX_MEAL_TEXT_CHARS,
+  parseMealRequestSchema,
+  type ParseMealRequest,
   foodRecognitionSchema,
   recognizeRequestSchema,
   recognizedFoodSchema,

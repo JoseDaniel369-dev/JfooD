@@ -58,6 +58,10 @@ El motor ya calcula nutrientes por gramos y conserva los valores desconocidos co
 
 El plan por fases, el estado detallado y las instrucciones para retomar el desarrollo en una sesión nueva están en [`PLAN.md`](PLAN.md).
 
+## Registro por texto
+
+Además de la foto, el escáner admite describir la comida ("2 huevos y un café con leche"). `POST /parse-meal` devuelve el mismo contrato estricto que `/recognize` (nombre, gramos estimados y confianza, nunca nutrientes), comparte el límite diario de Gemini y trata el texto como datos, no como instrucciones. Todo resultado pasa por la revisión obligatoria y por el catálogo local antes de guardarse.
+
 ## Código de barras y datos de productos
 
 La variante experimental puede escanear códigos de barras (EAN/UPC). El producto se busca primero en la base local y, si no está, en [Open Food Facts](https://world.openfoodfacts.org) (API pública, sin clave); solo se guardan nombre, marca y calorías/macros por 100 g, y cualquier valor ausente o inverosímil queda como desconocido. Los datos de Open Food Facts están bajo licencia [ODbL](https://opendatacommons.org/licenses/odbl/): se muestra la atribución en la pantalla del escáner. La variante estable no declara permisos de cámara.

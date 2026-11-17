@@ -49,5 +49,14 @@ export const recognizeRequestSchema = z.object({
 
 export type RecognizeRequest = z.infer<typeof recognizeRequestSchema>;
 
+export const MAX_MEAL_TEXT_CHARS = 500;
+
+/** Body of POST /parse-meal: a free-text description of what was eaten. */
+export const parseMealRequestSchema = z.object({
+  text: z.string().trim().min(2).max(MAX_MEAL_TEXT_CHARS),
+});
+
+export type ParseMealRequest = z.infer<typeof parseMealRequestSchema>;
+
 export type RecognizedFood = z.infer<typeof recognizedFoodSchema>;
 export type FoodRecognition = z.infer<typeof foodRecognitionSchema>;
