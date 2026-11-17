@@ -8,7 +8,12 @@ export interface StreakStats {
 
 export interface DayCalories {
   localDate: string;
+  /** Sum of the calories that are known; null when nothing is known. */
   caloriesKcal: number | null;
+  /** True when some entries of the day have no calories (total is a minimum). */
+  partial?: boolean;
+  /** True when the day has any entry. Defaults to caloriesKcal !== null. */
+  logged?: boolean;
 }
 
 export interface WeekStats {
@@ -50,28 +55,31 @@ export function computeWeekStats(
   records: DayCalories[],
   today: string,
 ): WeekStats {
-  const byDate = new Map(
-    records.map((record) => [record.localDate, record.caloriesKcal]),
-  );
+  const byDate = new Map(records.map((record) => [record.localDate, record]));
 
   const days: DayCalories[] = [];
   for (let offset = -6; offset <= 0; offset += 1) {
     const localDate = addDays(today, offset);
+    const record = byDate.get(localDate);
     days.push({
       localDate,
-      caloriesKcal: byDate.get(localDate) ?? null,
+      caloriesKcal: record?.caloriesKcal ?? null,
+      partial: record?.partial ?? false,
+      logged: record ? (record.logged ?? record.caloriesKcal !== null) : false,
     });
   }
 
-  const loggedDays = days.filter((day) => day.caloriesKcal !== null).length;
-  const total = days.reduce<number>(
+  const loggedDays = days.filter((day) => day.logged).length;
+  // Only complete days enter the average: a partial day would understate it.
+  const complete = days.filter((day) => day.caloriesKcal !== null && !day.partial);
+  const total = complete.reduce<number>(
     (sum, day) => sum + (day.caloriesKcal ?? 0),
     0,
   );
 
   return {
     loggedDays,
-    averageKcal: loggedDays > 0 ? Math.round(total / loggedDays) : null,
+    averageKcal: complete.length > 0 ? Math.round(total / complete.length) : null,
     days,
   };
 }

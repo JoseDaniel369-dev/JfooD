@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   ActivityIndicator,
+  type KeyboardTypeOptions,
   Alert,
   Pressable,
   StyleSheet,
@@ -17,7 +18,7 @@ import {
   View,
 } from 'react-native';
 
-import { gramsSchema, nutrientsPer100gSchema } from '@jfood/core';
+import { foodInputNutrientsSchema, gramsSchema } from '@jfood/core';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Button } from '@/components/Button';
@@ -27,8 +28,9 @@ import { StepIndicator } from '@/components/StepIndicator';
 import { useToast } from '@/components/Toast';
 import { FadeInView } from '@/features/motion/FadeInView';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
+import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
-import { toLocalDate } from '@/features/diary/utils/date';
+import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import {
   createFood,
   getFavoriteFoods,
@@ -48,6 +50,8 @@ import {
 
 type Step = 'search' | 'create' | 'quantity';
 
+const QUICK_GRAMS = [50, 100, 150, 200] as const;
+
 export default function AddFoodScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -59,7 +63,9 @@ export default function AddFoodScreen() {
     target?: string;
     name?: string;
   }>();
-  const localDate = date ?? toLocalDate(new Date());
+  // Route params can come from a deep link: never trust them as a date.
+  const localDate =
+    date && isValidLocalDate(date) ? date : toLocalDate(new Date());
   const initialMeal = (MEALS.map((m) => m.type).includes(meal as MealType)
     ? meal
     : 'breakfast') as MealType;
@@ -192,9 +198,9 @@ export default function AddFoodScreen() {
       fatGrams: fat.value,
     };
 
-    const parsedMacros = nutrientsPer100gSchema.safeParse(macros);
+    const parsedMacros = foodInputNutrientsSchema.safeParse(macros);
     if (!parsedMacros.success) {
-      setCreateError('Revisa los valores nutricionales (deben ser 0 o mayores).');
+      setCreateError(describeNutrientsError(parsedMacros.error.issues));
       return;
     }
 
@@ -225,7 +231,7 @@ export default function AddFoodScreen() {
     if (!gramsSchema.safeParse(parsedGrams).success) {
       Alert.alert(
         'Cantidad no válida',
-        'Introduce una cantidad entre 1 y 100.000 gramos.',
+        'Introduce una cantidad mayor que 0 y de hasta 100.000 gramos.',
       );
       return;
     }
@@ -253,7 +259,7 @@ export default function AddFoodScreen() {
       router.back();
     } catch {
       setSaving(false);
-      Alert.alert('Error', 'No se ha podido añadir la entrada.');
+      showToast('No se ha podido añadir la entrada.', 'error');
     }
   };
 
@@ -422,10 +428,37 @@ export default function AddFoodScreen() {
           <View style={styles.form}>
             <FormField
               accessibilityLabel="Cantidad en gramos"
+              keyboardType="decimal-pad"
               label="Cantidad (g)"
               value={grams}
               onChange={setGrams}
             />
+            <View style={styles.mealOptions}>
+              {QUICK_GRAMS.map((amount) => (
+                <Pressable
+                  key={amount}
+                  accessibilityLabel={`${amount} gramos`}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    hapticSelection();
+                    setGrams(String(amount));
+                  }}
+                  style={[
+                    styles.mealOption,
+                    grams === String(amount) && styles.mealOptionSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.mealOptionText,
+                      grams === String(amount) && styles.mealOptionTextSelected,
+                    ]}
+                  >
+                    {amount} g
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
             <Text style={styles.label}>Comida</Text>
             <View style={styles.mealOptions}>
@@ -560,11 +593,13 @@ function FoodSection({
 
 function FormField({
   accessibilityLabel,
+  keyboardType,
   label,
   value,
   onChange,
 }: {
   accessibilityLabel?: string;
+  keyboardType?: KeyboardTypeOptions;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -577,6 +612,7 @@ function FormField({
       <Text style={styles.label}>{label}</Text>
       <TextInput
         accessibilityLabel={accessibilityLabel ?? label}
+        keyboardType={keyboardType}
         onChangeText={onChange}
         placeholderTextColor={colors.textMuted}
         style={styles.input}

@@ -10,7 +10,10 @@ export interface DiaryStats {
 
 interface WeekRow {
   local_date: string;
+  /** Sum of the known calories; NULL when no entry of the day has calories. */
   kcal: number | null;
+  entries: number;
+  known: number;
 }
 
 export async function getDiaryStats(
@@ -28,11 +31,9 @@ export async function getDiaryStats(
     ),
     database.getAllAsync<WeekRow>(
       `SELECT meal.local_date,
-              CASE
-                WHEN COUNT(entry.calories_kcal) = COUNT(*)
-                THEN SUM(entry.calories_kcal * entry.grams / 100.0)
-                ELSE NULL
-              END AS kcal
+              SUM(entry.calories_kcal * entry.grams / 100.0) AS kcal,
+              COUNT(*) AS entries,
+              COUNT(entry.calories_kcal) AS known
        FROM diary_entries AS entry
        INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
        WHERE meal.local_date >= ?
@@ -41,15 +42,18 @@ export async function getDiaryStats(
     ),
   ]);
 
-  const weekMap = new Map(
-    weekRows.map((row) => [row.local_date, row.kcal]),
-  );
+  const weekMap = new Map(weekRows.map((row) => [row.local_date, row]));
 
   const week: DayCalories[] = [];
   for (let offset = -6; offset <= 0; offset += 1) {
     const localDate = addDays(today, offset);
-    const kcal = weekMap.get(localDate);
-    week.push({ localDate, caloriesKcal: kcal ?? null });
+    const row = weekMap.get(localDate);
+    week.push({
+      localDate,
+      caloriesKcal: row?.kcal ?? null,
+      partial: row ? row.known < row.entries : false,
+      logged: row ? row.entries > 0 : false,
+    });
   }
 
   return {

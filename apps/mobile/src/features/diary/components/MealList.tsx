@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { entryNutrients, formatPartialAmount } from '@/features/diary/utils/totals';
 import { hapticSelection } from '@/features/haptics/haptics';
 import {
   radius,
@@ -47,7 +48,6 @@ export function MealList({
     <View style={styles.list}>
       {MEALS.map(({ type, label }, index) => {
         const meal = meals[type];
-        const calories = meal.nutrients.caloriesKcal;
         const isDetailed = variant === 'detailed';
         const isPressable = variant === 'summary' && Boolean(onMealPress);
 
@@ -72,7 +72,7 @@ export function MealList({
             </View>
             <View style={styles.mealActions}>
               <Text style={styles.calories}>
-                {calories === null ? '—' : Math.round(calories)}
+                {formatPartialAmount(meal.partial.caloriesKcal)}
                 <Text style={styles.unit}> kcal</Text>
               </Text>
               {isDetailed && onAddFood ? (
@@ -147,7 +147,10 @@ export function MealList({
                     />
                   </Pressable>
                 ) : (
-                  meal.entries.map((entry) => (
+                  meal.entries.map((entry) => {
+                    const eaten = entryNutrients(entry.per100g, entry.grams);
+
+                    return (
                     <Pressable
                       key={entry.id}
                       accessibilityLabel={`${entry.foodName}, ${entry.grams} gramos`}
@@ -165,34 +168,29 @@ export function MealList({
                           <MacroBadge
                             color={colors.protein}
                             label="P"
-                            value={entry.per100g.proteinGrams}
-                            grams={entry.grams}
+                            amount={eaten.proteinGrams}
                           />
                           <MacroBadge
                             color={colors.carbohydrates}
                             label="C"
-                            value={entry.per100g.carbohydrateGrams}
-                            grams={entry.grams}
+                            amount={eaten.carbohydrateGrams}
                           />
                           <MacroBadge
                             color={colors.fat}
                             label="G"
-                            value={entry.per100g.fatGrams}
-                            grams={entry.grams}
+                            amount={eaten.fatGrams}
                           />
                         </View>
                       </View>
                       <Text style={styles.entryCalories}>
-                        {entry.per100g.caloriesKcal === null
+                        {eaten.caloriesKcal === null
                           ? '—'
-                          : Math.round(
-                              (entry.per100g.caloriesKcal * entry.grams) /
-                                100,
-                            )}
+                          : Math.round(eaten.caloriesKcal)}
                         <Text style={styles.unit}> kcal</Text>
                       </Text>
                     </Pressable>
-                  ))
+                    );
+                  })
                 )}
               </View>
             ) : null}
@@ -205,26 +203,23 @@ export function MealList({
 
 function MacroBadge({
   label,
-  value,
+  amount,
   color,
-  grams,
 }: {
   label: string;
-  value: number | null;
+  amount: number | null;
   color: string;
-  grams: number;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  if (value === null) return null;
+  if (amount === null) return null;
 
-  const amount = Math.round((value * grams) / 100);
   return (
     <View style={styles.macroBadge}>
       <View style={[styles.macroDot, { backgroundColor: color }]} />
       <Text style={styles.macroBadgeText}>
-        {label} {amount}g
+        {label} {Math.round(amount)}g
       </Text>
     </View>
   );

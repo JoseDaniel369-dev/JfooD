@@ -1,24 +1,13 @@
-import {
-  calculateNutrients,
-  gramsSchema,
-  nutrientsPer100gSchema,
-  sumNutrients,
-  type Nutrients,
-} from '@jfood/core';
+import { gramsSchema, nutrientsPer100gSchema } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { ensureMeal } from '@/data/sqlite/repositories/diaryRepository';
 import { generateId } from '@/data/sqlite/utils/id';
-import type { DiaryEntry, MealSummary, MealType } from '@/features/diary/types';
+import { assertLocalDate } from '@/features/diary/utils/date';
+import type { DiaryEntry, MealType } from '@/features/diary/types';
+import { buildMeals, summarizeEntries } from '@/features/diary/utils/summarize';
 import type { PlanDay } from '@/features/plan/types';
 import type { Food } from '@/features/foods/types';
-
-const EMPTY_NUTRIENTS: Nutrients = {
-  caloriesKcal: 0,
-  proteinGrams: 0,
-  carbohydrateGrams: 0,
-  fatGrams: 0,
-};
 
 interface EntryRow {
   id: string;
@@ -47,22 +36,14 @@ export async function getPlanDay(
   );
 
   const entries = rows.map(mapEntry);
-  const consumed = entries.length
-    ? sumNutrients(
-        entries.map((entry) => calculateNutrients(entry.per100g, entry.grams)),
-      )
-    : EMPTY_NUTRIENTS;
+  const total = summarizeEntries(entries);
 
   return {
     localDate,
     entries,
-    consumed,
-    meals: {
-      breakfast: summarizeMeal(entries, 'breakfast'),
-      lunch: summarizeMeal(entries, 'lunch'),
-      snack: summarizeMeal(entries, 'snack'),
-      dinner: summarizeMeal(entries, 'dinner'),
-    },
+    consumed: total.nutrients,
+    consumedPartial: total.partial,
+    meals: buildMeals(entries),
   };
 }
 
@@ -81,24 +62,6 @@ function mapEntry(row: EntryRow): DiaryEntry {
   };
 }
 
-function summarizeMeal(
-  entries: readonly DiaryEntry[],
-  mealType: MealType,
-): MealSummary {
-  const mealEntries = entries.filter((entry) => entry.mealType === mealType);
-
-  return {
-    entries: mealEntries,
-    nutrients: mealEntries.length
-      ? sumNutrients(
-          mealEntries.map((entry) =>
-            calculateNutrients(entry.per100g, entry.grams),
-          ),
-        )
-      : EMPTY_NUTRIENTS,
-  };
-}
-
 interface AddPlanEntryInput {
   localDate: string;
   mealType: MealType;
@@ -110,6 +73,7 @@ export async function addPlanEntry(
   database: SQLiteDatabase,
   input: AddPlanEntryInput,
 ): Promise<void> {
+  assertLocalDate(input.localDate);
   const validGrams = gramsSchema.parse(input.grams);
   const per100g = nutrientsPer100gSchema.parse({
     caloriesKcal: input.food.caloriesKcal,
@@ -164,6 +128,7 @@ export async function movePlanEntry(
   targetLocalDate: string,
   targetMealType: MealType,
 ): Promise<void> {
+  assertLocalDate(targetLocalDate);
   const entry = await database.getFirstAsync<{ id: string }>(
     'SELECT id FROM plan_entries WHERE id = ?',
     [entryId],

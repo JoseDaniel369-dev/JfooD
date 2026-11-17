@@ -3,9 +3,10 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { nutrientsPer100gSchema } from '@jfood/core';
+import { foodInputNutrientsSchema } from '@jfood/core';
 
 import { ErrorState, LoadingState } from '@/components/AsyncState';
+import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -129,7 +130,7 @@ export default function FoodDetailScreen() {
       return;
     }
 
-    const macros = nutrientsPer100gSchema.safeParse({
+    const macros = foodInputNutrientsSchema.safeParse({
       caloriesKcal: caloriesValue.value,
       proteinGrams: proteinValue.value,
       carbohydrateGrams: carbsValue.value,
@@ -137,7 +138,7 @@ export default function FoodDetailScreen() {
     });
 
     if (!macros.success) {
-      setFormError('Los valores nutricionales deben ser 0 o mayores.');
+      setFormError(describeNutrientsError(macros.error.issues));
       return;
     }
 

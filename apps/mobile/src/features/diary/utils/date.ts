@@ -44,3 +44,26 @@ export function addDays(localDate: string, days: number): string {
   date.setDate(date.getDate() + days);
   return toLocalDate(date);
 }
+
+/** True for a real calendar date written as YYYY-MM-DD (e.g. rejects 2026-02-31). */
+export function isValidLocalDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split('-').map(Number) as [number, number, number];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/** Returns the date unchanged or throws a Spanish error when it is not valid. */
+export function assertLocalDate(value: string): string {
+  if (!isValidLocalDate(value)) {
+    throw new Error('La fecha no es válida.');
+  }
+  return value;
+}

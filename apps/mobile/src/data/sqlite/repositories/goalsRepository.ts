@@ -20,18 +20,27 @@ export async function getLatestGoals(
   database: SQLiteDatabase,
   localDate: string,
 ): Promise<{ goals: NutritionGoals; goalsAreDefault: boolean }> {
-  const row = await database.getFirstAsync<GoalRow>(
-    `SELECT calories_kcal, protein_grams, carbohydrate_grams, fat_grams
-     FROM nutrition_goals
-     WHERE effective_from <= ?
-     ORDER BY effective_from DESC, id DESC
-     LIMIT 1`,
-    localDate,
-  );
+  const row =
+    (await database.getFirstAsync<GoalRow>(
+      `SELECT calories_kcal, protein_grams, carbohydrate_grams, fat_grams
+       FROM nutrition_goals
+       WHERE effective_from <= ?
+       ORDER BY effective_from DESC, id DESC
+       LIMIT 1`,
+      localDate,
+    )) ??
+    // Days before the first saved goal (e.g. logging "yesterday" right after
+    // onboarding) use the earliest real goal instead of the provisional default.
+    (await database.getFirstAsync<GoalRow>(
+      `SELECT calories_kcal, protein_grams, carbohydrate_grams, fat_grams
+       FROM nutrition_goals
+       ORDER BY effective_from ASC, id ASC
+       LIMIT 1`,
+    ));
 
   return {
     goals: row ? mapGoals(row) : DEFAULT_GOALS,
-    goalsAreDefault: row === null,
+    goalsAreDefault: !row,
   };
 }
 

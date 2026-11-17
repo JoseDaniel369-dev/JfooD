@@ -1,9 +1,14 @@
 export {
+  FOOD_INPUT_LIMITS,
   calculateNutrients,
+  foodInputNutrientsSchema,
   gramsSchema,
   nutrientsPer100gSchema,
   sumNutrients,
+  sumNutrientsKnown,
   type Nutrients,
+  type PartialNutrient,
+  type PartialNutrients,
 } from './nutrition/nutrients.js';
 export {
   ACTIVITY_LEVELS,
@@ -13,6 +18,8 @@ export {
   calculateBmr,
   calculateNutritionGoals,
   calculateTdee,
+  MIN_DAILY_CALORIES_KCAL,
+  PROFILE_LIMITS,
   mifflinVariantSchema,
   userProfileSchema,
   type ActivityLevel,

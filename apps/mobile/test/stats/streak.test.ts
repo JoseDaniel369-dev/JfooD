@@ -51,3 +51,15 @@ test('computeWeekStats handles empty week', () => {
   assert.equal(result.loggedDays, 0);
   assert.equal(result.averageKcal, null);
 });
+
+test('computeWeekStats counts partial days as logged but keeps them out of the average', () => {
+  const records = [
+    { localDate: '2026-11-12', caloriesKcal: 2000 },
+    { localDate: '2026-11-13', caloriesKcal: 800, partial: true, logged: true },
+    { localDate: '2026-11-14', caloriesKcal: null, logged: true },
+  ];
+  const result = computeWeekStats(records, '2026-11-14');
+  assert.equal(result.loggedDays, 3);
+  assert.equal(result.averageKcal, 2000);
+  assert.equal(result.days.at(-1)?.logged, true);
+});

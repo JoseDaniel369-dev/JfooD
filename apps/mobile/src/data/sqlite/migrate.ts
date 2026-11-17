@@ -22,6 +22,15 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
     'PRAGMA user_version',
   );
   const currentVersion = result?.user_version ?? 0;
+  const latestVersion = migrations[migrations.length - 1]?.version ?? 0;
+
+  if (currentVersion > latestVersion) {
+    // An older build opened a database created by a newer one. Running on it
+    // could corrupt data the older code does not understand, so stop here.
+    throw new Error(
+      `La base de datos (v${currentVersion}) es más nueva que esta versión de la app (v${latestVersion}). Actualiza JfooD.`,
+    );
+  }
 
   for (const migration of migrations) {
     if (migration.version <= currentVersion) {

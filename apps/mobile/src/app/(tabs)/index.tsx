@@ -21,6 +21,14 @@ import { isScannerEnabled } from '@/config/api';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { formatLocalDate } from '@/features/diary/utils/date';
+import { currentDefaultMeal } from '@/features/diary/utils/meals';
+import {
+  describeUnknown,
+  formatPartialAmount,
+  formatRemaining,
+  remainingCalories,
+  remainingLabel,
+} from '@/features/diary/utils/totals';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { durations, easings } from '@/features/motion/motion';
 import { useCountUp } from '@/features/motion/useCountUp';
@@ -37,6 +45,7 @@ import {
   useTheme,
   type ThemeColors,
 } from '@/theme';
+import type { PartialNutrient } from '@jfood/core';
 import type { MealType } from '@/features/diary/types';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -80,11 +89,9 @@ export default function HomeScreen() {
     );
   }
 
-  const consumedCalories = day.consumed.caloriesKcal;
-  const remainingCalories =
-    consumedCalories === null
-      ? null
-      : day.goals.caloriesKcal - consumedCalories;
+  const kcal = day.consumedPartial.caloriesKcal;
+  const remaining = remainingCalories(day.goals.caloriesKcal, kcal);
+  const unknownCaloriesNotice = describeUnknown(kcal);
 
   const handleMealPress = (mealType: MealType) => {
     router.push({
@@ -109,7 +116,7 @@ export default function HomeScreen() {
   const handleFabPress = () => {
     router.push({
       pathname: '/diary/add-food',
-      params: { date: localDate, meal: 'breakfast' },
+      params: { date: localDate, meal: currentDefaultMeal() },
     });
   };
 
@@ -133,8 +140,9 @@ export default function HomeScreen() {
               <AnimatedNumber
                 color={colors.onHero}
                 decimals={0}
+                prefix={kcal.complete ? '' : '≥ '}
                 style={styles.calorieValue}
-                value={consumedCalories}
+                value={kcal.knownTotal}
               />
               <Text style={styles.calorieGoal}>
                 / {formatNumber(day.goals.caloriesKcal)} kcal
@@ -142,14 +150,10 @@ export default function HomeScreen() {
             </View>
             <View style={styles.calorieFooter}>
               <Text style={styles.calorieFooterLabel}>
-                {remainingCalories !== null && remainingCalories < 0
-                  ? 'Por encima del objetivo'
-                  : 'Restantes'}
+                {remainingLabel(remaining)}
               </Text>
               <Text style={styles.calorieFooterValue}>
-                {remainingCalories === null
-                  ? '—'
-                  : `${formatNumber(Math.abs(remainingCalories))} kcal`}
+                {formatRemaining(remaining)}
               </Text>
             </View>
           </View>
@@ -176,8 +180,14 @@ export default function HomeScreen() {
           color={colors.accent}
           maximum={day.goals.caloriesKcal}
           trackColor="rgba(255,255,255,0.18)"
-          value={consumedCalories}
+          value={kcal.knownTotal}
         />
+
+        {unknownCaloriesNotice ? (
+          <Text style={styles.goalNotice}>
+            {unknownCaloriesNotice}. Completa sus datos para ver el total real.
+          </Text>
+        ) : null}
 
         {day.goalsAreDefault ? (
           <Text style={styles.goalNotice}>
@@ -198,25 +208,30 @@ export default function HomeScreen() {
           }
         />
         <WeekBars days={week.days} />
+        {week.days.some((day) => day.partial || (day.logged && day.caloriesKcal === null)) ? (
+          <Text style={styles.weekLegend}>
+            Barras naranjas: días con alimentos sin calorías (valor mínimo).
+          </Text>
+        ) : null}
       </Card>
 
       <Card animated delay={100}>
         <SectionHeader title="Macronutrientes" />
         <MacroRow
           color={colors.protein}
-          consumed={day.consumed.proteinGrams}
+          consumed={day.consumedPartial.proteinGrams}
           goal={day.goals.proteinGrams}
           label="Proteínas"
         />
         <MacroRow
           color={colors.carbohydrates}
-          consumed={day.consumed.carbohydrateGrams}
+          consumed={day.consumedPartial.carbohydrateGrams}
           goal={day.goals.carbohydrateGrams}
           label="Carbohidratos"
         />
         <MacroRow
           color={colors.fat}
-          consumed={day.consumed.fatGrams}
+          consumed={day.consumedPartial.fatGrams}
           goal={day.goals.fatGrams}
           label="Grasas"
         />
@@ -248,11 +263,6 @@ export default function HomeScreen() {
             icon="add"
             label="+500 ml"
             onPress={() => void handleAddWater(500)}
-          />
-          <ButtonChip
-            icon="water-outline"
-            label="Vaso"
-            onPress={() => void handleAddWater(250)}
           />
         </View>
       </Card>
@@ -300,16 +310,18 @@ function AnimatedNumber({
   color,
   style,
   decimals = 0,
+  prefix = '',
 }: {
   value: number | null;
   color: string;
   style?: object;
   decimals?: number;
+  prefix?: string;
 }) {
   const display = useCountUp(value ?? 0, 600, decimals);
   return (
     <Text style={[style, { color }]}>
-      {value === null ? '—' : String(display)}
+      {value === null ? '—' : `${prefix}${String(display)}`}
     </Text>
   );
 }
@@ -345,7 +357,12 @@ function ButtonChip({
 function WeekBars({
   days,
 }: {
-  days: { localDate: string; caloriesKcal: number | null }[];
+  days: {
+    localDate: string;
+    caloriesKcal: number | null;
+    partial?: boolean;
+    logged?: boolean;
+  }[];
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -357,16 +374,20 @@ function WeekBars({
     <View style={styles.weekBars}>
       {days.map((day, index) => {
         const targetHeight =
-          day.caloriesKcal === null ? 4 : Math.max((day.caloriesKcal / max) * BAR_HEIGHT, 10);
+          day.caloriesKcal === null
+            ? day.logged
+              ? 10
+              : 4
+            : Math.max((day.caloriesKcal / max) * BAR_HEIGHT, 10);
         const label = day.localDate.split('-')[2] ?? '';
 
         return (
           <View key={day.localDate} style={styles.weekBarColumn}>
             <Svg height={BAR_HEIGHT} width={18}>
               <AnimatedBar
-                color={colors.primary}
+                color={day.partial || (day.logged && day.caloriesKcal === null) ? colors.accent : colors.primary}
                 height={targetHeight}
-                opacity={day.caloriesKcal === null ? 0.25 : 1}
+                opacity={day.logged ? (day.partial || day.caloriesKcal === null ? 0.7 : 1) : 0.25}
               />
             </Svg>
             <Text style={styles.weekBarLabel}>
@@ -455,7 +476,7 @@ function ShortcutButton({
 
 interface MacroRowProps {
   label: string;
-  consumed: number | null;
+  consumed: PartialNutrient;
   goal: number;
   color: string;
 }
@@ -472,10 +493,11 @@ function MacroRow({ label, consumed, goal, color }: MacroRowProps) {
           <Text style={styles.macroLabel}>{label}</Text>
         </View>
         <Text style={styles.macroValue}>
-          {formatNumber(consumed)} <Text style={styles.macroGoal}>/ {goal} g</Text>
+          {formatPartialAmount(consumed)}{' '}
+          <Text style={styles.macroGoal}>/ {goal} g</Text>
         </Text>
       </View>
-      <ProgressBar color={color} maximum={goal} value={consumed} />
+      <ProgressBar color={color} maximum={goal} value={consumed.knownTotal} />
     </View>
   );
 }
@@ -597,6 +619,11 @@ function createStyles(colors: ThemeColors) {
     weekBarColumn: {
       alignItems: 'center',
       gap: spacing.xs,
+    },
+    weekLegend: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontSize: 11,
     },
     weekBarLabel: {
       ...typography.caption,

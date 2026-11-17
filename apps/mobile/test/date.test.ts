@@ -3,7 +3,9 @@ import { test } from 'node:test';
 
 import {
   addDays,
+  assertLocalDate,
   formatLocalDate,
+  isValidLocalDate,
   toLocalDate,
 } from '../src/features/diary/utils/date';
 
@@ -28,4 +30,19 @@ test('addDays moves to the previous day', () => {
 test('addDays crosses month boundaries', () => {
   assert.equal(addDays('2026-01-31', 1), '2026-02-01');
   assert.equal(addDays('2026-03-01', -1), '2026-02-28');
+});
+
+test('isValidLocalDate accepts real dates and rejects malformed or impossible ones', () => {
+  assert.equal(isValidLocalDate('2026-11-17'), true);
+  assert.equal(isValidLocalDate('2028-02-29'), true);
+  assert.equal(isValidLocalDate('2026-02-29'), false);
+  assert.equal(isValidLocalDate('2026-02-31'), false);
+  assert.equal(isValidLocalDate('garbage'), false);
+  assert.equal(isValidLocalDate('2026-1-5'), false);
+  assert.equal(isValidLocalDate(''), false);
+});
+
+test('assertLocalDate throws a Spanish message for invalid dates', () => {
+  assert.equal(assertLocalDate('2026-11-17'), '2026-11-17');
+  assert.throws(() => assertLocalDate('garbage'), /fecha no es válida/);
 });

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -19,10 +19,20 @@ import {
   moveEntry,
   updateEntryGrams,
 } from '@/data/sqlite/repositories/diaryRepository';
+import { updateEntryNutrients } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
+import { NutrientsEditorModal } from '@/features/diary/components/NutrientsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { currentDefaultMeal } from '@/features/diary/utils/meals';
+import {
+  describeUnknown,
+  formatPartialAmount,
+  formatRemaining,
+  remainingCalories,
+  remainingLabel,
+} from '@/features/diary/utils/totals';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
 import { animateNextLayout } from '@/features/motion/motion';
 import { useSwipeDays } from '@/features/motion/useSwipeDays';
@@ -46,6 +56,7 @@ export default function DiaryScreen() {
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [activeEntry, setActiveEntry] = useState<DiaryEntry | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
+  const [completingEntry, setCompletingEntry] = useState<DiaryEntry | null>(null);
 
   const handlePreviousDay = useCallback(() => {
     setLocalDate((current) => addDays(current, -1));
@@ -83,7 +94,7 @@ export default function DiaryScreen() {
         await moveEntry(database, entry.id, localDate, targetMealType);
         await refresh();
       } catch {
-        Alert.alert('Error', 'No se ha podido mover la entrada.');
+        showToast('No se ha podido mover la entrada.', 'error');
       }
     })();
   };
@@ -106,9 +117,31 @@ export default function DiaryScreen() {
         hapticWarning();
         showToast('Entrada eliminada.');
       } catch {
-        Alert.alert('Error', 'No se ha podido eliminar la entrada.');
+        showToast('No se ha podido eliminar la entrada.', 'error');
       }
     })();
+  };
+
+  const handleSaveNutrients = async (
+    values: Parameters<typeof updateEntryNutrients>[3],
+    alsoUpdateFood: boolean,
+  ): Promise<string | null> => {
+    if (!completingEntry) return null;
+
+    try {
+      await updateEntryNutrients(database, 'diary_entries', completingEntry.id, values, {
+        alsoUpdateFood,
+      });
+      setCompletingEntry(null);
+      await refresh();
+      hapticSuccess();
+      showToast('Valores nutricionales actualizados.');
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : 'No se han podido guardar los valores.';
+    }
   };
 
   const handleSaveGrams = async (grams: number) => {
@@ -122,7 +155,7 @@ export default function DiaryScreen() {
       hapticSuccess();
       showToast('Cantidad actualizada.');
     } catch {
-      Alert.alert('Error', 'No se ha podido actualizar la cantidad.');
+      showToast('No se ha podido actualizar la cantidad.', 'error');
     }
   };
 
@@ -144,6 +177,16 @@ export default function DiaryScreen() {
           onPress: () => {
             setActiveEntry(null);
             setEditingEntry(activeEntry);
+          },
+        },
+        {
+          label: hasUnknownNutrients(activeEntry)
+            ? 'Completar datos nutricionales'
+            : 'Editar valores nutricionales',
+          icon: 'nutrition-outline' as const,
+          onPress: () => {
+            setActiveEntry(null);
+            setCompletingEntry(activeEntry);
           },
         },
         ...moveOptions,
@@ -175,12 +218,9 @@ export default function DiaryScreen() {
     );
   }
 
-  const consumedCalories = day.consumed.caloriesKcal;
-  const remainingCalories =
-    consumedCalories === null
-      ? null
-      : day.goals.caloriesKcal - consumedCalories;
-  const overGoal = remainingCalories !== null && remainingCalories < 0;
+  const kcal = day.consumedPartial.caloriesKcal;
+  const remaining = remainingCalories(day.goals.caloriesKcal, kcal);
+  const unknownCaloriesNotice = describeUnknown(kcal);
 
   return (
     <Screen fab>
@@ -210,7 +250,7 @@ export default function DiaryScreen() {
           <Text style={styles.cardLabel}>CALORÍAS</Text>
           <View style={styles.calorieNumbers}>
             <Text style={styles.calorieValue}>
-              {formatNumber(consumedCalories)}
+              {formatPartialAmount(kcal)}
             </Text>
             <Text style={styles.calorieGoal}>
               / {formatNumber(day.goals.caloriesKcal)} kcal
@@ -218,14 +258,17 @@ export default function DiaryScreen() {
           </View>
           <View style={styles.calorieFooter}>
             <Text style={styles.calorieFooterLabel}>
-              {overGoal ? 'Por encima del objetivo' : 'Restantes'}
+              {remainingLabel(remaining)}
             </Text>
             <Text style={styles.calorieFooterValue}>
-              {remainingCalories === null
-                ? '—'
-                : `${formatNumber(Math.abs(remainingCalories))} kcal`}
+              {formatRemaining(remaining)}
             </Text>
           </View>
+          {unknownCaloriesNotice ? (
+            <Text style={styles.goalNotice}>
+              {unknownCaloriesNotice}. Completa sus datos para ver el total real.
+            </Text>
+          ) : null}
           {day.goalsAreDefault ? (
             <Text style={styles.goalNotice}>
               Objetivos provisionales: no calculados con tus datos personales.
@@ -247,7 +290,7 @@ export default function DiaryScreen() {
         </Card>
       </Animated.View>
 
-      <Fab accessibilityLabel="Añadir comida" onPress={() => handleAddFood('breakfast')} />
+      <Fab accessibilityLabel="Añadir comida" onPress={() => handleAddFood(currentDefaultMeal())} />
 
       <ActionSheet
         options={actionOptions}
@@ -266,6 +309,18 @@ export default function DiaryScreen() {
         onConfirm={confirmDelete}
       />
 
+      {completingEntry ? (
+        <NutrientsEditorModal
+          key={completingEntry.id}
+          canUpdateFood
+          foodName={completingEntry.foodName}
+          initial={completingEntry.per100g}
+          onClose={() => setCompletingEntry(null)}
+          onSave={handleSaveNutrients}
+          visible
+        />
+      ) : null}
+
       {editingEntry ? (
         <GramsEditorModal
           key={editingEntry.id}
@@ -278,6 +333,10 @@ export default function DiaryScreen() {
       ) : null}
     </Screen>
   );
+}
+
+function hasUnknownNutrients(entry: DiaryEntry): boolean {
+  return Object.values(entry.per100g).some((value) => value === null);
 }
 
 function formatNumber(value: number | null): string {

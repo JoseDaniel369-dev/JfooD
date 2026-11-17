@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -143,7 +142,7 @@ export default function ProgressScreen() {
         showToast('Registro eliminado.');
         resetForm();
       } catch {
-        Alert.alert('Error', 'No se ha podido eliminar el registro.');
+        showToast('No se ha podido eliminar el registro.', 'error');
       }
     })();
   };
@@ -300,6 +299,7 @@ export default function ProgressScreen() {
 
         {showDatePicker && !editingDate ? (
           <DateTimePicker
+            maximumDate={new Date()}
             mode="date"
             value={parseLocalDate(date) ?? new Date()}
             onChange={handleDateChange}

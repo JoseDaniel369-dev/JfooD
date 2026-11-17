@@ -9,6 +9,7 @@ import {
   getProfileFormData,
   saveProfile,
   type ProfileFormData,
+  type SaveProfileOptions,
 } from '@/data/sqlite/repositories/profileRepository';
 import { toLocalDate } from '@/features/diary/utils/date';
 
@@ -32,8 +33,10 @@ export function useProfile() {
   });
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
-    setState({ profile: null, goals: null, error: null, loading: true });
+  const load = useCallback(async (silent = false) => {
+    if (!silent) {
+      setState({ profile: null, goals: null, error: null, loading: true });
+    }
 
     try {
       const profile = await getProfileFormData(database);
@@ -46,41 +49,46 @@ export function useProfile() {
 
       setState({ profile, goals, error: null, loading: false });
     } catch {
-      setState({ profile: null, goals: null, error: LOAD_ERROR, loading: false });
+      setState((current) =>
+        silent
+          ? { ...current, error: LOAD_ERROR }
+          : { profile: null, goals: null, error: LOAD_ERROR, loading: false },
+      );
     }
   }, [database]);
 
   const update = useCallback(
-    async (data: ProfileFormData): Promise<NutritionGoals | null> => {
+    async (
+      data: ProfileFormData,
+      options?: SaveProfileOptions,
+    ): Promise<NutritionGoals | null> => {
       setSaving(true);
 
       try {
-        const goals = await saveProfile(database, data);
-        setState({ profile: data, goals, error: null, loading: false });
+        const goals = await saveProfile(database, data, options);
+        // Re-read from the database: the stored weight may differ from the
+        // form when it was edited elsewhere (e.g. the Progress tab).
+        await load(true);
         return goals;
-      } catch (error) {
-        const message =
-          error instanceof Error && error.message
-            ? error.message
-            : SAVE_ERROR;
-        setState((current) => ({ ...current, error: message }));
+      } catch {
+        setState((current) => ({ ...current, error: SAVE_ERROR }));
         return null;
       } finally {
         setSaving(false);
       }
     },
-    [database],
+    [database, load],
   );
 
   const hasLoaded = useRef(false);
 
+  // First focus shows the loading state; later focuses refresh silently so
+  // data edited in other tabs (weight, height) is never shown stale.
   useFocusEffect(
     useCallback(() => {
-      if (hasLoaded.current) {
-        return;
-      }
+      const silent = hasLoaded.current;
       hasLoaded.current = true;
-      void load();
+      void load(silent);
     }, [load]),
   );
 

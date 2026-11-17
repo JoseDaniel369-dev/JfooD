@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { generateId } from '@/data/sqlite/utils/id';
+import { assertLocalDate, toLocalDate } from '@/features/diary/utils/date';
 
 export interface WeightLog {
   localDate: string;
@@ -41,6 +42,11 @@ export async function upsertWeightLog(
   database: SQLiteDatabase,
   input: UpsertWeightLogInput,
 ): Promise<void> {
+  assertLocalDate(input.localDate);
+  if (input.localDate > toLocalDate(new Date())) {
+    throw new Error('No se puede registrar el peso de una fecha futura.');
+  }
+
   if (!Number.isFinite(input.weightKg) || input.weightKg <= 0) {
     throw new Error('El peso debe ser un número mayor que 0.');
   }

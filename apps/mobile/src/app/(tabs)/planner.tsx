@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -22,14 +22,20 @@ import {
   movePlanEntry,
   updatePlanEntryGrams,
 } from '@/data/sqlite/repositories/planRepository';
+import { countDiaryEntries } from '@/data/sqlite/repositories/diaryRepository';
+import { updateEntryNutrients } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
+import { NutrientsEditorModal } from '@/features/diary/components/NutrientsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
 import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { currentDefaultMeal } from '@/features/diary/utils/meals';
+import { describeUnknown, formatPartialAmount } from '@/features/diary/utils/totals';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
 import { animateNextLayout } from '@/features/motion/motion';
 import { useSwipeDays } from '@/features/motion/useSwipeDays';
 import { usePlanDay } from '@/features/plan/hooks/usePlanDay';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import type { PartialNutrient } from '@jfood/core';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -49,7 +55,9 @@ export default function PlannerScreen() {
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [activeEntry, setActiveEntry] = useState<DiaryEntry | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
+  const [completingEntry, setCompletingEntry] = useState<DiaryEntry | null>(null);
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
+  const [existingDiaryEntries, setExistingDiaryEntries] = useState(0);
 
   const handlePreviousDay = useCallback(() => {
     setLocalDate((current) => addDays(current, -1));
@@ -87,7 +95,7 @@ export default function PlannerScreen() {
         await movePlanEntry(database, entry.id, localDate, targetMealType);
         await refresh();
       } catch {
-        Alert.alert('Error', 'No se ha podido mover la entrada.');
+        showToast('No se ha podido mover la entrada.', 'error');
       }
     })();
   };
@@ -110,9 +118,31 @@ export default function PlannerScreen() {
         hapticWarning();
         showToast('Entrada eliminada del plan.');
       } catch {
-        Alert.alert('Error', 'No se ha podido eliminar la entrada.');
+        showToast('No se ha podido eliminar la entrada.', 'error');
       }
     })();
+  };
+
+  const handleSaveNutrients = async (
+    values: Parameters<typeof updateEntryNutrients>[3],
+    alsoUpdateFood: boolean,
+  ): Promise<string | null> => {
+    if (!completingEntry) return null;
+
+    try {
+      await updateEntryNutrients(database, 'plan_entries', completingEntry.id, values, {
+        alsoUpdateFood,
+      });
+      setCompletingEntry(null);
+      await refresh();
+      hapticSuccess();
+      showToast('Valores nutricionales actualizados.');
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : 'No se han podido guardar los valores.';
+    }
   };
 
   const handleSaveGrams = async (grams: number) => {
@@ -126,8 +156,17 @@ export default function PlannerScreen() {
       hapticSuccess();
       showToast('Cantidad actualizada.');
     } catch {
-      Alert.alert('Error', 'No se ha podido actualizar la cantidad.');
+      showToast('No se ha podido actualizar la cantidad.', 'error');
     }
+  };
+
+  const openCopyConfirm = async () => {
+    try {
+      setExistingDiaryEntries(await countDiaryEntries(database, localDate));
+    } catch {
+      setExistingDiaryEntries(0);
+    }
+    setShowCopyConfirm(true);
   };
 
   const handleCopyToDiary = async () => {
@@ -139,7 +178,7 @@ export default function PlannerScreen() {
       hapticSuccess();
       showToast('El día se ha copiado al diario.');
     } catch {
-      Alert.alert('Error', 'No se ha podido copiar el plan al diario.');
+      showToast('No se ha podido copiar el plan al diario.', 'error');
     }
   };
 
@@ -161,6 +200,16 @@ export default function PlannerScreen() {
           onPress: () => {
             setActiveEntry(null);
             setEditingEntry(activeEntry);
+          },
+        },
+        {
+          label: hasUnknownNutrients(activeEntry)
+            ? 'Completar datos nutricionales'
+            : 'Editar valores nutricionales',
+          icon: 'nutrition-outline' as const,
+          onPress: () => {
+            setActiveEntry(null);
+            setCompletingEntry(activeEntry);
           },
         },
         ...moveOptions,
@@ -223,28 +272,35 @@ export default function PlannerScreen() {
               color={colors.primary}
               label="Calorías"
               unit="kcal"
-              value={day.consumed.caloriesKcal}
+              value={day.consumedPartial.caloriesKcal}
             />
             <TotalItem
               color={colors.protein}
               label="Proteínas"
               unit="g"
-              value={day.consumed.proteinGrams}
+              value={day.consumedPartial.proteinGrams}
             />
             <TotalItem
               color={colors.carbohydrates}
               label="Carbos"
               unit="g"
-              value={day.consumed.carbohydrateGrams}
+              value={day.consumedPartial.carbohydrateGrams}
             />
             <TotalItem
               color={colors.fat}
               label="Grasas"
               unit="g"
-              value={day.consumed.fatGrams}
+              value={day.consumedPartial.fatGrams}
             />
           </View>
         </Card>
+
+        {describeUnknown(day.consumedPartial.caloriesKcal) ? (
+          <Text style={styles.unknownNotice}>
+            {describeUnknown(day.consumedPartial.caloriesKcal)}: los totales son
+            un mínimo.
+          </Text>
+        ) : null}
 
         <Card animated delay={100}>
           <SectionHeader
@@ -257,7 +313,7 @@ export default function PlannerScreen() {
               icon="restaurant-outline"
               message="Planifica tu primer alimento para este día."
               title="Día vacío"
-              onAction={() => handleAddFood('breakfast')}
+              onAction={() => handleAddFood(currentDefaultMeal())}
             />
           ) : (
             <MealList
@@ -274,12 +330,12 @@ export default function PlannerScreen() {
             icon="copy-outline"
             title="Copiar al diario"
             variant="accent"
-            onPress={() => setShowCopyConfirm(true)}
+            onPress={() => void openCopyConfirm()}
           />
         ) : null}
       </Animated.View>
 
-      <Fab accessibilityLabel="Añadir alimento" onPress={() => handleAddFood('breakfast')} />
+      <Fab accessibilityLabel="Añadir alimento" onPress={() => handleAddFood(currentDefaultMeal())} />
 
       <ActionSheet
         options={actionOptions}
@@ -290,7 +346,11 @@ export default function PlannerScreen() {
 
       <ConfirmDialog
         confirmLabel="Copiar"
-        message={`Se añadirán ${day.entries.length} entrada(s) del plan al diario. El plan no se borrará.`}
+        message={
+          existingDiaryEntries > 0
+            ? `El diario de este día ya tiene ${existingDiaryEntries} entrada(s). Se añadirán ${day.entries.length} más del plan, así que podrían duplicarse. El plan no se borrará.`
+            : `Se añadirán ${day.entries.length} entrada(s) del plan al diario. El plan no se borrará.`
+        }
         title="Copiar al diario"
         visible={showCopyConfirm}
         onClose={() => setShowCopyConfirm(false)}
@@ -307,6 +367,18 @@ export default function PlannerScreen() {
         onConfirm={confirmDelete}
       />
 
+      {completingEntry ? (
+        <NutrientsEditorModal
+          key={completingEntry.id}
+          canUpdateFood
+          foodName={completingEntry.foodName}
+          initial={completingEntry.per100g}
+          onClose={() => setCompletingEntry(null)}
+          onSave={handleSaveNutrients}
+          visible
+        />
+      ) : null}
+
       {editingEntry ? (
         <GramsEditorModal
           key={editingEntry.id}
@@ -321,6 +393,10 @@ export default function PlannerScreen() {
   );
 }
 
+function hasUnknownNutrients(entry: DiaryEntry): boolean {
+  return Object.values(entry.per100g).some((value) => value === null);
+}
+
 function TotalItem({
   label,
   value,
@@ -328,7 +404,7 @@ function TotalItem({
   color,
 }: {
   label: string;
-  value: number | null;
+  value: PartialNutrient;
   unit: string;
   color: string;
 }) {
@@ -340,7 +416,7 @@ function TotalItem({
       <View style={[styles.totalDot, { backgroundColor: color }]} />
       <Text style={styles.totalLabel}>{label}</Text>
       <Text style={styles.totalValue}>
-        {value === null ? '—' : Math.round(value)}
+        {formatPartialAmount(value)}
         <Text style={styles.totalUnit}> {unit}</Text>
       </Text>
     </View>
@@ -369,6 +445,11 @@ function createStyles(colors: ThemeColors) {
     totalLabel: {
       ...typography.caption,
       color: colors.textMuted,
+    },
+    unknownNotice: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
     },
     totalValue: {
       ...typography.body,

@@ -1,5 +1,7 @@
+import { foodInputNutrientsSchema } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { CreateFoodInput, Food, FoodSource } from '@/features/foods/types';
@@ -28,6 +30,24 @@ const SELECT_FOOD_COLUMNS = `
   is_favorite, cached_at, created_at, updated_at
 `;
 
+function assertFoodNutrients(input: {
+  caloriesKcal?: number | null;
+  proteinGrams?: number | null;
+  carbohydrateGrams?: number | null;
+  fatGrams?: number | null;
+}): void {
+  const result = foodInputNutrientsSchema.safeParse({
+    caloriesKcal: input.caloriesKcal ?? null,
+    proteinGrams: input.proteinGrams ?? null,
+    carbohydrateGrams: input.carbohydrateGrams ?? null,
+    fatGrams: input.fatGrams ?? null,
+  });
+
+  if (!result.success) {
+    throw new Error(describeNutrientsError(result.error.issues));
+  }
+}
+
 export async function createFood(
   database: SQLiteDatabase,
   input: CreateFoodInput,
@@ -36,6 +56,7 @@ export async function createFood(
   if (!name) {
     throw new Error('El nombre del alimento es obligatorio.');
   }
+  assertFoodNutrients(input);
 
   const now = new Date().toISOString();
   const food: Food = {
@@ -113,7 +134,7 @@ export async function getRecentFoods(
   limit = 10,
 ): Promise<Food[]> {
   const rows = await database.getAllAsync<FoodRow>(
-    `SELECT f.*, MAX(latest.last_used) AS last_used
+    `SELECT ${SELECT_FOOD_COLUMNS}
      FROM foods f
      INNER JOIN (
        SELECT food_id, MAX(created_at) AS last_used
@@ -124,7 +145,7 @@ export async function getRecentFoods(
        )
        GROUP BY food_id
      ) latest ON latest.food_id = f.id
-     ORDER BY last_used DESC
+     ORDER BY latest.last_used DESC
      LIMIT ?`,
     [limit],
   );
@@ -202,6 +223,7 @@ export async function updateFood(
   if (!name) {
     throw new Error('El nombre del alimento es obligatorio.');
   }
+  assertFoodNutrients(input);
 
   const now = new Date().toISOString();
 

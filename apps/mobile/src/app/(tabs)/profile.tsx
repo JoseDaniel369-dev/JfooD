@@ -11,7 +11,10 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Button } from '@/components/Button';
 import { useToast } from '@/components/Toast';
-import { ProfileForm } from '@/features/profile/components/ProfileForm';
+import {
+  ProfileForm,
+  type ProfileSubmitMeta,
+} from '@/features/profile/components/ProfileForm';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { parseWaterGoal } from '@/features/water/utils/goal';
@@ -41,8 +44,11 @@ export default function ProfileScreen() {
   const { goalMl: storedWaterGoal, setGoalMl } = useWaterGoal();
   const [waterGoalDraft, setWaterGoalDraft] = useState<string | null>(null);
 
-  const handleSave = async (data: Parameters<typeof update>[0]) => {
-    const result = await update(data);
+  const handleSave = async (
+    data: Parameters<typeof update>[0],
+    meta: ProfileSubmitMeta,
+  ) => {
+    const result = await update(data, { loadedWeightKg: meta.loadedWeightKg });
     if (result) {
       hapticSuccess();
       showToast('Perfil y objetivos guardados.');
@@ -102,8 +108,9 @@ export default function ProfileScreen() {
       {goals ? <GoalsSummary goals={goals} /> : null}
 
       <ProfileForm
+        key={profileKey(profile)}
         initial={profile}
-        onSubmit={(data) => void handleSave(data)}
+        onSubmit={(data, meta) => void handleSave(data, meta)}
         saving={saving}
       />
 
@@ -178,6 +185,18 @@ export default function ProfileScreen() {
       </View>
     </Screen>
   );
+}
+
+/** Remounts the form when the stored profile changes elsewhere. */
+function profileKey(profile: Parameters<typeof ProfileForm>[0]['initial']): string {
+  if (!profile) return 'empty';
+  return [
+    profile.weightKg,
+    profile.heightCm,
+    profile.birthDate,
+    profile.variant,
+    profile.activityLevel,
+  ].join('|');
 }
 
 function GoalsSummary({ goals }: { goals: NutritionGoals }) {

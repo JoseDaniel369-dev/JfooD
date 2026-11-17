@@ -6,6 +6,7 @@ import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import {
   ACTIVITY_LEVELS,
   MIFFLIN_VARIANTS,
+  PROFILE_LIMITS,
   userProfileSchema,
   type ActivityLevel,
   type MifflinVariant,
@@ -26,10 +27,15 @@ import {
   type ThemeColors,
 } from '@/theme';
 
+export interface ProfileSubmitMeta {
+  /** Weight the form displayed when it was created (null for a blank form). */
+  loadedWeightKg: number | null;
+}
+
 interface ProfileFormProps {
   initial?: UserProfile | null;
   saving: boolean;
-  onSubmit: (data: UserProfile) => void;
+  onSubmit: (data: UserProfile, meta: ProfileSubmitMeta) => void;
   submitLabel?: string;
 }
 
@@ -94,7 +100,7 @@ export function ProfileForm({
     }
 
     setFieldErrors({});
-    onSubmit(parsed.data);
+    onSubmit(parsed.data, { loadedWeightKg: initial?.weightKg ?? null });
   };
 
   const errorFor = (key: keyof UserProfile) => fieldErrors[key];
@@ -276,11 +282,14 @@ function getFieldErrorMessage(field: string, zodMessage: string): string {
 
   switch (field) {
     case 'weightKg':
-      return 'Introduce un peso válido en kilogramos.';
+      return `Introduce un peso entre ${PROFILE_LIMITS.minWeightKg} y ${PROFILE_LIMITS.maxWeightKg} kg.`;
     case 'heightCm':
-      return 'Introduce una altura válida en centímetros.';
+      return `Introduce una altura entre ${PROFILE_LIMITS.minHeightCm} y ${PROFILE_LIMITS.maxHeightCm} cm.`;
     case 'birthDate':
-      return 'Selecciona una fecha de nacimiento válida.';
+      // Custom messages from the shared schema are already in Spanish.
+      return /edad|futuro|válida/i.test(zodMessage)
+        ? zodMessage
+        : 'Selecciona una fecha de nacimiento válida.';
     case 'variant':
       return 'Selecciona una opción.';
     case 'activityLevel':

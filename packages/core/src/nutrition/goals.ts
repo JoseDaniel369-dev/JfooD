@@ -15,6 +15,19 @@ export const activityLevelSchema = z.enum(ACTIVITY_LEVELS);
 export type MifflinVariant = z.infer<typeof mifflinVariantSchema>;
 export type ActivityLevel = z.infer<typeof activityLevelSchema>;
 
+/** Plausible ranges for the personal data used by the Mifflin-St Jeor equation. */
+export const PROFILE_LIMITS = {
+  minWeightKg: 25,
+  maxWeightKg: 300,
+  minHeightCm: 100,
+  maxHeightCm: 250,
+  minAgeYears: 10,
+  maxAgeYears: 110,
+} as const;
+
+/** Goals never go below this value, whatever the equation returns. */
+export const MIN_DAILY_CALORIES_KCAL = 1200;
+
 const birthDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -23,7 +36,18 @@ const birthDateSchema = z
   })
   .refine((value) => value <= currentLocalDateString(), {
     message: 'La fecha de nacimiento no puede estar en el futuro.',
-  });
+  })
+  .refine(
+    (value) => {
+      const age = calculateAge(value);
+      return (
+        age >= PROFILE_LIMITS.minAgeYears && age <= PROFILE_LIMITS.maxAgeYears
+      );
+    },
+    {
+      message: `La edad debe estar entre ${PROFILE_LIMITS.minAgeYears} y ${PROFILE_LIMITS.maxAgeYears} años.`,
+    },
+  );
 
 function currentLocalDateString(): string {
   const now = new Date();
@@ -46,8 +70,14 @@ function isRealCalendarDate(value: string): boolean {
 }
 
 export const userProfileSchema = z.object({
-  weightKg: z.number().positive().max(300),
-  heightCm: z.number().positive().max(300),
+  weightKg: z
+    .number()
+    .min(PROFILE_LIMITS.minWeightKg)
+    .max(PROFILE_LIMITS.maxWeightKg),
+  heightCm: z
+    .number()
+    .min(PROFILE_LIMITS.minHeightCm)
+    .max(PROFILE_LIMITS.maxHeightCm),
   birthDate: birthDateSchema,
   variant: mifflinVariantSchema,
   activityLevel: activityLevelSchema,
@@ -151,13 +181,16 @@ export function calculateNutritionGoals({
   weightKg,
   tdee,
 }: NutritionGoalsInput): NutritionGoals {
-  const caloriesKcal = Math.round(tdee);
+  // A goal below the floor would be unsafe advice and a negative one is
+  // meaningless, so the equation result is clamped.
+  const effectiveTdee = Math.max(tdee, MIN_DAILY_CALORIES_KCAL);
+  const caloriesKcal = Math.round(effectiveTdee);
   const proteinGrams = Math.round(weightKg * PROTEIN_PER_KG);
-  const fatGrams = Math.round((tdee * FAT_RATIO) / KCAL_PER_FAT_GRAM);
+  const fatGrams = Math.round((effectiveTdee * FAT_RATIO) / KCAL_PER_FAT_GRAM);
 
   const proteinKcal = proteinGrams * KCAL_PER_PROTEIN_GRAM;
   const fatKcal = fatGrams * KCAL_PER_FAT_GRAM;
-  const remainingKcal = Math.max(0, tdee - proteinKcal - fatKcal);
+  const remainingKcal = Math.max(0, effectiveTdee - proteinKcal - fatKcal);
   const carbohydrateGrams = Math.round(remainingKcal / KCAL_PER_CARB_GRAM);
 
   return {

@@ -1,4 +1,4 @@
-import type { Nutrients } from '@jfood/core';
+import type { Nutrients, PartialNutrients } from '@jfood/core';
 
 export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 
@@ -16,7 +16,10 @@ export interface DiaryEntry {
 
 export interface MealSummary {
   entries: DiaryEntry[];
+  /** Strict total: a nutrient is null when any entry lacks it. */
   nutrients: Nutrients;
+  /** Known part of each total plus how many entries lack the value. */
+  partial: PartialNutrients;
 }
 
 export interface DiaryDay {
@@ -25,6 +28,7 @@ export interface DiaryDay {
   goalsAreDefault: boolean;
   entries: DiaryEntry[];
   consumed: Nutrients;
+  consumedPartial: PartialNutrients;
   meals: Record<MealType, MealSummary>;
 }
 

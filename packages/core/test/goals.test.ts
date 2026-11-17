@@ -116,3 +116,31 @@ test('validates a complete user profile', () => {
   assert.equal(profile.weightKg, 70);
   assert.equal(profile.variant, 'male');
 });
+
+test('rejects implausible weight, height and age instead of producing absurd goals', () => {
+  const base = {
+    weightKg: 70,
+    heightCm: 175,
+    birthDate: '1990-06-15',
+    variant: 'female' as const,
+    activityLevel: 'sedentary' as const,
+  };
+
+  assert.equal(userProfileSchema.safeParse({ ...base, weightKg: 1 }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, weightKg: 24.9 }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, heightCm: 1 }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, heightCm: 251 }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, birthDate: '1900-01-01' }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, birthDate: '2026-01-01' }).success, false);
+  assert.equal(userProfileSchema.safeParse(base).success, true);
+});
+
+test('calorie goals are never below the safety floor', () => {
+  const goals = calculateNutritionGoals({ weightKg: 25, tdee: 150 });
+  assert.equal(goals.caloriesKcal, 1200);
+  assert.ok(goals.carbohydrateGrams >= 0 && goals.fatGrams >= 0);
+
+  const negative = calculateNutritionGoals({ weightKg: 1, tdee: -750 });
+  assert.equal(negative.caloriesKcal, 1200);
+  assert.ok(negative.fatGrams > 0);
+});

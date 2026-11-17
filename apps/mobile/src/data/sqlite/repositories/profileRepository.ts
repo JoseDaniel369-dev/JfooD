@@ -62,22 +62,58 @@ export async function getProfileFormData(
   };
 }
 
+export interface SaveProfileOptions {
+  /**
+   * Weight that the form displayed when it was loaded. When the submitted
+   * weight equals it, the user did not edit the field, so the stored weight
+   * logs are left untouched and goals use the latest real weight instead of
+   * a possibly stale form value.
+   */
+  loadedWeightKg?: number | null;
+}
+
+const WEIGHT_EPSILON_KG = 0.005;
+
 export async function saveProfile(
   database: SQLiteDatabase,
   formData: ProfileFormData,
+  options: SaveProfileOptions = {},
 ): Promise<NutritionGoals> {
   const profile = userProfileSchema.parse(formData);
   const age = calculateAge(profile.birthDate);
-  const bmr = calculateBmr({ ...profile, age });
-  const tdee = calculateTdee(bmr, profile.activityLevel);
-  const goals = calculateNutritionGoals({
-    weightKg: profile.weightKg,
-    tdee,
-  });
   const now = new Date().toISOString();
   const today = toLocalDate(new Date());
+  const weightUntouched =
+    options.loadedWeightKg !== undefined &&
+    options.loadedWeightKg !== null &&
+    Math.abs(options.loadedWeightKg - profile.weightKg) < WEIGHT_EPSILON_KG;
+
+  let goals: NutritionGoals | null = null;
 
   await database.withTransactionAsync(async () => {
+    let effectiveWeightKg = profile.weightKg;
+    let writeWeight = true;
+
+    if (weightUntouched) {
+      const latest = await database.getFirstAsync<WeightRow>(
+        `SELECT weight_kg
+         FROM weight_logs
+         WHERE local_date <= ?
+         ORDER BY local_date DESC, created_at DESC
+         LIMIT 1`,
+        [today],
+      );
+
+      if (latest) {
+        effectiveWeightKg = latest.weight_kg;
+        writeWeight = false;
+      }
+    }
+
+    const bmr = calculateBmr({ ...profile, weightKg: effectiveWeightKg, age });
+    const tdee = calculateTdee(bmr, profile.activityLevel);
+    goals = calculateNutritionGoals({ weightKg: effectiveWeightKg, tdee });
+
     await database.runAsync(
       `INSERT INTO user_profile (id, height_cm, birth_date, mifflin_variant, activity_level, updated_at)
        VALUES (1, ?, ?, ?, ?, ?)
@@ -109,14 +145,20 @@ export async function saveProfile(
       ],
     );
 
-    await database.runAsync(
-      `INSERT INTO weight_logs (id, local_date, weight_kg, note, created_at)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(local_date) DO UPDATE SET
-         weight_kg = excluded.weight_kg`,
-      [generateId(), today, profile.weightKg, null, now],
-    );
+    if (writeWeight) {
+      await database.runAsync(
+        `INSERT INTO weight_logs (id, local_date, weight_kg, note, created_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(local_date) DO UPDATE SET
+           weight_kg = excluded.weight_kg`,
+        [generateId(), today, profile.weightKg, null, now],
+      );
+    }
   });
+
+  if (!goals) {
+    throw new Error('No se han podido calcular los objetivos.');
+  }
 
   return goals;
 }

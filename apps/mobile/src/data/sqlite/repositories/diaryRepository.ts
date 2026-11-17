@@ -1,28 +1,12 @@
-import {
-  calculateNutrients,
-  gramsSchema,
-  nutrientsPer100gSchema,
-  sumNutrients,
-  type Nutrients,
-} from '@jfood/core';
+import { gramsSchema, nutrientsPer100gSchema } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
 import { generateId } from '@/data/sqlite/utils/id';
-import type {
-  DiaryDay,
-  DiaryEntry,
-  MealSummary,
-  MealType,
-} from '@/features/diary/types';
+import { assertLocalDate } from '@/features/diary/utils/date';
+import type { DiaryDay, DiaryEntry, MealType } from '@/features/diary/types';
+import { buildMeals, summarizeEntries } from '@/features/diary/utils/summarize';
 import type { Food } from '@/features/foods/types';
-
-const EMPTY_NUTRIENTS: Nutrients = {
-  caloriesKcal: 0,
-  proteinGrams: 0,
-  carbohydrateGrams: 0,
-  fatGrams: 0,
-};
 
 interface EntryRow {
   id: string;
@@ -54,24 +38,16 @@ export async function getDiaryDay(
   ]);
 
   const entries = entryRows.map(mapEntry);
-  const consumed = entries.length
-    ? sumNutrients(
-        entries.map((entry) => calculateNutrients(entry.per100g, entry.grams)),
-      )
-    : EMPTY_NUTRIENTS;
+  const total = summarizeEntries(entries);
 
   return {
     localDate,
     goals,
     goalsAreDefault,
     entries,
-    consumed,
-    meals: {
-      breakfast: summarizeMeal(entries, 'breakfast'),
-      lunch: summarizeMeal(entries, 'lunch'),
-      snack: summarizeMeal(entries, 'snack'),
-      dinner: summarizeMeal(entries, 'dinner'),
-    },
+    consumed: total.nutrients,
+    consumedPartial: total.partial,
+    meals: buildMeals(entries),
   };
 }
 
@@ -90,22 +66,19 @@ function mapEntry(row: EntryRow): DiaryEntry {
   };
 }
 
-function summarizeMeal(
-  entries: readonly DiaryEntry[],
-  mealType: MealType,
-): MealSummary {
-  const mealEntries = entries.filter((entry) => entry.mealType === mealType);
-
-  return {
-    entries: mealEntries,
-    nutrients: mealEntries.length
-      ? sumNutrients(
-          mealEntries.map((entry) =>
-            calculateNutrients(entry.per100g, entry.grams),
-          ),
-        )
-      : EMPTY_NUTRIENTS,
-  };
+/** Number of diary entries already logged on a date. */
+export async function countDiaryEntries(
+  database: SQLiteDatabase,
+  localDate: string,
+): Promise<number> {
+  const row = await database.getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count
+     FROM diary_entries AS entry
+     INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
+     WHERE meal.local_date = ?`,
+    [localDate],
+  );
+  return row?.count ?? 0;
 }
 
 export async function ensureMeal(
@@ -113,6 +86,7 @@ export async function ensureMeal(
   localDate: string,
   mealType: MealType,
 ): Promise<string> {
+  assertLocalDate(localDate);
   const id = generateId();
   const now = new Date().toISOString();
 
