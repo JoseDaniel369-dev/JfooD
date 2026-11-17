@@ -1,11 +1,44 @@
-import { LayoutAnimation, Platform, UIManager } from 'react-native';
+import {
+  AccessibilityInfo,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+} from 'react-native';
 
+let reducedMotion = false;
+
+// Respect the system "remove animations" setting. The flag is read lazily by
+// the helpers below, so a change while the app is open is honoured too.
+AccessibilityInfo.isReduceMotionEnabled()
+  .then((enabled) => {
+    reducedMotion = enabled;
+  })
+  .catch(() => {
+    // Keep animations on if the setting cannot be read.
+  });
+AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+  reducedMotion = enabled;
+});
+
+export function isReducedMotion(): boolean {
+  return reducedMotion;
+}
+
+/** Durations in ms; they collapse to 0 when the user asked for less motion. */
 export const durations = {
-  fast: 150,
-  normal: 250,
-  slow: 400,
-  slower: 600,
-} as const;
+  get fast(): number {
+    return reducedMotion ? 0 : 150;
+  },
+  get normal(): number {
+    return reducedMotion ? 0 : 250;
+  },
+  get slow(): number {
+    return reducedMotion ? 0 : 400;
+  },
+  get slower(): number {
+    return reducedMotion ? 0 : 600;
+  },
+};
 
 export const easings = {
   easeOutCubic: (t: number) => 1 - Math.pow(1 - t, 3),
@@ -38,5 +71,8 @@ if (
 export function animateNextLayout(
   type: 'easeInEaseOut' | 'spring' | 'linear' = 'easeInEaseOut',
 ): void {
+  if (reducedMotion) {
+    return;
+  }
   LayoutAnimation.configureNext(LayoutAnimation.Presets[type]);
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 
-import { durations, easings } from './motion';
+import { durations, easings, isReducedMotion } from './motion';
 
 interface FadeInViewProps {
   children: ReactNode;
@@ -28,14 +28,14 @@ export function FadeInView({
       Animated.timing(opacity, {
         toValue: 1,
         duration,
-        delay,
+        delay: isReducedMotion() ? 0 : delay,
         useNativeDriver: true,
         easing: (x) => easings.easeOutCubic(x),
       }),
       Animated.timing(translate, {
         toValue: 0,
         duration,
-        delay,
+        delay: isReducedMotion() ? 0 : delay,
         useNativeDriver: true,
         easing: (x) => easings.easeOutCubic(x),
       }),

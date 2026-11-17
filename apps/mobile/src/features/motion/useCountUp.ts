@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated } from 'react-native';
 
-import { durations, easings } from './motion';
+import { durations, easings, isReducedMotion } from './motion';
 
 export function useCountUp(target: number, duration: number = durations.slower, decimals = 0) {
   const [display, setDisplay] = useState(target);
@@ -14,7 +14,7 @@ export function useCountUp(target: number, duration: number = durations.slower, 
 
     Animated.timing(value, {
       toValue: target,
-      duration,
+      duration: isReducedMotion() ? 0 : duration,
       useNativeDriver: true,
       easing: (x) => easings.easeOutCubic(x),
     }).start();
