@@ -6,6 +6,7 @@ import {
   assertLocalDate,
   formatLocalDate,
   isValidLocalDate,
+  startOfWeek,
   toLocalDate,
 } from '../src/features/diary/utils/date';
 
@@ -45,4 +46,12 @@ test('isValidLocalDate accepts real dates and rejects malformed or impossible on
 test('assertLocalDate throws a Spanish message for invalid dates', () => {
   assert.equal(assertLocalDate('2026-11-17'), '2026-11-17');
   assert.throws(() => assertLocalDate('garbage'), /fecha no es válida/);
+});
+
+test('startOfWeek returns the Monday of the week, across month and year boundaries', () => {
+  assert.equal(startOfWeek('2026-11-16'), '2026-11-16'); // Monday
+  assert.equal(startOfWeek('2026-11-17'), '2026-11-16'); // Tuesday
+  assert.equal(startOfWeek('2026-11-22'), '2026-11-16'); // Sunday
+  assert.equal(startOfWeek('2026-12-01'), '2026-11-30'); // Tuesday after month change
+  assert.equal(startOfWeek('2027-01-01'), '2026-12-28'); // Friday across the year
 });

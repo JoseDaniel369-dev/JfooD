@@ -67,3 +67,11 @@ export function assertLocalDate(value: string): string {
   }
   return value;
 }
+
+/** Monday (YYYY-MM-DD) of the week that contains the date. */
+export function startOfWeek(localDate: string): string {
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  const sinceMonday = (date.getDay() + 6) % 7;
+  return addDays(localDate, -sinceMonday);
+}

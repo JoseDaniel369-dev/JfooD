@@ -16,7 +16,9 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
+import { PlanWeekStrip } from '@/features/plan/components/PlanWeekStrip';
 import {
+  copyPlanDay,
   copyPlanToDiary,
   deletePlanEntry,
   movePlanEntry,
@@ -169,6 +171,18 @@ export default function PlannerScreen() {
     setShowCopyConfirm(true);
   };
 
+  const handleDuplicateToNextDay = async () => {
+    try {
+      const target = addDays(localDate, 1);
+      const count = await copyPlanDay(database, localDate, target);
+      hapticSuccess();
+      showToast(`Se han duplicado ${count} entrada(s) en el día siguiente.`);
+      setLocalDate(target);
+    } catch {
+      showToast('No se ha podido duplicar el día.', 'error');
+    }
+  };
+
   const handleCopyToDiary = async () => {
     setShowCopyConfirm(false);
     if (!day || day.entries.length === 0) return;
@@ -265,6 +279,14 @@ export default function PlannerScreen() {
           />
         </Card>
 
+        <Card animated delay={25}>
+          <PlanWeekStrip
+            selectedDate={localDate}
+            version={`${day.entries.length}|${day.consumedPartial.caloriesKcal.knownTotal}`}
+            onSelect={setLocalDate}
+          />
+        </Card>
+
         <Card animated delay={50}>
           <SectionHeader title="Totales del día" />
           <View style={styles.totalRow}>
@@ -324,6 +346,15 @@ export default function PlannerScreen() {
             />
           )}
         </Card>
+
+        {day.entries.length > 0 ? (
+          <Button
+            icon="duplicate-outline"
+            title="Duplicar al día siguiente"
+            variant="secondary"
+            onPress={() => void handleDuplicateToNextDay()}
+          />
+        ) : null}
 
         {day.entries.length > 0 ? (
           <Button

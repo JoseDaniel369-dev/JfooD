@@ -3,7 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { ensureMeal } from '@/data/sqlite/repositories/diaryRepository';
 import { generateId } from '@/data/sqlite/utils/id';
-import { assertLocalDate } from '@/features/diary/utils/date';
+import { addDays, assertLocalDate } from '@/features/diary/utils/date';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 import { buildMeals, summarizeEntries } from '@/features/diary/utils/summarize';
 import type { PlanDay } from '@/features/plan/types';
@@ -153,6 +153,105 @@ export async function deletePlanEntry(
   entryId: string,
 ): Promise<void> {
   await database.runAsync('DELETE FROM plan_entries WHERE id = ?', [entryId]);
+}
+
+export interface PlanDaySummary {
+  localDate: string;
+  entryCount: number;
+  /** Known calories; null when the day has no entries or none has calories. */
+  caloriesKcal: number | null;
+  /** True when some entries have no calories (the total is a minimum). */
+  partial: boolean;
+}
+
+/** Calories planned for each of the 7 days starting at `startLocalDate`. */
+export async function getPlanWeek(
+  database: SQLiteDatabase,
+  startLocalDate: string,
+): Promise<PlanDaySummary[]> {
+  assertLocalDate(startLocalDate);
+  const dates = Array.from({ length: 7 }, (_, index) =>
+    addDays(startLocalDate, index),
+  );
+
+  const rows = await database.getAllAsync<{
+    local_date: string;
+    kcal: number | null;
+    entries: number;
+    known: number;
+  }>(
+    `SELECT local_date,
+            SUM(calories_kcal * grams / 100.0) AS kcal,
+            COUNT(*) AS entries,
+            COUNT(calories_kcal) AS known
+     FROM plan_entries
+     WHERE local_date >= ? AND local_date <= ?
+     GROUP BY local_date`,
+    [dates[0]!, dates[6]!],
+  );
+  const byDate = new Map(rows.map((row) => [row.local_date, row]));
+
+  return dates.map((localDate) => {
+    const row = byDate.get(localDate);
+    return {
+      localDate,
+      entryCount: row?.entries ?? 0,
+      caloriesKcal: row?.kcal ?? null,
+      partial: row ? row.known < row.entries : false,
+    };
+  });
+}
+
+/** Duplicates all planned entries of a day into another day of the plan. */
+export async function copyPlanDay(
+  database: SQLiteDatabase,
+  fromLocalDate: string,
+  toLocalDate: string,
+): Promise<number> {
+  assertLocalDate(fromLocalDate);
+  assertLocalDate(toLocalDate);
+
+  const rows = await database.getAllAsync<EntryRow>(
+    `SELECT meal_type, food_id, food_name, grams,
+            calories_kcal, protein_grams, carbohydrate_grams, fat_grams
+     FROM plan_entries
+     WHERE local_date = ?
+     ORDER BY created_at, id`,
+    [fromLocalDate],
+  );
+
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  await database.withTransactionAsync(async () => {
+    for (const row of rows) {
+      const now = new Date().toISOString();
+      await database.runAsync(
+        `INSERT INTO plan_entries (
+          id, local_date, meal_type, food_id, food_name, grams,
+          calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          generateId(),
+          toLocalDate,
+          row.meal_type,
+          row.food_id,
+          row.food_name,
+          row.grams,
+          row.calories_kcal,
+          row.protein_grams,
+          row.carbohydrate_grams,
+          row.fat_grams,
+          now,
+          now,
+        ],
+      );
+    }
+  });
+
+  return rows.length;
 }
 
 export async function copyPlanToDiary(
