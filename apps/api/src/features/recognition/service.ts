@@ -27,10 +27,14 @@ export async function recognizeFood(
   let response: Response;
   try {
     response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // The key travels in a header, never in the URL (URLs end up in logs).
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -50,6 +54,7 @@ export async function recognizeFood(
           ],
           generationConfig: {
             responseMimeType: 'application/json',
+            temperature: 0.2,
           },
         }),
         signal: AbortSignal.timeout(30_000),
@@ -129,14 +134,22 @@ function extractText(json: unknown): string {
       Array.isArray(candidate.content.parts) &&
       candidate.content.parts.length > 0
     ) {
-      const firstPart = candidate.content.parts[0];
-      if (
-        typeof firstPart === 'object' &&
-        firstPart !== null &&
-        'text' in firstPart &&
-        typeof firstPart.text === 'string'
-      ) {
-        return firstPart.text;
+      // Some models return several parts (e.g. reasoning + answer): join the
+      // answer text and ignore parts flagged as thoughts.
+      const text = candidate.content.parts
+        .filter(
+          (part: unknown): part is { text: string } =>
+            typeof part === 'object' &&
+            part !== null &&
+            'text' in part &&
+            typeof part.text === 'string' &&
+            !('thought' in part && part.thought === true),
+        )
+        .map((part: { text: string }) => part.text)
+        .join('');
+
+      if (text !== '') {
+        return text;
       }
     }
   }

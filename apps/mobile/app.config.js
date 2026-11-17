@@ -1,4 +1,21 @@
+const LOCAL_HTTP = /^http:\/\/(localhost|127\.0\.0\.1|10\.|192\.168\.)/i;
+
+/** Fails the build early instead of shipping an APK whose scanner cannot work. */
+function assertValidApiUrl(url) {
+  if (!url) return;
+  if (/TU_API/i.test(url)) {
+    throw new Error(
+      'EXPO_PUBLIC_API_URL sigue con el valor de ejemplo (TU_API). ' +
+        'Edita apps/mobile/eas.json con la URL real de tu API.',
+    );
+  }
+  if (!/^https:\/\//i.test(url) && !LOCAL_HTTP.test(url)) {
+    throw new Error('EXPO_PUBLIC_API_URL debe ser una URL HTTPS pública.');
+  }
+}
+
 module.exports = ({ config }) => {
+  assertValidApiUrl(process.env.EXPO_PUBLIC_API_URL);
   const experimental = Boolean(process.env.EXPO_PUBLIC_API_URL);
 
   return {
@@ -37,8 +54,16 @@ module.exports = ({ config }) => {
       [
         'expo-image-picker',
         {
-          cameraPermission: 'JfooD necesita acceso a la cámara para fotografiar tu comida.',
-          photosPermission: 'JfooD necesita acceso a tus fotos para elegir imágenes de comida.',
+          // Only the experimental build has the scanner. The offline build
+          // declares no camera/photo permissions; neither build needs the
+          // microphone (the app never records video).
+          cameraPermission: experimental
+            ? 'JfooD necesita acceso a la cámara para fotografiar tu comida.'
+            : false,
+          photosPermission: experimental
+            ? 'JfooD necesita acceso a tus fotos para elegir imágenes de comida.'
+            : false,
+          microphonePermission: false,
         },
       ],
       '@react-native-community/datetimepicker',

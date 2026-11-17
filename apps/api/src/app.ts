@@ -7,12 +7,18 @@ import { recognizeRoute } from './features/recognition/route.js';
 interface BuildAppOptions {
   logger?: boolean;
   environment?: ApiEnvironment;
+  /** Proxy hops to trust for the client IP (see resolveTrustProxyHops). */
+  trustProxyHops?: number;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
+  const trustedHops = options.trustProxyHops ?? 0;
   const app = Fastify({
     logger: options.logger ?? true,
     bodyLimit: 10 * 1024 * 1024,
+    // Trust only the last N proxy hops (not `true`), so a client cannot forge
+    // X-Forwarded-For to dodge the rate limit. Hop 0 is the socket peer.
+    trustProxy: trustedHops > 0 ? (_address, hop) => hop < trustedHops : false,
   });
   const environment = options.environment;
 
@@ -22,14 +28,19 @@ export function buildApp(options: BuildAppOptions = {}) {
     allowList: (request) => (request.url ?? '').split('?')[0] === '/health',
   });
 
-  app.get('/health', async () => ({
-    service: 'jfood-api',
-    status: 'ok',
-  }));
+  // Routes MUST be registered in a plugin that loads after the rate limiter:
+  // @fastify/rate-limit only protects routes added once it has been loaded, so
+  // declaring them synchronously on the root instance left them unprotected.
+  app.register(async (routes) => {
+    routes.get('/health', async () => ({
+      service: 'jfood-api',
+      status: 'ok',
+    }));
 
-  if (environment) {
-    recognizeRoute(app, environment);
-  }
+    if (environment) {
+      recognizeRoute(routes, environment);
+    }
+  });
 
   app.setNotFoundHandler((_request, reply) => {
     return reply.status(404).send({

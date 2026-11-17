@@ -28,8 +28,11 @@ export {
   type UserProfile,
 } from './nutrition/goals.js';
 export {
+  MAX_IMAGE_BASE64_CHARS,
   foodRecognitionSchema,
+  recognizeRequestSchema,
   recognizedFoodSchema,
+  type RecognizeRequest,
   type FoodRecognition,
   type RecognizedFood,
 } from './schemas/recognition.js';

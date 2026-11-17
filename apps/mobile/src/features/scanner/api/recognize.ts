@@ -1,3 +1,5 @@
+import { foodRecognitionSchema } from '@jfood/core';
+
 import { getApiBaseUrl } from '@/config/api';
 
 import type { RecognitionResult } from '../types';
@@ -42,18 +44,14 @@ export async function recognizeImage(
       throw new Error(error);
     }
 
-    if (
-      typeof json !== 'object' ||
-      json === null ||
-      !('foods' in json) ||
-      !Array.isArray(json.foods) ||
-      !('warnings' in json) ||
-      !Array.isArray(json.warnings)
-    ) {
+    // The shared contract is strict: it rejects any nutritional field, so a
+    // misbehaving server (or model) can never inject nutrients into the app.
+    const parsed = foodRecognitionSchema.safeParse(json);
+    if (!parsed.success) {
       throw new Error('Respuesta inesperada del servidor.');
     }
 
-    return json as RecognitionResult;
+    return parsed.data;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('El análisis ha tardado demasiado. Inténtalo de nuevo.');

@@ -1,11 +1,9 @@
+import { recognizeRequestSchema } from '@jfood/core';
 import type { FastifyInstance } from 'fastify';
 
 import type { ApiEnvironment } from '../../config/env.js';
+import { createDailyLimiter } from './dailyLimit.js';
 import { GeminiError, recognizeFood } from './service.js';
-
-interface RecognizeBody {
-  image: string;
-}
 
 interface RecognizeReply {
   foods: Array<{
@@ -20,8 +18,9 @@ export function recognizeRoute(
   app: FastifyInstance,
   environment: ApiEnvironment,
 ): void {
+  const dailyLimiter = createDailyLimiter(environment.RECOGNIZE_DAILY_LIMIT);
+
   app.post<{
-    Body: RecognizeBody;
     Reply: RecognizeReply | { error: { code: string; message: string } };
   }>('/recognize', async (request, reply) => {
     if (!environment.GEMINI_API_KEY) {
@@ -33,12 +32,24 @@ export function recognizeRoute(
       });
     }
 
-    const image = request.body?.image;
-    if (typeof image !== 'string' || image.trim() === '') {
+    const body = recognizeRequestSchema.safeParse(request.body);
+    if (!body.success) {
       return reply.status(400).send({
         error: {
           code: 'INVALID_IMAGE',
-          message: 'Debes enviar una imagen codificada en base64.',
+          message:
+            'Debes enviar una imagen JPEG, PNG o WebP codificada en base64.',
+        },
+      });
+    }
+    const image = body.data.image;
+
+    if (!dailyLimiter.tryConsume()) {
+      return reply.status(429).send({
+        error: {
+          code: 'DAILY_LIMIT_REACHED',
+          message:
+            'Se ha alcanzado el límite diario de análisis. Inténtalo mañana.',
         },
       });
     }

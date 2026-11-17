@@ -99,7 +99,7 @@ export default function OnboardingScreen() {
             </View>
             <Text style={styles.brand}>JfooD</Text>
             <Text style={styles.welcomeSubtitle}>
-              Tu nutrición diaria, simple y privada
+              Tu nutrición diaria, simple y en tu móvil
             </Text>
           </View>
 

@@ -16,6 +16,7 @@ import {
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -23,10 +24,16 @@ import { useToast } from '@/components/Toast';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
 import { isScannerEnabled } from '@/config/api';
 import { createFood } from '@/data/sqlite/repositories/foodRepository';
+import {
+  getSetting,
+  setSetting,
+} from '@/data/sqlite/repositories/settingsRepository';
+import { normalizeName } from '@/features/foods/utils/normalize';
+import type { Food } from '@/features/foods/types';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
-import { toLocalDate } from '@/features/diary/utils/date';
+import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { recognizeImage } from '@/features/scanner/api/recognize';
 import { useImagePicker } from '@/features/scanner/hooks/useImagePicker';
 import type { RecognizedFood, RecognizedFoodMatch } from '@/features/scanner/types';
@@ -41,6 +48,11 @@ import {
 
 type ScannerStep = 'camera' | 'preview' | 'analyzing' | 'results' | 'error';
 
+const PRIVACY_ACK_KEY = 'scanner_privacy_ack';
+
+const PRIVACY_MESSAGE =
+  'Para identificar los alimentos, la foto se envía a tu servidor de JfooD y de ahí a Google (Gemini). El servidor no la guarda. Según las condiciones de Google para el nivel gratuito, Google puede usar el contenido para mejorar sus productos. No hagas fotos de personas ni de documentos.';
+
 export default function ScannerScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -52,7 +64,8 @@ export default function ScannerScreen() {
     meal?: string;
   }>();
 
-  const localDate = date ?? toLocalDate(new Date());
+  const localDate =
+    date && isValidLocalDate(date) ? date : toLocalDate(new Date());
   const initialMeal: MealType =
     MEALS.map((m) => m.type).includes(meal as MealType) ?
       (meal as MealType)
@@ -69,6 +82,9 @@ export default function ScannerScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const analyzeRequestRef = useRef(0);
+  const [consentPending, setConsentPending] = useState<
+    'camera' | 'library' | null
+  >(null);
 
   const handleImage = useCallback(
     async (result: Awaited<ReturnType<typeof launchCamera>>) => {
@@ -85,7 +101,7 @@ export default function ScannerScreen() {
       }
 
       if (result === 'unknown') {
-        Alert.alert('Error', 'No se ha podido procesar la imagen.');
+        showToast('No se ha podido procesar la imagen.', 'error');
         return;
       }
 
@@ -93,18 +109,53 @@ export default function ScannerScreen() {
       setImageBase64(result.base64);
       setStep('preview');
     },
-    [],
+    [showToast],
   );
 
-  const handleCamera = useCallback(async () => {
+  const startCamera = useCallback(async () => {
     const result = await launchCamera();
     await handleImage(result);
   }, [launchCamera, handleImage]);
 
-  const handleLibrary = useCallback(async () => {
+  const startLibrary = useCallback(async () => {
     const result = await launchLibrary();
     await handleImage(result);
   }, [launchLibrary, handleImage]);
+
+  // The first photo is only sent after the person has read where it goes.
+  const requestPick = useCallback(
+    async (source: 'camera' | 'library') => {
+      let acknowledged: string | null = null;
+      try {
+        acknowledged = await getSetting(database, PRIVACY_ACK_KEY);
+      } catch {
+        acknowledged = null;
+      }
+
+      if (acknowledged === '1') {
+        await (source === 'camera' ? startCamera() : startLibrary());
+        return;
+      }
+      setConsentPending(source);
+    },
+    [database, startCamera, startLibrary],
+  );
+
+  const handleCamera = useCallback(() => requestPick('camera'), [requestPick]);
+  const handleLibrary = useCallback(() => requestPick('library'), [requestPick]);
+
+  const handleConsentConfirm = async () => {
+    const source = consentPending;
+    setConsentPending(null);
+    if (!source) return;
+
+    try {
+      await setSetting(database, PRIVACY_ACK_KEY, '1');
+    } catch {
+      // Not persisting only means the notice is shown again next time.
+    }
+    await (source === 'camera' ? startCamera() : startLibrary());
+  };
 
   const handleAnalyze = useCallback(async () => {
     if (!imageBase64) return;
@@ -187,8 +238,15 @@ export default function ScannerScreen() {
     setSaving(true);
     try {
       await database.withTransactionAsync(async () => {
+        const createdByName = new Map<string, Food>();
+
         for (const match of matches) {
           let food = match.food;
+
+          if (!food) {
+            const key = normalizeName(match.recognized.name);
+            food = createdByName.get(key) ?? null;
+          }
 
           if (!food) {
             food = await createFood(database, {
@@ -199,6 +257,7 @@ export default function ScannerScreen() {
               carbohydrateGrams: null,
               fatGrams: null,
             });
+            createdByName.set(normalizeName(match.recognized.name), food);
           }
 
           await addEntry(database, {
@@ -215,11 +274,16 @@ export default function ScannerScreen() {
       router.back();
     } catch {
       setSaving(false);
-      Alert.alert('Error', 'No se han podido añadir los alimentos.');
+      showToast('No se han podido añadir los alimentos.', 'error');
     }
   };
 
-  const handleManualCreate = (recognizedName: string) => {
+  const handleManualCreate = (recognizedName: string, index?: number) => {
+    if (index !== undefined) {
+      // The food will be added from the manual flow: drop it here so it
+      // cannot be saved twice when the person comes back.
+      setMatches((previous) => previous.filter((_, i) => i !== index));
+    }
     router.push({
       pathname: '/diary/add-food',
       params: { date: localDate, meal: targetMeal, name: recognizedName },
@@ -298,6 +362,14 @@ export default function ScannerScreen() {
           />
         </View>
       ) : null}
+      <ConfirmDialog
+        confirmLabel="Entendido, continuar"
+        message={PRIVACY_MESSAGE}
+        title="Antes de enviar la foto"
+        visible={consentPending !== null}
+        onClose={() => setConsentPending(null)}
+        onConfirm={() => void handleConsentConfirm()}
+      />
     </Screen>
   );
 }
@@ -347,7 +419,8 @@ function CameraStep({
         <Ionicons color={colors.primary} name="information-circle-outline" size={20} />
         <Text style={styles.noticeText}>
           Las cantidades detectadas en una fotografía siempre serán aproximadas.
-          Revisa los gramos antes de guardar.
+          Revisa los gramos antes de guardar. La foto se envía a Google (Gemini)
+          para identificar los alimentos.
         </Text>
       </View>
     </View>
@@ -475,7 +548,7 @@ function ResultsStep({
   onChangeGrams: (index: number, value: string) => void;
   onCommitGrams: (index: number, grams: number) => void;
   onChangeMeal: (meal: MealType) => void;
-  onManualCreate: (name: string) => void;
+  onManualCreate: (name: string, index: number) => void;
   onRetake: () => void;
 }) {
   const { colors } = useTheme();
@@ -517,6 +590,7 @@ function ResultsStep({
               key={index}
               grams={match.grams}
               index={index}
+              confidence={match.confidence}
               matched={match.food !== null}
               name={match.food?.name ?? match.recognized.name}
               originalName={match.recognized.name}
@@ -559,6 +633,7 @@ function ResultsStep({
 }
 
 function ResultRow({
+  confidence,
   grams,
   index,
   matched,
@@ -568,6 +643,7 @@ function ResultRow({
   onCommitGrams,
   onManualCreate,
 }: {
+  confidence: number | null;
   grams: number;
   index: number;
   matched: boolean;
@@ -575,7 +651,7 @@ function ResultRow({
   originalName: string;
   onChangeGrams: (index: number, value: string) => void;
   onCommitGrams: (index: number, grams: number) => void;
-  onManualCreate: (name: string) => void;
+  onManualCreate: (name: string, index: number) => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -600,6 +676,11 @@ function ResultRow({
     <View style={styles.resultRow}>
       <View style={styles.resultInfo}>
         <Text style={styles.resultName}>{name}</Text>
+        {confidence !== null ? (
+          <Text style={styles.resultConfidence}>
+            {describeConfidence(confidence)}
+          </Text>
+        ) : null}
         {matched ? (
           <Text style={styles.resultMatch}>Coincide con tu catálogo local</Text>
         ) : (
@@ -624,7 +705,7 @@ function ResultRow({
             accessibilityLabel="Introducir datos manualmente"
             accessibilityRole="button"
             hitSlop={8}
-            onPress={() => onManualCreate(originalName)}
+            onPress={() => onManualCreate(originalName, index)}
             style={styles.manualButton}
           >
             <Ionicons color={colors.primary} name="create-outline" size={20} />
@@ -633,6 +714,13 @@ function ResultRow({
       </View>
     </View>
   );
+}
+
+function describeConfidence(confidence: number): string {
+  const percent = Math.round(confidence * 100);
+  if (confidence >= 0.8) return `Confianza alta (${percent} %)`;
+  if (confidence >= 0.5) return `Confianza media (${percent} %): revísalo`;
+  return `Confianza baja (${percent} %): revisa nombre y gramos`;
 }
 
 function ErrorStep({
@@ -796,6 +884,10 @@ function createStyles(colors: ThemeColors) {
       color: colors.text,
       fontSize: 15,
       fontWeight: '600',
+    },
+    resultConfidence: {
+      color: colors.textMuted,
+      fontSize: 12,
     },
     resultMatch: {
       color: colors.success,
