@@ -106,7 +106,7 @@ export default function ProfileScreen() {
         </Card>
       ) : null}
 
-      {goals ? <GoalsSummary goals={goals} /> : null}
+      {goals ? <GoalsSummary goals={goals} goalText={describeGoal(profile)} /> : null}
 
       <ProfileForm
         key={profileKey(profile)}
@@ -202,13 +202,28 @@ function profileKey(profile: Parameters<typeof ProfileForm>[0]['initial']): stri
   ].join('|');
 }
 
-function GoalsSummary({ goals }: { goals: NutritionGoals }) {
+function describeGoal(profile: Parameters<typeof profileKey>[0]): string | null {
+  if (!profile || profile.goalType === 'maintain') return 'Objetivo: mantener el peso';
+  const rate = String(profile.weeklyRateKg).replace('.', ',');
+  return profile.goalType === 'lose'
+    ? `Objetivo: perder ${rate} kg por semana`
+    : `Objetivo: ganar ${rate} kg por semana`;
+}
+
+function GoalsSummary({
+  goals,
+  goalText,
+}: {
+  goals: NutritionGoals;
+  goalText: string | null;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <Card variant="hero">
       <Text style={styles.goalsTitle}>Tus objetivos diarios</Text>
+      {goalText ? <Text style={styles.goalsSubtitle}>{goalText}</Text> : null}
       <View style={styles.goalsRow}>
         <GoalItem
           color={colors.accent}
@@ -265,6 +280,11 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
       lineHeight: 20,
       textAlign: 'center',
+    },
+    goalsSubtitle: {
+      color: colors.onHero,
+      fontSize: 13,
+      opacity: 0.85,
     },
     goalsTitle: {
       color: colors.onHero,

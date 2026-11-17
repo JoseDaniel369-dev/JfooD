@@ -9,6 +9,14 @@ export const ACTIVITY_LEVELS = [
   'very_high',
 ] as const;
 
+export const GOAL_TYPES = ['maintain', 'lose', 'gain'] as const;
+export const goalTypeSchema = z.enum(GOAL_TYPES);
+export type GoalType = z.infer<typeof goalTypeSchema>;
+
+/** Weekly change rates offered to the person, in kg per week. */
+export const WEEKLY_RATES_KG = [0.25, 0.5, 0.75, 1] as const;
+export const MAX_WEEKLY_RATE_KG = 1;
+
 export const mifflinVariantSchema = z.enum(MIFFLIN_VARIANTS);
 export const activityLevelSchema = z.enum(ACTIVITY_LEVELS);
 
@@ -81,6 +89,8 @@ export const userProfileSchema = z.object({
   birthDate: birthDateSchema,
   variant: mifflinVariantSchema,
   activityLevel: activityLevelSchema,
+  goalType: goalTypeSchema.default('maintain'),
+  weeklyRateKg: z.number().min(0).max(MAX_WEEKLY_RATE_KG).default(0),
 });
 
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -129,6 +139,24 @@ export function calculateAge(
   return Math.max(0, age);
 }
 
+/**
+ * Daily calories for a goal: TDEE minus (lose) or plus (gain) the energy of
+ * the weekly weight change spread over seven days.
+ */
+export function applyGoal(
+  tdee: number,
+  goalType: GoalType,
+  weeklyRateKg: number,
+): number {
+  if (goalType === 'maintain') {
+    return tdee;
+  }
+
+  const rate = Math.min(Math.max(weeklyRateKg, 0), MAX_WEEKLY_RATE_KG);
+  const dailyDelta = (rate * KCAL_PER_KG_BODY_WEIGHT) / 7;
+  return goalType === 'lose' ? tdee - dailyDelta : tdee + dailyDelta;
+}
+
 interface BmrInput {
   weightKg: number;
   heightCm: number;
@@ -163,7 +191,14 @@ export function calculateTdee(
 interface NutritionGoalsInput {
   weightKg: number;
   tdee: number;
+  /** Defaults to 'maintain' (calories = TDEE). */
+  goalType?: GoalType;
+  /** kg of body weight to lose or gain per week. */
+  weeklyRateKg?: number;
 }
+
+/** Energy of one kilogram of body weight change (common nutrition estimate). */
+export const KCAL_PER_KG_BODY_WEIGHT = 7700;
 
 const PROTEIN_PER_KG = 1.6;
 const FAT_RATIO = 0.25;
@@ -180,10 +215,13 @@ const KCAL_PER_FAT_GRAM = 9;
 export function calculateNutritionGoals({
   weightKg,
   tdee,
+  goalType = 'maintain',
+  weeklyRateKg = 0,
 }: NutritionGoalsInput): NutritionGoals {
+  const target = applyGoal(tdee, goalType, weeklyRateKg);
   // A goal below the floor would be unsafe advice and a negative one is
-  // meaningless, so the equation result is clamped.
-  const effectiveTdee = Math.max(tdee, MIN_DAILY_CALORIES_KCAL);
+  // meaningless, so the result is clamped.
+  const effectiveTdee = Math.max(target, MIN_DAILY_CALORIES_KCAL);
   const caloriesKcal = Math.round(effectiveTdee);
   const proteinGrams = Math.round(weightKg * PROTEIN_PER_KG);
   const fatGrams = Math.round((effectiveTdee * FAT_RATIO) / KCAL_PER_FAT_GRAM);

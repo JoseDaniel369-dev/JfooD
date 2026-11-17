@@ -25,6 +25,8 @@ interface ProfileRow {
     | 'moderate'
     | 'high'
     | 'very_high';
+  goal_type: 'maintain' | 'lose' | 'gain';
+  weekly_rate_kg: number;
   updated_at: string;
 }
 
@@ -37,7 +39,8 @@ export async function getProfileFormData(
 ): Promise<ProfileFormData | null> {
   const [profileRow, weightRow] = await Promise.all([
     database.getFirstAsync<ProfileRow>(
-      `SELECT height_cm, birth_date, mifflin_variant, activity_level, updated_at
+      `SELECT height_cm, birth_date, mifflin_variant, activity_level,
+              goal_type, weekly_rate_kg, updated_at
        FROM user_profile
        WHERE id = 1`,
     ),
@@ -59,6 +62,8 @@ export async function getProfileFormData(
     birthDate: profileRow.birth_date,
     variant: profileRow.mifflin_variant,
     activityLevel: profileRow.activity_level,
+    goalType: profileRow.goal_type,
+    weeklyRateKg: profileRow.weekly_rate_kg,
   };
 }
 
@@ -112,22 +117,31 @@ export async function saveProfile(
 
     const bmr = calculateBmr({ ...profile, weightKg: effectiveWeightKg, age });
     const tdee = calculateTdee(bmr, profile.activityLevel);
-    goals = calculateNutritionGoals({ weightKg: effectiveWeightKg, tdee });
+    goals = calculateNutritionGoals({
+      weightKg: effectiveWeightKg,
+      tdee,
+      goalType: profile.goalType,
+      weeklyRateKg: profile.weeklyRateKg,
+    });
 
     await database.runAsync(
-      `INSERT INTO user_profile (id, height_cm, birth_date, mifflin_variant, activity_level, updated_at)
-       VALUES (1, ?, ?, ?, ?, ?)
+      `INSERT INTO user_profile (id, height_cm, birth_date, mifflin_variant, activity_level, goal_type, weekly_rate_kg, updated_at)
+       VALUES (1, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          height_cm = excluded.height_cm,
          birth_date = excluded.birth_date,
          mifflin_variant = excluded.mifflin_variant,
          activity_level = excluded.activity_level,
+         goal_type = excluded.goal_type,
+         weekly_rate_kg = excluded.weekly_rate_kg,
          updated_at = excluded.updated_at`,
       [
         profile.heightCm,
         profile.birthDate,
         profile.variant,
         profile.activityLevel,
+        profile.goalType,
+        profile.goalType === 'maintain' ? 0 : profile.weeklyRateKg,
         now,
       ],
     );

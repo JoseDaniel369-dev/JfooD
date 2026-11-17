@@ -5,10 +5,14 @@ import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 
 import {
   ACTIVITY_LEVELS,
+  GOAL_TYPES,
   MIFFLIN_VARIANTS,
+  MIN_DAILY_CALORIES_KCAL,
   PROFILE_LIMITS,
+  WEEKLY_RATES_KG,
   userProfileSchema,
   type ActivityLevel,
+  type GoalType,
   type MifflinVariant,
   type UserProfile,
 } from '@jfood/core';
@@ -47,6 +51,14 @@ const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   very_high: 'Muy alto',
 };
 
+const MIN_CALORIES = MIN_DAILY_CALORIES_KCAL;
+
+const GOAL_LABELS: Record<GoalType, string> = {
+  maintain: 'Mantener peso',
+  lose: 'Perder peso',
+  gain: 'Ganar peso',
+};
+
 const VARIANT_LABELS: Record<MifflinVariant, string> = {
   male: 'Hombre',
   female: 'Mujer',
@@ -73,6 +85,10 @@ export function ProfileForm({
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(
     initial?.activityLevel ?? null,
   );
+  const [goalType, setGoalType] = useState<GoalType>(initial?.goalType ?? 'maintain');
+  const [weeklyRate, setWeeklyRate] = useState<number>(
+    initial && initial.weeklyRateKg > 0 ? initial.weeklyRateKg : 0.5,
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { translateX, shake } = useShake();
@@ -84,6 +100,8 @@ export function ProfileForm({
       birthDate,
       variant,
       activityLevel,
+      goalType,
+      weeklyRateKg: goalType === 'maintain' ? 0 : weeklyRate,
     });
 
     if (!parsed.success) {
@@ -210,6 +228,39 @@ export function ProfileForm({
         ) : null}
       </Card>
 
+      <Card>
+        <SectionHeader title="Tu objetivo" />
+        <View style={styles.optionsRow}>
+          {GOAL_TYPES.map((value) => (
+            <OptionButton
+              key={value}
+              label={GOAL_LABELS[value]}
+              selected={goalType === value}
+              onPress={() => setGoalType(value)}
+            />
+          ))}
+        </View>
+        {goalType !== 'maintain' ? (
+          <>
+            <Text style={styles.label}>Ritmo semanal</Text>
+            <View style={styles.optionsRow}>
+              {WEEKLY_RATES_KG.map((rate) => (
+                <OptionButton
+                  key={rate}
+                  label={`${String(rate).replace('.', ',')} kg`}
+                  selected={weeklyRate === rate}
+                  onPress={() => setWeeklyRate(rate)}
+                />
+              ))}
+            </View>
+            <Text style={styles.hint}>
+              Un ritmo de 0,25–0,5 kg por semana suele ser sostenible. Las
+              calorías nunca bajan de {MIN_CALORIES} kcal.
+            </Text>
+          </>
+        ) : null}
+      </Card>
+
       <Button loading={saving} title={submitLabel} onPress={handleSubmit} />
     </Animated.View>
   );
@@ -309,6 +360,10 @@ function createStyles(colors: ThemeColors) {
       color: colors.text,
       fontWeight: '700',
       marginBottom: spacing.xs,
+    },
+    hint: {
+      ...typography.caption,
+      color: colors.textMuted,
     },
     input: {
       backgroundColor: colors.surfaceMuted,

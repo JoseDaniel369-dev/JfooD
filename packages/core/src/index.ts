@@ -12,7 +12,14 @@ export {
 } from './nutrition/nutrients.js';
 export {
   ACTIVITY_LEVELS,
+  GOAL_TYPES,
+  KCAL_PER_KG_BODY_WEIGHT,
+  MAX_WEEKLY_RATE_KG,
   MIFFLIN_VARIANTS,
+  WEEKLY_RATES_KG,
+  applyGoal,
+  goalTypeSchema,
+  type GoalType,
   activityLevelSchema,
   calculateAge,
   calculateBmr,

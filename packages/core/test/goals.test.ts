@@ -144,3 +144,43 @@ test('calorie goals are never below the safety floor', () => {
   assert.equal(negative.caloriesKcal, 1200);
   assert.ok(negative.fatGrams > 0);
 });
+
+test('losing weight subtracts the energy of the weekly change spread over 7 days', async () => {
+  const { applyGoal } = await import('../src/index.js');
+  // 0.5 kg/week * 7700 kcal / 7 days = 550 kcal/day
+  assert.equal(applyGoal(2500, 'lose', 0.5), 1950);
+  assert.equal(applyGoal(2500, 'gain', 0.25), 2500 + 275);
+  assert.equal(applyGoal(2500, 'maintain', 1), 2500);
+  // Rates above the maximum are clamped (1 kg/week = 1100 kcal/day).
+  assert.equal(applyGoal(2500, 'lose', 5), 1400);
+});
+
+test('goals for losing weight respect the calorie floor and keep protein per kg', () => {
+  const lose = calculateNutritionGoals({ weightKg: 70, tdee: 2000, goalType: 'lose', weeklyRateKg: 0.5 });
+  assert.equal(lose.caloriesKcal, 1450);
+  assert.equal(lose.proteinGrams, 112);
+  assert.equal(lose.fatGrams, Math.round((1450 * 0.25) / 9));
+
+  const floor = calculateNutritionGoals({ weightKg: 60, tdee: 1500, goalType: 'lose', weeklyRateKg: 1 });
+  assert.equal(floor.caloriesKcal, 1200);
+
+  const same = calculateNutritionGoals({ weightKg: 70, tdee: 2000 });
+  assert.equal(same.caloriesKcal, 2000);
+});
+
+test('the profile schema defaults to maintaining weight and validates the rate', () => {
+  const base = {
+    weightKg: 70,
+    heightCm: 175,
+    birthDate: '1990-06-15',
+    variant: 'male' as const,
+    activityLevel: 'moderate' as const,
+  };
+
+  const parsed = userProfileSchema.parse(base);
+  assert.equal(parsed.goalType, 'maintain');
+  assert.equal(parsed.weeklyRateKg, 0);
+  assert.equal(userProfileSchema.safeParse({ ...base, goalType: 'lose', weeklyRateKg: 0.5 }).success, true);
+  assert.equal(userProfileSchema.safeParse({ ...base, goalType: 'lose', weeklyRateKg: 2 }).success, false);
+  assert.equal(userProfileSchema.safeParse({ ...base, goalType: 'bulk' }).success, false);
+});

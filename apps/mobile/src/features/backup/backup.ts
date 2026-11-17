@@ -29,7 +29,8 @@ export const BACKUP_TABLES = {
     'created_at', 'updated_at',
   ],
   user_profile: [
-    'id', 'height_cm', 'birth_date', 'mifflin_variant', 'activity_level', 'updated_at',
+    'id', 'height_cm', 'birth_date', 'mifflin_variant', 'activity_level',
+    'goal_type', 'weekly_rate_kg', 'updated_at',
   ],
   nutrition_goals: [
     'id', 'effective_from', 'calories_kcal', 'protein_grams',
@@ -189,13 +190,16 @@ export async function restoreBackup(
       }
 
       for (const table of TABLE_NAMES) {
-        const columns = BACKUP_TABLES[table];
-        const placeholders = columns.map(() => '?').join(', ');
-        const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
-
         for (const row of backup.tables[table] ?? []) {
+          // Only the columns present in the file: backups made before a column
+          // existed fall back to that column's default.
+          const columns = BACKUP_TABLES[table].filter(
+            (column) => row[column] !== undefined,
+          );
+          const placeholders = columns.map(() => '?').join(', ');
+
           await database.runAsync(
-            sql,
+            `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`,
             columns.map((column) => row[column] ?? null),
           );
           counts[table] += 1;
