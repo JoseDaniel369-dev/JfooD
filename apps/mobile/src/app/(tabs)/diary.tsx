@@ -10,7 +10,6 @@ import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DayNavigator } from '@/components/DayNavigator';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
-import { Fab } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -27,7 +26,6 @@ import { NutrientsEditorModal } from '@/features/diary/components/NutrientsEdito
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { addDays, toLocalDate } from '@/features/diary/utils/date';
-import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import {
   describeUnknown,
   formatPartialAmount,
@@ -316,7 +314,6 @@ export default function DiaryScreen() {
         </Card>
       </Animated.View>
 
-      <Fab accessibilityLabel="Añadir comida" onPress={() => handleAddFood(currentDefaultMeal())} />
 
       <ActionSheet
         options={actionOptions}

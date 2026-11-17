@@ -448,7 +448,7 @@ function createStyles(colors: ThemeColors) {
     },
     unknownNotice: {
       ...typography.caption,
-      color: colors.textMuted,
+      color: colors.warning,
       textAlign: 'center',
     },
     totalValue: {

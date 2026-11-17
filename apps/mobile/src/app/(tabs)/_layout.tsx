@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionSheet } from '@/components/ActionSheet';
+import { isScannerEnabled } from '@/config/api';
 import { getSetting } from '@/data/sqlite/repositories/settingsRepository';
+import { toLocalDate } from '@/features/diary/utils/date';
+import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import { hapticSelection } from '@/features/haptics/haptics';
 import { radius, useTheme, type ThemeColors } from '@/theme';
 
@@ -24,6 +28,46 @@ export default function TabsLayout() {
   const database = useSQLiteContext();
   const router = useRouter();
   const [gateChecked, setGateChecked] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+  const quickActions = [
+    {
+      label: 'Añadir comida',
+      icon: 'restaurant-outline' as const,
+      onPress: () =>
+        router.push({
+          pathname: '/diary/add-food',
+          params: { date: toLocalDate(new Date()), meal: currentDefaultMeal() },
+        }),
+    },
+    ...(isScannerEnabled()
+      ? [
+          {
+            label: 'Escanear comida',
+            icon: 'camera-outline' as const,
+            onPress: () => router.push('/scanner'),
+          },
+        ]
+      : []),
+    {
+      label: 'Añadir al plan',
+      icon: 'calendar-outline' as const,
+      onPress: () =>
+        router.push({
+          pathname: '/diary/add-food',
+          params: {
+            date: toLocalDate(new Date()),
+            meal: currentDefaultMeal(),
+            target: 'plan',
+          },
+        }),
+    },
+    {
+      label: 'Registrar peso',
+      icon: 'scale-outline' as const,
+      onPress: () => router.push('/(tabs)/progress'),
+    },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +101,13 @@ export default function TabsLayout() {
   }
 
   return (
+    <>
+    <ActionSheet
+      options={quickActions}
+      title="¿Qué quieres hacer?"
+      visible={quickAddOpen}
+      onClose={() => setQuickAddOpen(false)}
+    />
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -106,6 +157,27 @@ export default function TabsLayout() {
         }}
         listeners={{
           tabPress: () => hapticSelection(),
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: 'Añadir',
+          tabBarButton: () => (
+            <View style={styles.addSlot}>
+              <Pressable
+                accessibilityLabel="Añadir"
+                accessibilityRole="button"
+                onPress={() => {
+                  hapticSelection();
+                  setQuickAddOpen(true);
+                }}
+                style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+              >
+                <Ionicons color={colors.textOnPrimary} name="add" size={30} />
+              </Pressable>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -160,6 +232,7 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }
 
@@ -210,6 +283,25 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
       flex: 1,
       justifyContent: 'center',
+    },
+    addSlot: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'flex-start',
+      paddingTop: 2,
+    },
+    addButton: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: radius.pill,
+      elevation: 4,
+      height: 52,
+      justifyContent: 'center',
+      marginTop: -4,
+      width: 52,
+    },
+    addButtonPressed: {
+      opacity: 0.85,
     },
     iconPill: {
       alignItems: 'center',

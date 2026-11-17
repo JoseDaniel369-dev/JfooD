@@ -7,6 +7,8 @@ export interface ThemeColors {
   primaryLight: string;
   accent: string;
   onAccent: string;
+  /** Text/icons for "careful" states (near or over a goal). Never red: it is not an error. */
+  warning: string;
   text: string;
   textMuted: string;
   textOnPrimary: string;
@@ -25,7 +27,7 @@ export interface ThemeColors {
 }
 
 export const lightColors: ThemeColors = {
-  background: '#F3F8F4',
+  background: '#F7F8F2',
   surface: '#FFFFFF',
   surfaceMuted: '#E8F2EC',
   primary: '#047857',
@@ -33,6 +35,7 @@ export const lightColors: ThemeColors = {
   primaryLight: '#D1FAE5',
   accent: '#F97316',
   onAccent: '#431407',
+  warning: '#B45309',
   text: '#0F1D18',
   textMuted: '#5B6B63',
   textOnPrimary: '#FFFFFF',
@@ -59,6 +62,7 @@ export const darkColors: ThemeColors = {
   primaryLight: '#14372E',
   accent: '#FB923C',
   onAccent: '#431407',
+  warning: '#FBBF24',
   text: '#EAF6EF',
   textMuted: '#93AFA2',
   textOnPrimary: '#052E21',
@@ -113,32 +117,38 @@ export const shadows = {
   },
 } as const;
 
+/** Nunito families. Android needs one family per weight (it ignores fontWeight for custom fonts). */
 export const fonts = {
-  brand: 'Nunito_800ExtraBold',
+  regular: 'Nunito_400Regular',
+  semibold: 'Nunito_600SemiBold',
   heading: 'Nunito_700Bold',
+  brand: 'Nunito_800ExtraBold',
 } as const;
 
 export const typography = {
   display: {
+    fontFamily: fonts.brand,
     fontSize: 32,
-    fontWeight: '800' as const,
     letterSpacing: -0.8,
   },
   title: {
+    fontFamily: fonts.heading,
     fontSize: 18,
-    fontWeight: '700' as const,
   },
   body: {
-    fontSize: 14,
-    fontWeight: '400' as const,
+    fontFamily: fonts.regular,
+    fontSize: 15,
   },
   caption: {
-    fontSize: 12,
-    fontWeight: '500' as const,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
   },
   label: {
+    fontFamily: fonts.heading,
     fontSize: 11,
-    fontWeight: '700' as const,
     letterSpacing: 1.2,
   },
 } as const;
+
+/** Spread into numeric Text styles so digits keep a constant width. */
+export const tabularNumbers = { fontVariant: ['tabular-nums' as const] };

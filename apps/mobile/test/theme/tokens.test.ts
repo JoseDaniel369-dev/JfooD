@@ -59,3 +59,15 @@ test('toast success background meets AA contrast with white in both themes', () 
   assert.ok(contrast(lightColors.toastSuccess, '#FFFFFF') >= 4.5);
   assert.ok(contrast(darkColors.toastSuccess, '#FFFFFF') >= 4.5);
 });
+
+test('warning text meets AA contrast on the surface and background in both themes', () => {
+  for (const palette of [lightColors, darkColors]) {
+    assert.ok(contrast(palette.warning, palette.surface) >= 4.5, `surface ${palette.warning}`);
+    assert.ok(contrast(palette.warning, palette.background) >= 4.5, `background ${palette.warning}`);
+  }
+});
+
+test('muted text stays readable on the cream canvas', () => {
+  assert.ok(contrast(lightColors.textMuted, lightColors.background) >= 4.5);
+  assert.ok(contrast(darkColors.textMuted, darkColors.background) >= 4.5);
+});

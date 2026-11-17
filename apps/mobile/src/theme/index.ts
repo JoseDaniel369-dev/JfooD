@@ -6,6 +6,7 @@ export {
   radius,
   shadows,
   spacing,
+  tabularNumbers,
   typography,
   type ThemeColors,
 } from './tokens';

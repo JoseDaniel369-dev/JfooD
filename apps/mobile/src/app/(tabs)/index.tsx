@@ -12,28 +12,23 @@ import Svg, { Rect } from 'react-native-svg';
 
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Card } from '@/components/Card';
-import { Fab } from '@/components/Fab';
 import { ProgressBar } from '@/components/ProgressBar';
+import { ProgressRing } from '@/components/ProgressRing';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
-import { isScannerEnabled } from '@/config/api';
 import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { formatLocalDate } from '@/features/diary/utils/date';
-import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import {
   describeUnknown,
   formatPartialAmount,
-  formatRemaining,
   remainingCalories,
-  remainingLabel,
 } from '@/features/diary/utils/totals';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { durations, easings } from '@/features/motion/motion';
 import { useCountUp } from '@/features/motion/useCountUp';
 import { useDiaryStats } from '@/features/stats/hooks/useDiaryStats';
-import { StreakRing } from '@/features/stats/components/StreakRing';
 import { computeStreak, computeWeekStats } from '@/features/stats/utils/streak';
 import { useWaterDay } from '@/features/water/hooks/useWaterDay';
 import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
@@ -41,6 +36,7 @@ import {
   fonts,
   radius,
   spacing,
+  tabularNumbers,
   typography,
   useTheme,
   type ThemeColors,
@@ -113,13 +109,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleFabPress = () => {
-    router.push({
-      pathname: '/diary/add-food',
-      params: { date: localDate, meal: currentDefaultMeal() },
-    });
-  };
-
   return (
     <Screen fab>
       <View style={styles.header}>
@@ -134,6 +123,26 @@ export default function HomeScreen() {
 
       <Card animated delay={0} variant="hero">
         <View style={styles.heroRow}>
+          <ProgressRing
+            accessibilityLabel={`${formatPartialAmount(kcal)} de ${day.goals.caloriesKcal} kilocalorías`}
+            color={colors.accent}
+            maximum={day.goals.caloriesKcal}
+            size={136}
+            strokeWidth={12}
+            value={kcal.knownTotal}
+          >
+            <AnimatedNumber
+              color={colors.onHero}
+              decimals={0}
+              prefix={remaining.approximate ? (remaining.over ? '≥ ' : '≤ ') : ''}
+              style={styles.ringValue}
+              value={remaining.amount}
+            />
+            <Text style={styles.ringLabel}>
+              {remaining.over ? 'de más' : 'restantes'}
+            </Text>
+          </ProgressRing>
+
           <View style={styles.heroMain}>
             <Text style={styles.cardLabel}>CALORÍAS DE HOY</Text>
             <View style={styles.calorieNumbers}>
@@ -144,44 +153,22 @@ export default function HomeScreen() {
                 style={styles.calorieValue}
                 value={kcal.knownTotal}
               />
-              <Text style={styles.calorieGoal}>
-                / {formatNumber(day.goals.caloriesKcal)} kcal
-              </Text>
             </View>
-            <View style={styles.calorieFooter}>
-              <Text style={styles.calorieFooterLabel}>
-                {remainingLabel(remaining)}
-              </Text>
-              <Text style={styles.calorieFooterValue}>
-                {formatRemaining(remaining)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.streakColumn}>
-            <StreakRing maximum={7} size={92} strokeWidth={9} value={streak.current}>
-              <View style={styles.streakCenter}>
-                <Ionicons color={colors.accent} name="flame" size={18} />
-                <AnimatedNumber
-                  color={colors.onHero}
-                  style={styles.streakValue}
-                  value={streak.current}
-                />
-                <Text style={styles.streakLabel}>días</Text>
-              </View>
-            </StreakRing>
-            <Text style={styles.streakHint}>
-              {streak.best > 0 ? `Mejor: ${streak.best}` : 'Tu racha'}
+            <Text style={styles.calorieGoal}>
+              de {formatNumber(day.goals.caloriesKcal)} kcal
             </Text>
+            <View
+              accessibilityLabel={`Racha de ${streak.current} días`}
+              style={styles.streakChip}
+            >
+              <Ionicons color={colors.accent} name="flame" size={16} />
+              <Text style={styles.streakChipText}>
+                {streak.current} {streak.current === 1 ? 'día' : 'días'}
+                {streak.best > 0 ? ` · mejor ${streak.best}` : ''}
+              </Text>
+            </View>
           </View>
         </View>
-
-        <ProgressBar
-          color={colors.accent}
-          maximum={day.goals.caloriesKcal}
-          trackColor="rgba(255,255,255,0.18)"
-          value={kcal.knownTotal}
-        />
 
         {unknownCaloriesNotice ? (
           <Text style={styles.goalNotice}>
@@ -217,23 +204,11 @@ export default function HomeScreen() {
 
       <Card animated delay={100}>
         <SectionHeader title="Macronutrientes" />
-        <MacroRow
-          color={colors.protein}
-          consumed={day.consumedPartial.proteinGrams}
-          goal={day.goals.proteinGrams}
-          label="Proteínas"
-        />
-        <MacroRow
-          color={colors.carbohydrates}
-          consumed={day.consumedPartial.carbohydrateGrams}
-          goal={day.goals.carbohydrateGrams}
-          label="Carbohidratos"
-        />
-        <MacroRow
-          color={colors.fat}
-          consumed={day.consumedPartial.fatGrams}
-          goal={day.goals.fatGrams}
-          label="Grasas"
+        <MacroRings
+          carbohydrates={day.consumedPartial.carbohydrateGrams}
+          fat={day.consumedPartial.fatGrams}
+          goals={day.goals}
+          protein={day.consumedPartial.proteinGrams}
         />
       </Card>
 
@@ -267,29 +242,6 @@ export default function HomeScreen() {
         </View>
       </Card>
 
-      <Card animated delay={200}>
-        <SectionHeader title="Accesos rápidos" />
-        <View style={styles.shortcuts}>
-          <ShortcutButton
-            icon="scale-outline"
-            label="Peso"
-            onPress={() => router.push('/(tabs)/progress')}
-          />
-          <ShortcutButton
-            icon="calendar-outline"
-            label="Planificar"
-            onPress={() => router.push('/(tabs)/planner')}
-          />
-          {isScannerEnabled() ? (
-            <ShortcutButton
-              icon="camera-outline"
-              label="Escanear"
-              onPress={() => router.push('/scanner')}
-            />
-          ) : null}
-        </View>
-      </Card>
-
       <Card animated delay={250}>
         <SectionHeader
           actionLabel="Ver diario"
@@ -300,7 +252,6 @@ export default function HomeScreen() {
         <MealList meals={day.meals} onMealPress={handleMealPress} />
       </Card>
 
-      <Fab accessibilityLabel="Añadir comida" onPress={handleFabPress} />
     </Screen>
   );
 }
@@ -444,60 +395,51 @@ function AnimatedBar({
   );
 }
 
-function ShortcutButton({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-}) {
+interface MacroRingsProps {
+  protein: PartialNutrient;
+  carbohydrates: PartialNutrient;
+  fat: PartialNutrient;
+  goals: { proteinGrams: number; carbohydrateGrams: number; fatGrams: number };
+}
+
+/** Three small rings, one per macro, each in its own fixed colour. */
+function MacroRings({ protein, carbohydrates, fat, goals }: MacroRingsProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      onPress={() => {
-        hapticSelection();
-        onPress();
-      }}
-      style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}
-    >
-      <View style={styles.shortcutIcon}>
-        <Ionicons color={colors.primary} name={icon} size={22} />
-      </View>
-      <Text style={styles.shortcutLabel}>{label}</Text>
-    </Pressable>
-  );
-}
-
-interface MacroRowProps {
-  label: string;
-  consumed: PartialNutrient;
-  goal: number;
-  color: string;
-}
-
-function MacroRow({ label, consumed, goal, color }: MacroRowProps) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const items = [
+    { label: 'Proteínas', short: 'P', color: colors.protein, partial: protein, goal: goals.proteinGrams },
+    { label: 'Carbos', short: 'C', color: colors.carbohydrates, partial: carbohydrates, goal: goals.carbohydrateGrams },
+    { label: 'Grasas', short: 'G', color: colors.fat, partial: fat, goal: goals.fatGrams },
+  ];
 
   return (
-    <View style={styles.macroRow}>
-      <View style={styles.macroHeader}>
-        <View style={styles.macroLabelRow}>
-          <View style={[styles.macroDot, { backgroundColor: color }]} />
-          <Text style={styles.macroLabel}>{label}</Text>
-        </View>
-        <Text style={styles.macroValue}>
-          {formatPartialAmount(consumed)}{' '}
-          <Text style={styles.macroGoal}>/ {goal} g</Text>
-        </Text>
-      </View>
-      <ProgressBar color={color} maximum={goal} value={consumed.knownTotal} />
+    <View style={styles.macroRings}>
+      {items.map((item) => {
+        const percent =
+          item.goal > 0 ? Math.round((item.partial.knownTotal / item.goal) * 100) : 0;
+
+        return (
+          <View key={item.label} style={styles.macroRingItem}>
+            <ProgressRing
+              accessibilityLabel={`${item.label}: ${formatPartialAmount(item.partial)} de ${item.goal} gramos`}
+              color={item.color}
+              maximum={item.goal}
+              size={76}
+              strokeWidth={8}
+              trackColor={colors.surfaceMuted}
+              value={item.partial.knownTotal}
+            >
+              <Text style={styles.macroRingPercent}>{percent}%</Text>
+            </ProgressRing>
+            <Text style={styles.macroRingLabel}>{item.label}</Text>
+            <Text style={styles.macroRingValue}>
+              {formatPartialAmount(item.partial)}
+              <Text style={styles.macroGoal}> / {item.goal} g</Text>
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -588,6 +530,57 @@ function createStyles(colors: ThemeColors) {
       lineHeight: 16,
       opacity: 0.7,
     },
+    ringValue: {
+      ...tabularNumbers,
+      fontFamily: fonts.brand,
+      fontSize: 30,
+      letterSpacing: -0.5,
+    },
+    ringLabel: {
+      color: colors.onHero,
+      fontFamily: fonts.semibold,
+      fontSize: 12,
+      opacity: 0.8,
+    },
+    streakChip: {
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      borderRadius: radius.pill,
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    streakChipText: {
+      color: colors.onHero,
+      fontFamily: fonts.semibold,
+      fontSize: 12,
+    },
+    macroRings: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    macroRingItem: {
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    macroRingPercent: {
+      ...tabularNumbers,
+      color: colors.text,
+      fontFamily: fonts.heading,
+      fontSize: 15,
+    },
+    macroRingLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    macroRingValue: {
+      ...typography.caption,
+      ...tabularNumbers,
+      color: colors.text,
+    },
     streakColumn: {
       alignItems: 'center',
       gap: spacing.xs,
@@ -622,7 +615,7 @@ function createStyles(colors: ThemeColors) {
     },
     weekLegend: {
       ...typography.caption,
-      color: colors.textMuted,
+      color: colors.warning,
       fontSize: 11,
     },
     weekBarLabel: {
