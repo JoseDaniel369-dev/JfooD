@@ -1,5 +1,11 @@
+import {
+  ImageManipulator,
+  SaveFormat,
+} from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useState } from 'react';
+
+import { fitWithin } from '@/features/scanner/utils/resize';
 
 export type ImagePickerError =
   | 'permission_denied'
@@ -30,10 +36,9 @@ export function useImagePicker() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true,
       });
 
-      return parseResult(result);
+      return await parseResult(result);
     } catch {
       return 'unknown';
     } finally {
@@ -57,10 +62,9 @@ export function useImagePicker() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true,
       });
 
-      return parseResult(result);
+      return await parseResult(result);
     } catch {
       return 'unknown';
     } finally {
@@ -75,28 +79,44 @@ export function useImagePicker() {
   };
 }
 
-function parseResult(
+/**
+ * Shrinks the photo before it is sent: a full camera photo is several MB of
+ * base64, slow on mobile data, while 1024 px is plenty to recognise food.
+ */
+async function parseResult(
   result: ImagePicker.ImagePickerResult,
-): PickedImage | ImagePickerError {
+): Promise<PickedImage | ImagePickerError> {
   if (result.canceled || !result.assets || result.assets.length === 0) {
     return 'no_image';
   }
 
   const asset = result.assets[0]!;
-  const base64 = asset.base64;
-  const uri = asset.uri;
 
-  if (!base64) {
+  try {
+    const context = ImageManipulator.manipulate(asset.uri);
+    const target = fitWithin(asset.width ?? 0, asset.height ?? 0);
+    if (target) {
+      context.resize(target);
+    }
+
+    const rendered = await context.renderAsync();
+    const saved = await rendered.saveAsync({
+      format: SaveFormat.JPEG,
+      compress: 0.7,
+      base64: true,
+    });
+
+    if (!saved.base64) {
+      return 'unknown';
+    }
+
+    return {
+      uri: saved.uri,
+      base64: `data:image/jpeg;base64,${saved.base64}`,
+      width: saved.width,
+      height: saved.height,
+    };
+  } catch {
     return 'unknown';
   }
-
-  const mimeType = asset.mimeType ?? 'image/jpeg';
-  const prefix = `data:${mimeType};base64,`;
-
-  return {
-    uri,
-    base64: prefix + base64,
-    width: asset.width ?? 0,
-    height: asset.height ?? 0,
-  };
 }

@@ -164,6 +164,28 @@ export async function getRecentFoods(
   return rows.map(mapFood);
 }
 
+/** Foods logged most often in the diary (ties broken by most recent use). */
+export async function getFrequentFoods(
+  database: SQLiteDatabase,
+  limit = 10,
+): Promise<Food[]> {
+  const rows = await database.getAllAsync<FoodRow>(
+    `SELECT ${SELECT_FOOD_COLUMNS}
+     FROM foods f
+     INNER JOIN (
+       SELECT food_id, COUNT(*) AS uses, MAX(created_at) AS last_used
+       FROM diary_entries
+       WHERE food_id IS NOT NULL
+       GROUP BY food_id
+     ) usage ON usage.food_id = f.id
+     ORDER BY usage.uses DESC, usage.last_used DESC
+     LIMIT ?`,
+    [limit],
+  );
+
+  return rows.map(mapFood);
+}
+
 export async function getFavoriteFoods(
   database: SQLiteDatabase,
   limit = 20,

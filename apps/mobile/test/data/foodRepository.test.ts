@@ -100,3 +100,18 @@ test('searchFoods matches every word in any order and ranks prefixes first', asy
   assert.equal((await searchFoods(sqlite, '  ')).length, 4);
   assert.equal((await searchFoods(sqlite, 'zanahoria')).length, 0);
 });
+
+test('getFrequentFoods orders by how often a food was logged', async () => {
+  const { getFrequentFoods } = await import('../../src/data/sqlite/repositories/foodRepository');
+  const { sqlite, rice, chicken, apple } = await setup();
+
+  for (let i = 0; i < 3; i += 1) {
+    await addEntry(sqlite, { localDate: `2026-11-0${i + 1}`, mealType: 'lunch', food: chicken, grams: 100 });
+  }
+  await addEntry(sqlite, { localDate: '2026-11-01', mealType: 'lunch', food: rice, grams: 100 });
+  await pause();
+  await addEntry(sqlite, { localDate: '2026-11-01', mealType: 'snack', food: apple, grams: 100 });
+
+  assert.deepEqual((await getFrequentFoods(sqlite, 10)).map((f) => f.name), ['Pollo', 'Manzana', 'Arroz']);
+  assert.equal((await getFrequentFoods(sqlite, 1)).length, 1);
+});

@@ -144,3 +144,22 @@ test('countDiaryEntries counts only the requested day', async () => {
   assert.equal(await countDiaryEntries(sqlite, DATE), 2);
   assert.equal(await countDiaryEntries(sqlite, '2026-12-31'), 0);
 });
+
+test('copyDiaryDay repeats a day (or one meal) with snapshots and never changes the source', async () => {
+  const { sqlite, chicken, mystery } = await setup();
+  const { copyDiaryDay } = await import('../../src/data/sqlite/repositories/diaryRepository');
+  await addEntry(sqlite, { localDate: DATE, mealType: 'lunch', food: chicken, grams: 200 });
+  await addEntry(sqlite, { localDate: DATE, mealType: 'dinner', food: mystery, grams: 100 });
+
+  assert.equal(await copyDiaryDay(sqlite, DATE, '2026-11-02', 'lunch'), 1);
+  assert.equal((await getDiaryDay(sqlite, '2026-11-02')).entries.length, 1);
+
+  assert.equal(await copyDiaryDay(sqlite, DATE, '2026-11-03'), 2);
+  const copied = await getDiaryDay(sqlite, '2026-11-03');
+  assert.equal(copied.meals.lunch.nutrients.caloriesKcal, 300);
+  assert.equal(copied.meals.dinner.nutrients.caloriesKcal, null);
+  assert.equal((await getDiaryDay(sqlite, DATE)).entries.length, 2);
+
+  assert.equal(await copyDiaryDay(sqlite, '2026-12-25', '2026-12-26'), 0);
+  await assert.rejects(() => copyDiaryDay(sqlite, 'garbage', DATE), /fecha no es válida/);
+});

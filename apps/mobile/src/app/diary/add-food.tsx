@@ -34,10 +34,12 @@ import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import {
   createFood,
   getFavoriteFoods,
+  getFrequentFoods,
   getRecentFoods,
   searchFoods,
   toggleFavorite,
 } from '@/data/sqlite/repositories/foodRepository';
+import { entryNutrients } from '@/features/diary/utils/totals';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { MEALS, type MealType } from '@/features/diary/types';
 import type { Food } from '@/features/foods/types';
@@ -78,6 +80,7 @@ export default function AddFoodScreen() {
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [favorites, setFavorites] = useState<Food[]>([]);
   const [recents, setRecents] = useState<Food[]>([]);
+  const [frequents, setFrequents] = useState<Food[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [grams, setGrams] = useState('100');
   const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
@@ -92,12 +95,14 @@ export default function AddFoodScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const loadLists = useCallback(async () => {
-    const [favoriteRows, recentRows] = await Promise.all([
+    const [favoriteRows, recentRows, frequentRows] = await Promise.all([
       getFavoriteFoods(database, 20),
       getRecentFoods(database, 10),
+      getFrequentFoods(database, 8),
     ]);
     setFavorites(favoriteRows);
     setRecents(recentRows);
+    setFrequents(frequentRows);
   }, [database]);
 
   useFocusEffect(
@@ -271,6 +276,25 @@ export default function AddFoodScreen() {
 
   const stepIndex = step === 'search' ? 0 : step === 'create' ? 1 : 2;
 
+  // Live result of the typed amount: "= 195 kcal · P 4 g · C 42 g · G 0 g".
+  const previewText = useMemo(() => {
+    if (!selectedFood || !canAdd) {
+      return 'Introduce una cantidad para ver el resultado.';
+    }
+    const eaten = entryNutrients(
+      {
+        caloriesKcal: selectedFood.caloriesKcal,
+        proteinGrams: selectedFood.proteinGrams,
+        carbohydrateGrams: selectedFood.carbohydrateGrams,
+        fatGrams: selectedFood.fatGrams,
+      },
+      Number(grams.replace(',', '.')),
+    );
+    const part = (value: number | null, unit: string) =>
+      value === null ? `— ${unit}` : `${Math.round(value * 10) / 10} ${unit}`;
+    return `= ${part(eaten.caloriesKcal, 'kcal')} · P ${part(eaten.proteinGrams, 'g')} · C ${part(eaten.carbohydrateGrams, 'g')} · G ${part(eaten.fatGrams, 'g')}`;
+  }, [selectedFood, canAdd, grams]);
+
   return (
     <Screen>
       <StepIndicator current={stepIndex} steps={3} />
@@ -339,6 +363,18 @@ export default function AddFoodScreen() {
                 onSelect={handleSelectFood}
                 onToggleFavorite={handleToggleFavorite}
               />
+              {frequents.length > 0 ? (
+                <>
+                  <View style={styles.sectionSpacer} />
+                  <FoodSection
+                    foods={frequents}
+                    emptyMessage=""
+                    title="Más usados"
+                    onSelect={handleSelectFood}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                </>
+              ) : null}
             </>
           )}
 
@@ -426,6 +462,7 @@ export default function AddFoodScreen() {
           </View>
 
           <View style={styles.form}>
+            <Text style={styles.preview}>{previewText}</Text>
             <FormField
               accessibilityLabel="Cantidad en gramos"
               keyboardType="decimal-pad"
@@ -741,6 +778,11 @@ function createStyles(colors: ThemeColors) {
     foodMacros: {
       color: colors.textMuted,
       fontSize: 12,
+    },
+    preview: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: '700',
     },
     favoriteButton: {
       alignItems: 'center',

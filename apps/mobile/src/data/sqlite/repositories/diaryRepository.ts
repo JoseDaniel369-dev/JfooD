@@ -157,6 +157,67 @@ export async function addEntry(
   );
 }
 
+/**
+ * Copies the entries of one day (optionally one meal) to another day, keeping
+ * their nutrient snapshots. Returns how many entries were copied.
+ */
+export async function copyDiaryDay(
+  database: SQLiteDatabase,
+  fromLocalDate: string,
+  toLocalDate: string,
+  mealType?: MealType,
+): Promise<number> {
+  assertLocalDate(fromLocalDate);
+  assertLocalDate(toLocalDate);
+
+  const rows = await database.getAllAsync<
+    EntryRow & { food_id: string | null }
+  >(
+    `SELECT entry.id, meal.meal_type, entry.food_id, entry.food_name, entry.grams,
+            entry.calories_kcal, entry.protein_grams,
+            entry.carbohydrate_grams, entry.fat_grams
+     FROM diary_entries AS entry
+     INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
+     WHERE meal.local_date = ? AND (? IS NULL OR meal.meal_type = ?)
+     ORDER BY entry.created_at, entry.id`,
+    [fromLocalDate, mealType ?? null, mealType ?? null],
+  );
+
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  await database.withTransactionAsync(async () => {
+    for (const row of rows) {
+      const mealId = await ensureMeal(database, toLocalDate, row.meal_type);
+      const now = new Date().toISOString();
+
+      await database.runAsync(
+        `INSERT INTO diary_entries (
+          id, meal_id, food_id, food_name, grams,
+          calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          generateId(),
+          mealId,
+          row.food_id,
+          row.food_name,
+          row.grams,
+          row.calories_kcal,
+          row.protein_grams,
+          row.carbohydrate_grams,
+          row.fat_grams,
+          now,
+          now,
+        ],
+      );
+    }
+  });
+
+  return rows.length;
+}
+
 export async function updateEntryGrams(
   database: SQLiteDatabase,
   entryId: string,

@@ -5,6 +5,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { ActionSheet } from '@/components/ActionSheet';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DayNavigator } from '@/components/DayNavigator';
@@ -15,6 +16,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
 import {
+  copyDiaryDay,
   deleteEntry,
   moveEntry,
   updateEntryGrams,
@@ -80,6 +82,21 @@ export default function DiaryScreen() {
       pathname: '/diary/add-food',
       params: { date: localDate, meal: mealType },
     });
+  };
+
+  const handleRepeatYesterday = async () => {
+    try {
+      const count = await copyDiaryDay(database, addDays(localDate, -1), localDate);
+      if (count === 0) {
+        showToast('No hay comidas registradas el día anterior.', 'error');
+        return;
+      }
+      await refresh();
+      hapticSuccess();
+      showToast(`Se han copiado ${count} alimento(s) del día anterior.`);
+    } catch {
+      showToast('No se han podido copiar las comidas.', 'error');
+    }
   };
 
   const handleEntryPress = (entry: DiaryEntry) => {
@@ -275,6 +292,15 @@ export default function DiaryScreen() {
             </Text>
           ) : null}
         </Card>
+
+        {day.entries.length === 0 ? (
+          <Button
+            icon="copy-outline"
+            title="Repetir comidas del día anterior"
+            variant="secondary"
+            onPress={() => void handleRepeatYesterday()}
+          />
+        ) : null}
 
         <Card animated delay={100}>
           <SectionHeader
