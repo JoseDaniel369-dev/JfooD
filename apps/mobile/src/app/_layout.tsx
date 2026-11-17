@@ -88,6 +88,7 @@ function RootNavigator() {
             title: 'Escáner de alimentos',
           }}
         />
+        <Stack.Screen name="recipe" options={{ title: 'Receta' }} />
         <Stack.Screen
           name="barcode"
           options={{

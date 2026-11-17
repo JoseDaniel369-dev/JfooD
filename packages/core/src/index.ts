@@ -1,4 +1,9 @@
 export {
+  computeRecipe,
+  type RecipeIngredient,
+  type RecipeResult,
+} from './nutrition/recipe.js';
+export {
   FOOD_INPUT_LIMITS,
   calculateNutrients,
   foodInputNutrientsSchema,

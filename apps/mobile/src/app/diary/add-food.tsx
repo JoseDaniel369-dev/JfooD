@@ -428,6 +428,12 @@ export default function AddFoodScreen() {
             variant="secondary"
             onPress={() => setStep('create')}
           />
+          <Button
+            icon="restaurant-outline"
+            title="Crear receta"
+            variant="secondary"
+            onPress={() => router.push('/recipe')}
+          />
         </FadeInView>
       ) : null}
 
