@@ -179,7 +179,19 @@ Informe completo y plan de correcciones en el plan de la sesión. Corregido en e
 - **Calidad:** tests de SQLite (`node:sqlite`), API (proxy, límites, contratos) y config; `typecheck` incluye los tests; `expo install --fix`; CI en GitHub Actions; guardia de `user_version` futura.
 - **UX puntual:** teclado numérico y chips de gramos, comida por hora, `reduce motion`, errores con Toast, aviso al copiar un plan sobre un diario con entradas.
 
-**Pendiente de la auditoría (no incluido):** copia de seguridad/exportación de datos (necesita `expo-file-system`/`expo-sharing`), gráfico de peso proporcional al tiempo, objetivos táctiles ≥ 48 dp en iconos, revisión del suelo de 64 dp de la barra de pestañas (probar en dispositivo), búsqueda por palabras, redimensionado de la foto del escáner, refactor de hooks de fecha duplicados y rediseño visual. Verificación en dispositivo pendiente.
+### 3.11 Implementación del plan restante (lotes 6-16)
+
+- **Lote 6:** búsqueda por palabras, gráfico de peso proporcional al calendario (tooltip en píxeles reales), objetivos táctiles ≥ 48 dp, `useLocalDay` (unifica los tres hooks de día), pantalla de carga con tema y toast arriba.
+- **Lote 7:** copia de seguridad y restauración (JSON versionado, restauración atómica, columnas en lista blanca) en Perfil → «Tus datos».
+- **Lote 8:** «Más usados», vista previa en vivo de la cantidad, «Repetir comidas del día anterior»; foto del escáner reducida a 1024 px (JPEG 0,7).
+- **Lote 9:** objetivo de peso (mantener/perder/ganar, 0,25–1 kg/semana), migración 005.
+- **Lote 10:** rediseño visual v1: anillo de calorías y de macros, botón central «+», Nunito completo, token `warning`.
+- **Lote 11:** vista semanal del planificador y «Duplicar al día siguiente».
+- **Lote 12:** escáner de código de barras con Open Food Facts (solo variante con red).
+- **Lote 13:** `POST /parse-meal`: registro por texto con el mismo contrato estricto.
+- **Lote 14:** raciones por alimento (migración 006). **Lote 15:** recetas como alimentos (`computeRecipe`). **Lote 16:** ESLint en api/core.
+
+**Sigue pendiente:** catálogo base offline (BEDCA/Open Food Facts: requiere decidir fuente y licencia), micronutrientes (fibra, azúcares, sal: cambia `Nutrients` y los snapshots), resumen semanal y generación de menús con IA, rediseño completo de Progreso y de «Añadir alimento» en una pantalla con hoja de cantidad, Health Connect, suelo de 64 dp de la barra de pestañas (probar en dispositivo), índices redundantes (sin síntoma) y verificación en dispositivo de todo lo anterior.
 
 ---
 

@@ -58,6 +58,13 @@ El motor ya calcula nutrientes por gramos y conserva los valores desconocidos co
 
 El plan por fases, el estado detallado y las instrucciones para retomar el desarrollo en una sesión nueva están en [`PLAN.md`](PLAN.md).
 
+## Datos del usuario, objetivos y recetas
+
+- **Copia de seguridad:** Perfil → «Tus datos» exporta un JSON versionado y restaura desde un archivo. La restauración es atómica: si algo no es válido, no se cambia nada.
+- **Objetivo de peso:** mantener, perder o ganar con un ritmo de 0,25 a 1 kg por semana; las calorías nunca bajan de 1200 kcal.
+- **Raciones y recetas:** cada alimento puede tener raciones ("1 unidad = 60 g"); una receta combina alimentos y se guarda como un alimento más.
+- **Planificador:** tira semanal con las calorías de cada día y duplicado del día al siguiente. El botón central «+» de la barra da acceso rápido a añadir comida, escanear, planificar y registrar peso.
+
 ## Registro por texto
 
 Además de la foto, el escáner admite describir la comida ("2 huevos y un café con leche"). `POST /parse-meal` devuelve el mismo contrato estricto que `/recognize` (nombre, gramos estimados y confianza, nunca nutrientes), comparte el límite diario de Gemini y trata el texto como datos, no como instrucciones. Todo resultado pasa por la revisión obligatoria y por el catálogo local antes de guardarse.
