@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `postinstall` builds @jfood/core, so a stale dist can never hide a break.
+      - run: npm ci
+
+      - name: Tests (core, api, mobile incl. SQLite repositories)
+        run: npm test
+
+      - name: Typecheck (sources and tests)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build core and api
+        run: npm run build
+
+      - name: Export Android bundle
+        working-directory: apps/mobile
+        run: npx expo export --platform android --output-dir "$RUNNER_TEMP/export-android"
+
+      - name: Expo Doctor
+        working-directory: apps/mobile
+        run: npx expo-doctor

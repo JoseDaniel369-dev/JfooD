@@ -1,6 +1,6 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 16 de noviembre de 2026
+**Última actualización:** 17 de noviembre de 2026 (auditoría integral)
 **Estado:** Fases 0, 1, 2, 3, 4, 4.5, 5, 6, 7 y R completadas; se han aplicado las correcciones de la segunda auditoría post-Fase R. La app cuenta con un refresh visual, modo oscuro, racha/estadísticas, registro de agua, gestión del catálogo de alimentos, gráfico de línea en Progreso, onboarding y un rediseño animado e intuitivo; está lista para compilar y distribuir dos APKs.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`. La Fase R (rediseño animado) ya está completada.
@@ -164,6 +164,22 @@ Nueva revisión de los archivos que no se habían inspeccionado en la primera ro
 - **Accesibilidad:** el input de objetivo de agua en Perfil tiene `accessibilityLabel`.
 - **Feedback de error en tarjeta de agua (`apps/mobile/src/app/(tabs)/index.tsx`):** si falla la carga del registro de agua, la tarjeta muestra un caption de error en lugar de quedarse en 0/goal.
 - **SQL simplificado en `foodRepository.getRecentFoods`:** se eliminó el `GROUP BY f.id` externo porque el subquery `latest` ya devuelve una fila por alimento, haciendo la consulta más clara y portable.
+
+### 3.10 Auditoría integral (17 de noviembre de 2026)
+
+Informe completo y plan de correcciones en el plan de la sesión. Corregido en esta ronda (cada punto con test):
+
+- **DATA-01 (crítico):** `saveProfile` ya no pisa el peso de hoy con un valor obsoleto del formulario (`SaveProfileOptions.loadedWeightKg`); `useProfile` refresca en cada foco y el formulario se remonta si cambian los datos guardados.
+- **DATA-02:** `getRecentFoods` devolvía como máximo 1 alimento (`MAX()` sin `GROUP BY`): regresión de la segunda auditoría post-Fase R.
+- **API (nuevo, alto):** el rate limit de `/recognize` **nunca se aplicó** porque las rutas se registraban antes de cargar el plugin; ahora se registran en un plugin posterior. Además `trustProxy` limitado a N saltos (IP real tras Render), tope diario global, contrato Zod de la petición (`recognizeRequestSchema`), clave de Gemini en cabecera `x-goog-api-key`, partes múltiples de la respuesta.
+- **NUT-01…05:** `sumNutrientsKnown` + UI "≥ X kcal · N sin datos"; edición de los valores nutricionales de una entrada ("Completar datos"); rangos plausibles de perfil y suelo de 1200 kcal; `foodInputNutrientsSchema` (solo entrada) para macros imposibles; `MealList` sin fórmulas propias; semana con tres estados.
+- **Fechas:** `assertLocalDate` en repositorios y parámetros de ruta; sin pesos futuros.
+- **Escáner:** respuesta validada con el contrato del núcleo, confianza visible, un alimento nuevo por nombre, sin doble alta tras "datos manualmente", aviso de privacidad en el primer uso.
+- **Build/permisos:** sin `RECORD_AUDIO`; la variante estable sin cámara/fotos; guarda contra URL de ejemplo o no HTTPS.
+- **Calidad:** tests de SQLite (`node:sqlite`), API (proxy, límites, contratos) y config; `typecheck` incluye los tests; `expo install --fix`; CI en GitHub Actions; guardia de `user_version` futura.
+- **UX puntual:** teclado numérico y chips de gramos, comida por hora, `reduce motion`, errores con Toast, aviso al copiar un plan sobre un diario con entradas.
+
+**Pendiente de la auditoría (no incluido):** copia de seguridad/exportación de datos (necesita `expo-file-system`/`expo-sharing`), gráfico de peso proporcional al tiempo, objetivos táctiles ≥ 48 dp en iconos, revisión del suelo de 64 dp de la barra de pestañas (probar en dispositivo), búsqueda por palabras, redimensionado de la foto del escáner, refactor de hooks de fecha duplicados y rediseño visual. Verificación en dispositivo pendiente.
 
 ---
 

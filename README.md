@@ -16,7 +16,7 @@ La Fase 1 añade el diario completo y el catálogo local offline: se pueden crea
 
 La Fase 3 convierte la pantalla de Progreso en un registro de peso funcional: permite añadir, editar y eliminar registros por fecha, muestra el cambio respecto al peso anterior y la media de los últimos 7 días, y mantiene todo el historial localmente.
 
-La Fase 4 implementa el planificador semanal: permite añadir alimentos del catálogo local a cualquier día, editar gramos, mover entradas entre comidas, eliminarlas y copiar un día planificado completo al diario. Todo se guarda localmente y funciona sin conexión.
+La Fase 4 implementa el planificador (navegación día a día, sin vista de semana todavía): permite añadir alimentos del catálogo local a cualquier día, editar gramos, mover entradas entre comidas, eliminarlas y copiar un día planificado completo al diario. Todo se guarda localmente y funciona sin conexión.
 
 La Fase 4.5 refina la interfaz y la experiencia de interacción: sistema de diseño unificado con `Button`, `ActionSheet`, `ConfirmDialog`, `EmptyState`, `DayNavigator` y `SectionHeader`; navegación de días en el Diario; totales y macros visibles en el Plan; accesos rápidos y comidas pulsables en Inicio; selector de fecha nativo y mini-gráfico de tendencia en Progreso; resumen de objetivos y formulario por secciones en Perfil.
 
@@ -52,7 +52,9 @@ La app deriva automáticamente la URL del backend en desarrollo a partir de la I
 
 La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`56 + inset inferior`) y un suelo de 64 dp para la zona de navegación, evitando que la barra del sistema se solape con los iconos o etiquetas incluso en dispositivos que infrarreportan el inset inferior. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
 
-El motor ya calcula nutrientes por gramos y conserva los valores desconocidos como `null`. El contrato de reconocimiento admite únicamente nombre, gramos estimados y confianza, nunca valores nutricionales generados por Gemini.
+**Auditoría integral (noviembre de 2026).** Se corrigieron: sobrescritura del peso de hoy al guardar el Perfil con datos obsoletos, "Recientes" que devolvía una sola fila, rate limit de `/recognize` que nunca se aplicaba (rutas registradas antes del plugin) y que no distinguía clientes tras el proxy de Render, totales del día anulados por un alimento sin calorías (ahora "≥ X kcal · N sin datos" con edición de los valores de la entrada), rangos absurdos de peso/altura/edad, macros físicamente imposibles al crear alimentos, fechas inválidas o futuras, clave de Gemini en la URL, petición/respuesta de `/recognize` sin contrato Zod, permisos de cámara/micrófono innecesarios y falta de aviso de privacidad del escáner. Se añadieron tests de la capa SQLite (`node:sqlite`), de la API y de la configuración de build, y CI.
+
+El motor ya calcula nutrientes por gramos y conserva los valores desconocidos como `null`; para mostrarlos, `sumNutrientsKnown` devuelve el total conocido y cuántos valores faltan (nunca se cuentan como cero). El contrato de reconocimiento admite únicamente nombre, gramos estimados y confianza, nunca valores nutricionales generados por Gemini.
 
 El plan por fases, el estado detallado y las instrucciones para retomar el desarrollo en una sesión nueva están en [`PLAN.md`](PLAN.md).
 
@@ -76,7 +78,16 @@ Para el backend:
 npm run start:api
 ```
 
-El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vacía se interpreta como no configurada, de modo que la API arranca sin ella. Copia `.env.example` como `apps/api/.env` y configura `GEMINI_API_KEY` solo en el backend. Nunca uses variables `EXPO_PUBLIC_*` para secretos.
+El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vacía se interpreta como no configurada, de modo que la API arranca sin ella. Crea `apps/api/.env` (ignorado por git) con estas variables y configura `GEMINI_API_KEY` solo en el backend. Nunca uses variables `EXPO_PUBLIC_*` para secretos.
+
+```sh
+GEMINI_API_KEY=            # obligatoria para /recognize
+GEMINI_MODEL=gemini-3.5-flash-lite
+API_HOST=0.0.0.0
+API_PORT=3000              # PORT tiene prioridad (Render)
+RECOGNIZE_DAILY_LIMIT=300  # llamadas a Gemini por día UTC para todos los usuarios
+TRUST_PROXY_HOPS=          # proxies de confianza; por defecto 1 en Render (variable RENDER) y 0 en local
+```
 
 ## Despliegue y builds de distribución
 
@@ -84,13 +95,13 @@ El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vac
 
 1. Crea un servicio web en [Render](https://render.com) desde tu repositorio de GitHub.
 2. Selecciona el directorio raíz y el comando de arranque: `npm run start:api`.
-3. Añade una variable de entorno `GEMINI_API_KEY` con tu clave de Gemini.
+3. Añade una variable de entorno `GEMINI_API_KEY` con tu clave de Gemini. Render define `RENDER`, por lo que la API confía en 1 proxy para obtener la IP real del cliente (rate limit de 10 req/min por IP); si pones otro proxy delante (p. ej. Cloudflare), ajusta `TRUST_PROXY_HOPS`.
 4. Render inyecta `PORT` automáticamente; el servidor lo usa como fallback de `API_PORT`.
 5. Para evitar el cold start de ~1 min, crea un monitor gratuito en [UptimeRobot](https://uptimerobot.com) que haga ping a `https://TU_API.onrender.com/health` cada 5 min.
 
 ### Builds de la app con EAS
 
-Edita `apps/mobile/eas.json` y reemplaza `https://TU_API.onrender.com` por la URL real de tu API:
+Edita `apps/mobile/eas.json` y reemplaza `https://TU_API.onrender.com` por la URL real de tu API (la build falla si queda el valor de ejemplo o si la URL no es HTTPS):
 
 ```json
 "env": {
@@ -106,6 +117,8 @@ npx eas-cli@latest build --profile estable        # APK 100 % offline
 npx eas-cli@latest build --profile experimental   # APK con escáner Gemini
 ```
 
+La variante estable no declara permisos de cámara ni fotos; ninguna variante pide micrófono. La primera vez que se usa el escáner se muestra un aviso explicando que la foto se envía a Google (Gemini).
+
 Ambos perfiles usan `distribution: internal` y generan un APK que puedes compartir directamente por sideload. La versión experimental se instala como `JfooD Experimental` (`com.jfood.app.experimental`) para que no sobrescriba la estable.
 
 ### Variables de entorno del móvil
@@ -117,11 +130,13 @@ Ambos perfiles usan `distribution: internal` y generan un APK que puedes compart
 
 ```sh
 npm test
-npm run typecheck
+npm run typecheck   # fuentes y tests de los tres paquetes
 npm run lint
 npm run build
 npx expo export --platform android
 ```
+
+`npm test` ejecuta las migraciones reales sobre SQLite en memoria (`apps/mobile/test/helpers/sqliteAdapter.ts`, basado en `node:sqlite`) para probar los repositorios. Si cambias dependencias o `packages/core`, ejecuta `npm ci`: `@jfood/core` se consume desde `dist` y un `dist` antiguo rompe la app. El workflow `.github/workflows/ci.yml` repite todas estas comprobaciones.
 
 Diagnóstico adicional de la app:
 
@@ -132,5 +147,7 @@ npm exec -w @jfood/mobile -- expo-doctor
 ## Modelo de datos
 
 La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso. La migración `002_plan` añade la tabla `plan_entries`; `003_settings` añade `app_settings` para preferencias (tema, onboarding visto, objetivo de agua); `004_water` añade `water_logs`. Las entradas del diario y del plan guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
+
+Las fechas se guardan como texto `YYYY-MM-DD`; los repositorios las validan y no admiten pesos con fecha futura. Una base de datos con `user_version` mayor que el de la app no se abre (evita corromper datos al instalar una build antigua).
 
 Los objetivos iniciales de la interfaz son provisionales (2000 kcal) hasta completar su configuración en Perfil, y la pantalla de Inicio lo indica explícitamente. Todos los datos se almacenan localmente en `jfood.db`.
