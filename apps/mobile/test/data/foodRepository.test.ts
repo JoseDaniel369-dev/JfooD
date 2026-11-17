@@ -115,3 +115,24 @@ test('getFrequentFoods orders by how often a food was logged', async () => {
   assert.deepEqual((await getFrequentFoods(sqlite, 10)).map((f) => f.name), ['Pollo', 'Manzana', 'Arroz']);
   assert.equal((await getFrequentFoods(sqlite, 1)).length, 1);
 });
+
+test('foods imported from a barcode are found by it and the barcode stays unique', async () => {
+  const { findFoodByBarcode } = await import('../../src/data/sqlite/repositories/foodRepository');
+  const db = await createMigratedDatabase();
+  const sqlite = db.asSqlite();
+
+  const food = await createFood(sqlite, {
+    name: 'Crema de cacao',
+    barcode: '8410000123456',
+    source: 'open_food_facts',
+    externalId: '8410000123456',
+    caloriesKcal: 539,
+  });
+
+  assert.equal((await findFoodByBarcode(sqlite, '8410000123456'))?.id, food.id);
+  assert.equal(await findFoodByBarcode(sqlite, '0000000000000'), null);
+  assert.equal(food.source, 'open_food_facts');
+  await assert.rejects(() =>
+    createFood(sqlite, { name: 'Duplicado', barcode: '8410000123456', source: 'open_food_facts' }),
+  );
+});

@@ -18,8 +18,17 @@ export interface Food {
   updatedAt: string;
 }
 
+/** Foods the person may edit or delete (their own and ones imported from a barcode). */
+export function isEditableSource(source: FoodSource): boolean {
+  return source === 'user' || source === 'open_food_facts';
+}
+
 export interface CreateFoodInput {
   name: string;
+  /** Barcode of a packaged product (digits only). */
+  barcode?: string | null;
+  source?: FoodSource;
+  externalId?: string | null;
   brand?: string | null;
   caloriesKcal?: number | null;
   proteinGrams?: number | null;

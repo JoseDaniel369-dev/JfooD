@@ -49,6 +49,19 @@ export default function TabsLayout() {
           },
         ]
       : []),
+    ...(isScannerEnabled()
+      ? [
+          {
+            label: 'Escanear código de barras',
+            icon: 'barcode-outline' as const,
+            onPress: () =>
+              router.push({
+                pathname: '/barcode',
+                params: { date: toLocalDate(new Date()), meal: currentDefaultMeal() },
+              }),
+          },
+        ]
+      : []),
     {
       label: 'Añadir al plan',
       icon: 'calendar-outline' as const,

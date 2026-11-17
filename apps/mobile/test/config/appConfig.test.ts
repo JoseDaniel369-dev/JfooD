@@ -33,6 +33,24 @@ test('stable build: offline package, no camera, photo or microphone permissions'
   assert.equal(options?.microphonePermission, false);
 });
 
+test('the camera plugin follows the same rules as the image picker', () => {
+  const find = (plugins: unknown[]) =>
+    (plugins.find((p) => Array.isArray(p) && p[0] === 'expo-camera') as
+      | [string, Record<string, unknown>]
+      | undefined)?.[1];
+
+  delete process.env.EXPO_PUBLIC_API_URL;
+  const stable = find(buildConfig({ config: {} }).plugins);
+  assert.equal(stable?.cameraPermission, false);
+  assert.equal(stable?.microphonePermission, false);
+  assert.equal(stable?.recordAudioAndroid, false);
+
+  process.env.EXPO_PUBLIC_API_URL = 'https://api.example.com';
+  const experimental = find(buildConfig({ config: {} }).plugins);
+  assert.equal(typeof experimental?.cameraPermission, 'string');
+  assert.equal(experimental?.microphonePermission, false);
+});
+
 test('experimental build: own package, camera allowed, microphone never requested', () => {
   process.env.EXPO_PUBLIC_API_URL = 'https://api.example.com';
   const config = buildConfig({ config: {} });

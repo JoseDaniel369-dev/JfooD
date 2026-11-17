@@ -23,7 +23,7 @@ import {
   hapticWarning,
 } from '@/features/haptics/haptics';
 import { animateNextLayout } from '@/features/motion/motion';
-import type { Food } from '@/features/foods/types';
+import { isEditableSource, type Food } from '@/features/foods/types';
 import { useToast } from '@/components/Toast';
 import {
   radius,
@@ -91,7 +91,7 @@ export default function FoodDetailScreen() {
     }, [load]),
   );
 
-  const isUserFood = food?.source === 'user';
+  const isUserFood = food ? isEditableSource(food.source) : false;
 
   const startEditing = () => {
     if (!food) return;
@@ -231,7 +231,13 @@ export default function FoodDetailScreen() {
             />
             <InfoRow
               label="Origen"
-              value={isUserFood ? 'Creado por ti' : 'Catálogo predefinido'}
+              value={
+                food.source === 'open_food_facts'
+                  ? 'Open Food Facts (código de barras)'
+                  : isUserFood
+                    ? 'Creado por ti'
+                    : 'Catálogo predefinido'
+              }
             />
           </Card>
 

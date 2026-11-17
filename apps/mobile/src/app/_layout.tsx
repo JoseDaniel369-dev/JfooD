@@ -89,6 +89,14 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen
+          name="barcode"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+            title: 'Código de barras',
+          }}
+        />
+        <Stack.Screen
           name="foods/[id]"
           options={{
             title: 'Alimento',

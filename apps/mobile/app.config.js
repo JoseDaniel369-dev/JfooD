@@ -66,6 +66,18 @@ module.exports = ({ config }) => {
           microphonePermission: false,
         },
       ],
+      [
+        'expo-camera',
+        {
+          // Barcode scanning needs the network (Open Food Facts), so only the
+          // experimental build declares the camera; nobody needs the microphone.
+          cameraPermission: experimental
+            ? 'JfooD necesita la cámara para leer el código de barras de los productos.'
+            : false,
+          microphonePermission: false,
+          recordAudioAndroid: false,
+        },
+      ],
       '@react-native-community/datetimepicker',
       'expo-status-bar',
       'expo-font',

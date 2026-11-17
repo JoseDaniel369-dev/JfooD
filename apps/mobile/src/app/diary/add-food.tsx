@@ -34,6 +34,7 @@ import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import {
   createFood,
   getFavoriteFoods,
+  getFoodById,
   getFrequentFoods,
   getRecentFoods,
   searchFoods,
@@ -42,7 +43,7 @@ import {
 import { entryNutrients } from '@/features/diary/utils/totals';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { MEALS, type MealType } from '@/features/diary/types';
-import type { Food } from '@/features/foods/types';
+import { isEditableSource, type Food } from '@/features/foods/types';
 import {
   radius,
   spacing,
@@ -59,11 +60,12 @@ export default function AddFoodScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
   const database = useSQLiteContext();
-  const { date, meal, target, name } = useLocalSearchParams<{
+  const { date, meal, target, name, foodId } = useLocalSearchParams<{
     date?: string;
     meal?: string;
     target?: string;
     name?: string;
+    foodId?: string;
   }>();
   // Route params can come from a deep link: never trust them as a date.
   const localDate =
@@ -93,6 +95,29 @@ export default function AddFoodScreen() {
   const [createCarbs, setCreateCarbs] = useState('');
   const [createFat, setCreateFat] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Opened from the barcode scanner with a food already chosen: go straight to
+  // the amount step.
+  useEffect(() => {
+    if (!foodId) return;
+    let cancelled = false;
+
+    void getFoodById(database, foodId)
+      .then((food) => {
+        if (!cancelled && food) {
+          setSelectedFood(food);
+          setGrams('100');
+          setStep('quantity');
+        }
+      })
+      .catch(() => {
+        // Falls back to the search step.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [database, foodId]);
 
   const loadLists = useCallback(async () => {
     const [favoriteRows, recentRows, frequentRows] = await Promise.all([
@@ -607,7 +632,7 @@ function FoodSection({
                 size={22}
               />
             </Pressable>
-            {food.source === 'user' ? (
+            {isEditableSource(food.source) ? (
               <Pressable
                 accessibilityLabel={`Editar ${food.name}`}
                 accessibilityRole="button"

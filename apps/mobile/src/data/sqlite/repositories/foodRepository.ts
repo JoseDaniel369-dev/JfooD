@@ -64,9 +64,9 @@ export async function createFood(
     name,
     normalizedName: normalizeName(name),
     brand: input.brand?.trim() ?? null,
-    barcode: null,
-    source: 'user',
-    externalId: null,
+    barcode: input.barcode ?? null,
+    source: input.source ?? 'user',
+    externalId: input.externalId ?? null,
     caloriesKcal: input.caloriesKcal ?? null,
     proteinGrams: input.proteinGrams ?? null,
     carbohydrateGrams: input.carbohydrateGrams ?? null,
@@ -222,6 +222,21 @@ export async function toggleFavorite(
   );
 
   return row?.is_favorite === 1;
+}
+
+/** Local food with this barcode (the barcode column is unique), or null. */
+export async function findFoodByBarcode(
+  database: SQLiteDatabase,
+  barcode: string,
+): Promise<Food | null> {
+  const row = await database.getFirstAsync<FoodRow>(
+    `SELECT ${SELECT_FOOD_COLUMNS}
+     FROM foods
+     WHERE barcode = ?`,
+    [barcode],
+  );
+
+  return row ? mapFood(row) : null;
 }
 
 export async function getFoodById(

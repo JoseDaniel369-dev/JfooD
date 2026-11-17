@@ -69,7 +69,7 @@ export async function updateEntryNutrients(
         `UPDATE foods
          SET calories_kcal = ?, protein_grams = ?, carbohydrate_grams = ?,
              fat_grams = ?, updated_at = ?
-         WHERE id = ? AND source = 'user'`,
+         WHERE id = ? AND source IN ('user', 'open_food_facts')`,
         [
           values.caloriesKcal,
           values.proteinGrams,
