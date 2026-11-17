@@ -15,6 +15,7 @@ import {
   ProfileForm,
   type ProfileSubmitMeta,
 } from '@/features/profile/components/ProfileForm';
+import { BackupCard } from '@/features/backup/BackupCard';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { parseWaterGoal } from '@/features/water/utils/goal';
@@ -176,6 +177,8 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      <BackupCard onRestored={() => void load()} />
 
       <View style={styles.notice}>
         <Text style={styles.noticeText}>

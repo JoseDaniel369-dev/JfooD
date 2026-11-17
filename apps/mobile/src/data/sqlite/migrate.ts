@@ -12,6 +12,9 @@ const migrations = [
   { version: 4, sql: waterMigration },
 ] as const;
 
+/** Schema version produced by the last migration. */
+export const LATEST_SCHEMA_VERSION = migrations[migrations.length - 1]?.version ?? 0;
+
 export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   await database.execAsync(`
     PRAGMA journal_mode = WAL;
@@ -22,7 +25,7 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
     'PRAGMA user_version',
   );
   const currentVersion = result?.user_version ?? 0;
-  const latestVersion = migrations[migrations.length - 1]?.version ?? 0;
+  const latestVersion = LATEST_SCHEMA_VERSION;
 
   if (currentVersion > latestVersion) {
     // An older build opened a database created by a newer one. Running on it
