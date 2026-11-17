@@ -8,6 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "test": "tsx --test test/**/*.test.ts",
+    "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {

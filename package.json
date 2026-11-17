@@ -17,11 +17,15 @@
   "scripts": {
     "build": "npm run build -w @jfood/core && npm run build -w @jfood/api",
     "build:core": "npm run build -w @jfood/core",
-    "lint": "npm run lint -w @jfood/mobile",
+    "lint": "npm run lint --workspaces --if-present",
     "postinstall": "npm run build -w @jfood/core",
     "start:api": "npm run dev -w @jfood/api",
     "start:mobile": "npm run build -w @jfood/core && npm run start -w @jfood/mobile",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.73.0",
+    "@typescript-eslint/parser": "^8.73.0"
   }
 }
