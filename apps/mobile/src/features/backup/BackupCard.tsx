@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
 import {
+  hasCatalogFoods,
   BackupError,
   restoreBackup,
   type BackupCounts,
@@ -69,7 +70,7 @@ export function BackupCard({ onRestored }: { onRestored?: () => void }) {
       const counts = await restoreBackup(database, backup);
       // A copy made before the base catalog existed replaces the foods table
       // with one that lacks it: load it again right away.
-      await seedCatalog(database).catch(() => false);
+      await seedCatalog(database, { force: !hasCatalogFoods(backup) }).catch(() => false);
       // The copy may carry another theme: apply it without restarting the app.
       await reloadPreference();
       hapticSuccess();

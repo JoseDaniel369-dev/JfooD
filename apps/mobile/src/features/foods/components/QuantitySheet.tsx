@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -78,6 +78,8 @@ function QuantityForm({
   const [text, setText] = useState('100');
   const [meal, setMeal] = useState<MealType>(initialMeal);
   const [saving, setSaving] = useState(false);
+  /** Set synchronously: two quick taps can both still see "not saving". */
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,11 +100,13 @@ function QuantityForm({
   const eaten = grams === null ? null : entryNutrients(foodNutrients(food), grams);
 
   const submit = async (keepOpen: boolean) => {
-    if (grams === null || saving) return;
+    if (grams === null || submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     try {
       await onSubmit(grams, meal, keepOpen);
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };

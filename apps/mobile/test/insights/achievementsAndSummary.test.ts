@@ -6,6 +6,7 @@ import {
   countWeighedWeeks,
   detectNewAchievements,
   evaluateAchievements,
+  mergeSeenIds,
   parseSeenIds,
 } from '../../src/features/achievements/achievements';
 import { buildWeekSummary, type WeekSummaryInput } from '../../src/features/insights/buildWeekSummary';
@@ -81,6 +82,20 @@ test('only unlocked achievements not seen before are reported as new', () => {
   );
   assert.deepEqual(detectNewAchievements(list, ['first-entry']).map((a) => a.id), ['entries-100']);
   assert.deepEqual(detectNewAchievements(list, ['first-entry', 'entries-100']), []);
+});
+
+test('seen ids only grow: a lost and regained achievement is not celebrated twice', () => {
+  const withRecipe = evaluateAchievements({ ...EMPTY, totalEntries: 1, recipes: 1 }, TODAY, 0);
+  const seen = mergeSeenIds([], withRecipe);
+  assert.deepEqual([...seen].sort(), ['first-entry', 'first-recipe']);
+
+  // The recipe is deleted: only the first entry is unlocked, but nothing is forgotten.
+  const withoutRecipe = evaluateAchievements({ ...EMPTY, totalEntries: 1 }, TODAY, 0);
+  const afterLoss = mergeSeenIds(seen, withoutRecipe);
+  assert.deepEqual([...afterLoss].sort(), ['first-entry', 'first-recipe']);
+
+  // A new recipe: unlocked again, yet already seen.
+  assert.deepEqual(detectNewAchievements(withRecipe, afterLoss), []);
 });
 
 test('the stored list of seen ids tolerates anything unexpected', () => {

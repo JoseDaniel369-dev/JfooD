@@ -140,6 +140,18 @@ test('seeding again does nothing, and never duplicates', async () => {
   assert.equal(rows[0]?.count, SEED_CATALOG.length);
 });
 
+test('catalog foods the person deleted do not come back on the next launch', async () => {
+  const sqlite = (await createMigratedDatabase()).asSqlite();
+  await seedCatalog(sqlite);
+  await sqlite.runAsync("DELETE FROM foods WHERE source = 'seed'");
+
+  assert.equal(await seedCatalog(sqlite), false);
+  const rows = await sqlite.getAllAsync<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM foods WHERE source = 'seed'",
+  );
+  assert.equal(rows[0]?.count, 0);
+});
+
 test('a new catalog version refreshes the catalog foods but never the person’s own', async () => {
   const db = await createMigratedDatabase();
   const sqlite = db.asSqlite();
@@ -217,7 +229,8 @@ test('after restoring a backup that has no catalog, the catalog comes back', asy
   );
   assert.equal(before[0]?.count, 0);
 
-  assert.equal(await seedCatalog(sqlite), true);
+  // The restore reloads the catalog on purpose, whatever version is stored.
+  assert.equal(await seedCatalog(sqlite, { force: true }), true);
   const after = await sqlite.getAllAsync<{ count: number }>(
     "SELECT COUNT(*) AS count FROM foods WHERE source = 'seed'",
   );

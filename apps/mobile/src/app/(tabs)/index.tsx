@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -103,6 +103,11 @@ export default function HomeScreen() {
   );
 
   const waterTotal = water.day?.totalMl ?? 0;
+  /** Running total, updated at once so two quick taps do not both cross the goal. */
+  const waterTotalRef = useRef(waterTotal);
+  useEffect(() => {
+    waterTotalRef.current = waterTotal;
+  }, [waterTotal]);
 
   const insights = useMemo(
     () =>
@@ -163,8 +168,12 @@ export default function HomeScreen() {
   };
 
   const handleAddWater = async (amountMl: number) => {
-    const previousTotal = waterTotal;
+    const previousTotal = waterTotalRef.current;
+    waterTotalRef.current = previousTotal + amountMl;
     const added = await water.add(amountMl);
+    if (!added) {
+      waterTotalRef.current = previousTotal;
+    }
     if (added) {
       hapticSuccess();
       if (previousTotal < waterGoal && previousTotal + amountMl >= waterGoal) {
@@ -312,7 +321,7 @@ export default function HomeScreen() {
             data={weekData}
             goalKcal={day.goals.caloriesKcal}
             onSelect={(date) =>
-              router.push({ pathname: '/(tabs)/diary', params: { date } })
+              router.push({ pathname: '/(tabs)/diary', params: { date, t: String(Date.now()) } })
             }
             selectedDate={localDate}
             showHeader={false}

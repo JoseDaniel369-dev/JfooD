@@ -75,6 +75,10 @@ export default function AddFoodScreen() {
   const mealLabel = MEALS.find((m) => m.type === initialMeal)?.label ?? '';
 
   const [creating, setCreating] = useState(Boolean(prefillName) || create === '1');
+  /** Name typed in the search box when "Crear «X»" was tapped. */
+  const [draftName, setDraftName] = useState('');
+  /** Bumped when the screen regains focus, to refresh lists after edits elsewhere. */
+  const [focusTick, setFocusTick] = useState(0);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<Food[]>([]);
@@ -120,8 +124,20 @@ export default function AddFoodScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadLists().catch(() => undefined);
+      setFocusTick((tick) => tick + 1);
     }, [loadLists]),
   );
+
+  // A food edited or deleted in its detail screen must not linger in the results.
+  useEffect(() => {
+    const current = latestQuery.current;
+    if (!current) return;
+    searchFoods(database, current, 30)
+      .then((found) => {
+        if (latestQuery.current === current) setResults(found);
+      })
+      .catch(() => undefined);
+  }, [database, focusTick]);
 
   // Foods of the chosen catalog category.
   useEffect(() => {
@@ -137,7 +153,7 @@ export default function AddFoodScreen() {
     return () => {
       cancelled = true;
     };
-  }, [database, category]);
+  }, [database, category, focusTick]);
 
   useEffect(
     () => () => {
@@ -213,6 +229,11 @@ export default function AddFoodScreen() {
     }
   };
 
+  const openCreate = (name: string) => {
+    setDraftName(name);
+    setCreating(true);
+  };
+
   const openInfo = (food: Food) => router.push({ pathname: '/foods/[id]', params: { id: food.id } });
   const shortcutParams = { date: localDate, meal: initialMeal, target };
 
@@ -222,8 +243,11 @@ export default function AddFoodScreen() {
         <Text style={styles.title}>Crear alimento</Text>
         <CreateFoodForm
           barcode={pendingBarcode}
-          initialName={prefillName}
-          onCancel={() => setCreating(false)}
+          initialName={draftName || prefillName}
+          onCancel={() => {
+            setCreating(false);
+            setDraftName('');
+          }}
           onCreated={(food) => {
             hapticSuccess();
             showToast('Alimento creado.');
@@ -294,7 +318,7 @@ export default function AddFoodScreen() {
         keyboardShouldPersistTaps="handled"
         showsHorizontalScrollIndicator={false}
       >
-        <Chip emoji="✏️" label="Crear" onPress={() => setCreating(true)} />
+        <Chip emoji="✏️" label="Crear" onPress={() => openCreate('')} />
         <Chip emoji="🍲" label="Receta" onPress={() => router.push('/recipe')} />
         {isScannerEnabled() ? (
           <>
@@ -341,7 +365,7 @@ export default function AddFoodScreen() {
               icon="create-outline"
               title={`Crear «${query.trim()}»`}
               variant="secondary"
-              onPress={() => setCreating(true)}
+              onPress={() => openCreate(query.trim())}
             />
           ) : null}
         </View>

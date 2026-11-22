@@ -25,6 +25,7 @@ import {
 } from '@/features/haptics/haptics';
 import { animateNextLayout } from '@/features/motion/motion';
 import { isEditableSource, type Food } from '@/features/foods/types';
+import { parseOptionalNumber } from '@/features/foods/utils/parseNumber';
 import { useToast } from '@/components/Toast';
 import {
   radius,
@@ -431,23 +432,6 @@ function Field({
 
 function formatOptional(value: number | null): string {
   return value === null ? '' : String(value);
-}
-
-interface OptionalNumber {
-  value: number | null;
-  valid: boolean;
-}
-
-function parseOptionalNumber(value: string): OptionalNumber {
-  const normalized = value.replace(',', '.').trim();
-  if (normalized === '') {
-    return { value: null, valid: true };
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed)
-    ? { value: parsed, valid: true }
-    : { value: null, valid: false };
 }
 
 function createStyles(colors: ThemeColors) {

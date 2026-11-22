@@ -50,6 +50,8 @@ export async function getWaterDay(
   database: SQLiteDatabase,
   localDate: string,
 ): Promise<WaterDay> {
+  assertLocalDate(localDate);
+
   const rows = await database.getAllAsync<WaterLogRow>(
     `SELECT id, amount_ml, created_at
      FROM water_logs

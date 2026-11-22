@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import {
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -34,6 +35,24 @@ interface BottomSheetProps extends PropsWithChildren {
 const DISMISS_DISTANCE = 120;
 const DISMISS_VELOCITY = 900;
 
+/** Height of the on-screen keyboard (0 when hidden). */
+function useKeyboardHeight(): number {
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, (event) => setKeyboardHeight(event.endCoordinates.height));
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return keyboardHeight;
+}
+
 /**
  * A panel that slides up from the bottom. Tap the dimmed area, press back or
  * drag the handle down to close it.
@@ -43,6 +62,8 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const keyboardHeight = useKeyboardHeight();
+  const keyboardOpen = keyboardHeight > 0;
 
   // The Modal stays mounted until the slide-out animation has finished.
   const [mounted, setMounted] = useState(visible);
@@ -115,15 +136,15 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
           />
         </Animated.View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          pointerEvents="box-none"
-          style={styles.keyboard}
-        >
+        {/* The sheet rides above the keyboard; its content scrolls when space runs out. */}
+        <View pointerEvents="box-none" style={[styles.keyboard, { paddingBottom: keyboardHeight }]}>
           <Animated.View
             style={[
               styles.sheet,
-              { maxHeight: height * 0.92, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              {
+                maxHeight: (height - keyboardHeight) * 0.92,
+                paddingBottom: keyboardOpen ? spacing.lg : Math.max(insets.bottom, spacing.lg),
+              },
               sheetStyle,
             ]}
           >
@@ -133,9 +154,17 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
                 {title ? <Text style={styles.title}>{title}</Text> : null}
               </View>
             </GestureDetector>
-            {children}
+            <ScrollView
+              bounces={false}
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={styles.scroll}
+            >
+              {children}
+            </ScrollView>
           </Animated.View>
-        </KeyboardAvoidingView>
+        </View>
       </GestureHandlerRootView>
     </Modal>
   );
@@ -160,6 +189,13 @@ function createStyles(colors: ThemeColors) {
       borderTopRightRadius: radius.xl,
       gap: spacing.lg,
       paddingHorizontal: spacing.xl,
+    },
+    scroll: {
+      flexGrow: 0,
+      flexShrink: 1,
+    },
+    content: {
+      gap: spacing.lg,
     },
     handleArea: {
       alignItems: 'center',

@@ -18,55 +18,78 @@ interface State {
   goalKcal: number;
   loading: boolean;
   error: string | null;
+  reload: () => void;
+}
+
+interface Loaded {
+  /** The week these numbers belong to. */
+  monday: string;
+  summary: WeekSummary | null;
+  goalKcal: number;
+  error: string | null;
 }
 
 /** The week that starts on `monday` in numbers, with the previous week for comparison. */
 export function useWeekSummary(monday: string): State {
   const database = useSQLiteContext();
   const { goalMl } = useWaterGoal();
-  const [state, setState] = useState<State>({ summary: null, goalKcal: 0, loading: true, error: null });
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      const sunday = addDays(monday, 6);
+  /** Loads the week; returns a function that discards the result. */
+  const load = useCallback(() => {
+    let cancelled = false;
+    const sunday = addDays(monday, 6);
 
-      void (async () => {
-        try {
-          const [days, previousDays, waterTotals, weights, { goals }] = await Promise.all([
-            getDailyTotals(database, monday, sunday),
-            getDailyTotals(database, addDays(monday, -7), addDays(monday, -1)),
-            getWaterTotals(database, monday, sunday),
-            getWeightLogs(database, 400),
-            getLatestGoals(database, sunday),
-          ]);
-          if (cancelled) return;
+    void (async () => {
+      try {
+        const [days, previousDays, waterTotals, weights, { goals }] = await Promise.all([
+          getDailyTotals(database, monday, sunday),
+          getDailyTotals(database, addDays(monday, -7), addDays(monday, -1)),
+          getWaterTotals(database, monday, sunday),
+          getWeightLogs(database, 400),
+          getLatestGoals(database, sunday),
+        ]);
+        if (cancelled) return;
 
-          setState({
-            summary: buildWeekSummary({
-              days,
-              previousDays,
-              goalKcal: goals.caloriesKcal,
-              waterTotals,
-              waterGoalMl: goalMl,
-              weights: weights.filter((log) => log.localDate >= monday && log.localDate <= sunday),
-            }),
+        setLoaded({
+          monday,
+          summary: buildWeekSummary({
+            days,
+            previousDays,
             goalKcal: goals.caloriesKcal,
-            loading: false,
-            error: null,
-          });
-        } catch {
-          if (!cancelled) {
-            setState({ summary: null, goalKcal: 0, loading: false, error: 'No se ha podido cargar el resumen.' });
-          }
+            waterTotals,
+            waterGoalMl: goalMl,
+            weights: weights.filter((log) => log.localDate >= monday && log.localDate <= sunday),
+          }),
+          goalKcal: goals.caloriesKcal,
+          error: null,
+        });
+      } catch {
+        if (!cancelled) {
+          setLoaded({ monday, summary: null, goalKcal: 0, error: 'No se ha podido cargar el resumen.' });
         }
-      })();
+      }
+    })();
 
-      return () => {
-        cancelled = true;
-      };
-    }, [database, monday, goalMl]),
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [database, monday, goalMl]);
 
-  return state;
+  useFocusEffect(load);
+
+  const reload = useCallback(() => {
+    setLoaded(null);
+    load();
+  }, [load]);
+
+  // Numbers of another week are never shown under this week's dates.
+  const current = loaded && loaded.monday === monday ? loaded : null;
+  return {
+    summary: current?.summary ?? null,
+    goalKcal: current?.goalKcal ?? 0,
+    loading: current === null,
+    error: current?.error ?? null,
+    reload,
+  };
 }

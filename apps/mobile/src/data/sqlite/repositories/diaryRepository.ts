@@ -365,16 +365,9 @@ export async function duplicateEntry(
   database: SQLiteDatabase,
   entryId: string,
 ): Promise<boolean> {
-  const row = await database.getFirstAsync<{ meal_id: string; food_id: string | null }>(
-    'SELECT meal_id, food_id FROM diary_entries WHERE id = ?',
-    [entryId],
-  );
-  if (!row) {
-    return false;
-  }
-
   const now = new Date().toISOString();
-  await database.runAsync(
+  // A single statement: if the entry is already gone nothing is inserted.
+  const result = await database.runAsync(
     `INSERT INTO diary_entries (
        id, meal_id, food_id, food_name, grams,
        ${nutrientColumnsSql()},
@@ -386,7 +379,7 @@ export async function duplicateEntry(
      FROM diary_entries WHERE id = ?`,
     [generateId(), now, now, entryId],
   );
-  return true;
+  return result.changes > 0;
 }
 
 /**

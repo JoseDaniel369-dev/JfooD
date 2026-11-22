@@ -6,9 +6,15 @@
 export interface DailyLimiter {
   /** Reserves one call. Returns false when today's budget is exhausted. */
   tryConsume(): boolean;
-  /** Gives back a reservation whose call never produced a result. */
-  refund(): void;
+  /**
+   * Gives back a reservation whose call never produced a result. Pass the day
+   * the reservation was made (`today()` at that moment): a refund that arrives
+   * after UTC midnight belongs to a budget that no longer exists and is ignored.
+   */
+  refund(reservedOn?: string): void;
   remaining(): number;
+  /** The UTC day this budget is counting (YYYY-MM-DD). */
+  today(): string;
 }
 
 export function createDailyLimiter(
@@ -35,13 +41,20 @@ export function createDailyLimiter(
       used += 1;
       return true;
     },
-    refund() {
+    refund(reservedOn) {
       rollover();
+      if (reservedOn !== undefined && reservedOn !== day) {
+        return;
+      }
       used = Math.max(0, used - 1);
     },
     remaining() {
       rollover();
       return Math.max(0, limit - used);
+    },
+    today() {
+      rollover();
+      return day;
     },
   };
 }
@@ -52,7 +65,8 @@ const MAX_TRACKED_KEYS = 10_000;
 /** Daily budget per client (for example per IP), so one client cannot drain the global one. */
 export interface KeyedDailyLimiter {
   tryConsume(key: string): boolean;
-  refund(key: string): void;
+  /** Same rule as the shared budget: a refund from a previous UTC day is ignored. */
+  refund(key: string, reservedOn?: string): void;
 }
 
 export function createKeyedDailyLimiter(
@@ -85,8 +99,11 @@ export function createKeyedDailyLimiter(
       used.set(key, current + 1);
       return true;
     },
-    refund(key) {
+    refund(key, reservedOn) {
       rollover();
+      if (reservedOn !== undefined && reservedOn !== day) {
+        return;
+      }
       const current = used.get(key) ?? 0;
       if (current <= 1) {
         used.delete(key);

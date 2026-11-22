@@ -11,7 +11,6 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { WeekStrip } from '@/components/WeekStrip';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
-import { Fab } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -392,8 +391,6 @@ export default function PlannerScreen() {
           />
         ) : null}
       </View>
-
-      <Fab accessibilityLabel="Añadir alimento" onPress={() => handleAddFood(currentDefaultMeal())} />
 
       <ActionSheet
         options={actionOptions}

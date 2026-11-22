@@ -378,16 +378,9 @@ export async function duplicatePlanEntry(
   database: SQLiteDatabase,
   entryId: string,
 ): Promise<boolean> {
-  const exists = await database.getFirstAsync<{ id: string }>(
-    'SELECT id FROM plan_entries WHERE id = ?',
-    [entryId],
-  );
-  if (!exists) {
-    return false;
-  }
-
   const now = new Date().toISOString();
-  await database.runAsync(
+  // A single statement: if the entry is already gone nothing is inserted.
+  const result = await database.runAsync(
     `INSERT INTO plan_entries (
        id, local_date, meal_type, food_id, food_name, grams,
        ${nutrientColumnsSql()},
@@ -399,5 +392,5 @@ export async function duplicatePlanEntry(
      FROM plan_entries WHERE id = ?`,
     [generateId(), now, now, entryId],
   );
-  return true;
+  return result.changes > 0;
 }

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -38,8 +38,11 @@ export function CreateFoodForm({ initialName = '', barcode = null, onCreated, on
   const [showMore, setShowMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Set synchronously: two quick taps can both still see "not saving". */
+  const savingRef = useRef(false);
 
   const handleCreate = async () => {
+    if (savingRef.current) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setError('El nombre es obligatorio.');
@@ -70,6 +73,7 @@ export function CreateFoodForm({ initialName = '', barcode = null, onCreated, on
     }
 
     setError(null);
+    savingRef.current = true;
     setSaving(true);
     try {
       if (barcode && (await findFoodByBarcode(database, barcode))) {
@@ -86,6 +90,7 @@ export function CreateFoodForm({ initialName = '', barcode = null, onCreated, on
     } catch {
       setError('No se ha podido crear el alimento.');
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

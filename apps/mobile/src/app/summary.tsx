@@ -27,7 +27,7 @@ export default function SummaryScreen() {
   const today = toLocalDate(new Date());
   const thisMonday = startOfWeek(today);
   const [monday, setMonday] = useState(thisMonday);
-  const { summary, goalKcal, loading, error } = useWeekSummary(monday);
+  const { summary, goalKcal, loading, error, reload } = useWeekSummary(monday);
 
   const isCurrentWeek = monday === thisMonday;
 
@@ -64,7 +64,7 @@ export default function SummaryScreen() {
       {loading ? (
         <ScreenSkeleton />
       ) : error || !summary ? (
-        <ErrorState message={error ?? 'No hay datos disponibles.'} onRetry={() => setMonday((m) => m)} />
+        <ErrorState message={error ?? 'No hay datos disponibles.'} onRetry={reload} />
       ) : summary.loggedDays === 0 ? (
         <EmptyState
           actionLabel="Registrar una comida"

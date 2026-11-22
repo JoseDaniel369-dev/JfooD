@@ -286,7 +286,7 @@ export default function ProgressScreen() {
         </Card>
       ) : null}
 
-      {chartLogs.length > 1 ? (
+      {sortedLogs.length > 1 ? (
         <Card>
           <SectionHeader title="Evolución" />
           <View style={styles.periodSelector}>
@@ -299,9 +299,15 @@ export default function ProgressScreen() {
               />
             ))}
           </View>
-          <FadeInView key={chartPeriod}>
-            <WeightLineChart logs={chartLogs} />
-          </FadeInView>
+          {chartLogs.length > 1 ? (
+            <FadeInView key={chartPeriod}>
+              <WeightLineChart logs={chartLogs} />
+            </FadeInView>
+          ) : (
+            <Text style={styles.summaryDate}>
+              Hay menos de dos registros en este periodo. Prueba con uno más largo.
+            </Text>
+          )}
         </Card>
       ) : null}
 

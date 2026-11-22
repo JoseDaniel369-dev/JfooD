@@ -116,14 +116,19 @@ export default function RecipeScreen() {
 
     setSaving(true);
     try {
-      const food = await createFood(database, {
-        name: recipeName,
-        brand: 'Receta',
-        ...computed.result.per100g,
+      const per100g = computed.result.per100g;
+      // One transaction: a failed portion must not leave a half-saved recipe
+      // that a retry would then duplicate.
+      await database.withTransactionAsync(async () => {
+        const food = await createFood(database, {
+          name: recipeName,
+          brand: 'Receta',
+          ...per100g,
+        });
+        if (perPortion) {
+          await saveServing(database, food.id, '1 ración', Math.round(perPortion * 10) / 10);
+        }
       });
-      if (perPortion) {
-        await saveServing(database, food.id, '1 ración', Math.round(perPortion * 10) / 10);
-      }
       hapticSuccess();
       showToast('Receta guardada como alimento.');
       router.back();

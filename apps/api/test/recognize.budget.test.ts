@@ -133,6 +133,27 @@ test('without APP_TOKEN the routes stay open', async (context) => {
   assert.equal(response.statusCode, 200);
 });
 
+test('a refund that arrives after UTC midnight does not touch the new day', () => {
+  let now = new Date('2026-11-18T23:59:58Z');
+  const limiter = createDailyLimiter(2, () => now);
+  const keyed = createKeyedDailyLimiter(2, () => now);
+
+  assert.equal(limiter.tryConsume(), true);
+  assert.equal(keyed.tryConsume('a'), true);
+  const reservedOn = limiter.today();
+
+  now = new Date('2026-11-19T00:00:03Z');
+  assert.equal(limiter.tryConsume(), true);
+  assert.equal(keyed.tryConsume('a'), true);
+
+  // The call reserved yesterday fails now: today's counters stay as they are.
+  limiter.refund(reservedOn);
+  keyed.refund('a', reservedOn);
+  assert.equal(limiter.remaining(), 1);
+  assert.equal(keyed.tryConsume('a'), true);
+  assert.equal(keyed.tryConsume('a'), false, 'per-client count was not reduced either');
+});
+
 test('daily limiter gives a reservation back with refund()', () => {
   const limiter = createDailyLimiter(2);
   assert.equal(limiter.tryConsume(), true);

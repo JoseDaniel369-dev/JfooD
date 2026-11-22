@@ -16,6 +16,7 @@ import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
 import {
   detectNewAchievements,
   evaluateAchievements,
+  mergeSeenIds,
   parseSeenIds,
   type Achievement,
 } from './achievements';
@@ -61,10 +62,10 @@ export function useAchievements() {
   );
 
   const markSeen = useCallback(async () => {
-    const unlocked = achievements.filter((a) => a.unlocked).map((a) => a.id);
     setFresh([]);
     try {
-      await setSetting(database, SEEN_KEY, JSON.stringify(unlocked));
+      const stored = parseSeenIds(await getSetting(database, SEEN_KEY));
+      await setSetting(database, SEEN_KEY, JSON.stringify(mergeSeenIds(stored, achievements)));
     } catch {
       // Worst case they are celebrated again next time.
     }

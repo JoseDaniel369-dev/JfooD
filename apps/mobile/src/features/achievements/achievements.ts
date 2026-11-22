@@ -108,3 +108,21 @@ export function parseSeenIds(raw: string | null): string[] {
     return [];
   }
 }
+
+/**
+ * The ids to store after celebrating: everything seen before plus what is
+ * unlocked now. Never shrinks, so an achievement that is lost (a deleted
+ * recipe) and earned again is not celebrated a second time.
+ */
+export function mergeSeenIds(
+  previouslySeen: readonly string[],
+  achievements: readonly Achievement[],
+): string[] {
+  const merged = new Set(previouslySeen);
+  for (const achievement of achievements) {
+    if (achievement.unlocked) {
+      merged.add(achievement.id);
+    }
+  }
+  return [...merged];
+}

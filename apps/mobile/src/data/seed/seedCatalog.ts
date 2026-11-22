@@ -38,20 +38,20 @@ export const SEED_CATALOG = seedFoods as SeedFood[];
  * the foods table, marked `source = 'seed'`.
  *
  * Safe to run on every launch: it does nothing when the catalog is already at
- * this version. Foods created by the person (`user`, `open_food_facts`) are
- * never touched: only rows with the catalog's own ids are inserted or refreshed.
+ * this version, so catalog foods the person deleted stay deleted. Foods created
+ * by the person (`user`, `open_food_facts`) are never touched: only rows with
+ * the catalog's own ids are inserted or refreshed.
+ *
+ * `force` loads it regardless of the stored version. It is used after restoring
+ * a backup that replaced the foods table with one that has no catalog.
  */
-export async function seedCatalog(database: SQLiteDatabase): Promise<boolean> {
-  const [version, existing] = await Promise.all([
-    getSetting(database, SEED_VERSION_KEY),
-    database.getFirstAsync<{ found: number }>(
-      "SELECT 1 AS found FROM foods WHERE source = 'seed' LIMIT 1",
-    ),
-  ]);
+export async function seedCatalog(
+  database: SQLiteDatabase,
+  options: { force?: boolean } = {},
+): Promise<boolean> {
+  const version = await getSetting(database, SEED_VERSION_KEY);
 
-  // The row check matters after a backup restore: the settings may say "seeded"
-  // while the foods table was replaced by one without the catalog.
-  if (version === String(SEED_VERSION) && existing) {
+  if (!options.force && version === String(SEED_VERSION)) {
     return false;
   }
 

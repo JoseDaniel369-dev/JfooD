@@ -88,9 +88,11 @@ export function recognizeRoute(
       return null;
     }
 
+    // A call that fails after UTC midnight must not take back from the new day.
+    const reservedOn = dailyLimiter.today();
     return () => {
-      dailyLimiter.refund();
-      perClientLimiter.refund(client);
+      dailyLimiter.refund(reservedOn);
+      perClientLimiter.refund(client, reservedOn);
     };
   }
 

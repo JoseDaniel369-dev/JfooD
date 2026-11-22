@@ -61,12 +61,13 @@ export default function DiaryScreen() {
   const copyingRef = useRef(false);
 
   // Opened from the Inicio week strip with a day to show.
-  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  // `t` changes on every tap, so choosing the same day again still applies.
+  const { date: dateParam, t: tapStamp } = useLocalSearchParams<{ date?: string; t?: string }>();
   useEffect(() => {
     if (dateParam && isValidLocalDate(dateParam)) {
       setLocalDate(dateParam);
     }
-  }, [dateParam, setLocalDate]);
+  }, [dateParam, tapStamp, setLocalDate]);
 
   const weekData = useWeekOverview(
     localDate,

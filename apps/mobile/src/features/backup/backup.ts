@@ -178,6 +178,11 @@ const DELETE_ORDER: BackupTable[] = [
   'foods',
 ];
 
+/** True when the backup carries the base catalog's foods. */
+export function hasCatalogFoods(backup: BackupFile): boolean {
+  return (backup.tables.foods ?? []).some((food) => food.source === 'seed');
+}
+
 /**
  * Replaces ALL user data with the backup, atomically: if anything fails (bad
  * value, broken reference) the transaction rolls back and nothing changes.
@@ -212,6 +217,10 @@ export async function restoreBackup(
           const columns = BACKUP_TABLES[table].filter(
             (column) => row[column] !== undefined,
           );
+          if (columns.length === 0) {
+            // Nothing recognisable in this row: skip it rather than build an empty INSERT.
+            continue;
+          }
           const placeholders = columns.map(() => '?').join(', ');
 
           await transaction.runAsync(
