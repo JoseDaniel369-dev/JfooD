@@ -23,6 +23,11 @@
     "lint": "npm run lint --workspaces --if-present",
     "postinstall": "npm run build -w @jfood/core",
     "start:api": "npm run dev -w @jfood/api",
+    "start:api:prod": "npm run build && npm run start -w @jfood/api",
+    "release:export": "npm exec -w @jfood/mobile -- expo export --platform android",
+    "release:doctor": "npm exec -w @jfood/mobile -- expo-doctor",
+    "release:check": "npm test && npm run typecheck && npm run lint && npm run build && npm run release:export && npm run release:doctor",
+    "release:set-api-url": "npm exec -w @jfood/mobile -- tsx scripts/setApiUrl.ts",
     "start:mobile": "npm run build -w @jfood/core && npm run start -w @jfood/mobile",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

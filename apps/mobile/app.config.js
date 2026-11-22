@@ -14,6 +14,13 @@ function assertValidApiUrl(url) {
   }
 }
 
+/**
+ * Id of the Expo (EAS) project. `eas init` creates the project and prints this id;
+ * because this config is a script, it cannot be written for you: paste it here.
+ * It is an identifier, not a secret, so it can live in git.
+ */
+const EAS_PROJECT_ID = '';
+
 module.exports = ({ config }) => {
   assertValidApiUrl(process.env.EXPO_PUBLIC_API_URL);
   const experimental = Boolean(process.env.EXPO_PUBLIC_API_URL);
@@ -112,6 +119,9 @@ module.exports = ({ config }) => {
         },
       ],
     ],
+    ...(EAS_PROJECT_ID
+      ? { extra: { ...config.extra, eas: { projectId: EAS_PROJECT_ID } } }
+      : {}),
     experiments: {
       typedRoutes: true,
     },

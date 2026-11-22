@@ -203,10 +203,15 @@ Plan completo: «JfooD 2.0 — Rediseño, funciones nuevas y APK». Cada lote es
 - **Perfil y onboarding (lote D):** avatar, nombre, `RemindersCard`, apariencia, «Acerca de»; onboarding de 4 pasos con `StepIndicator` animado y confeti; clave `onboarding_done` compartida.
 - **Pulido (lote E):** código muerto eliminado (`DayNavigator`, `useSwipeDays`, `FeaturePlaceholder`, `StreakRing`, `Fab`, `FadeInView`, `usePressScale`), `Button`/`Card`/`EmptyState`/`ProfileForm` migrados a Reanimated y `LoadingState` convertido en esqueleto.
 
+- **Funciones que faltaban (lote G):** «Duplicar como mío» (`duplicateFoodAsUser`), «Copiar a otro día» por comida (`CopyMealSheet`, `buildCopyTargets`), agua con cantidad personalizada (`parseWaterAmount`) y sección «Macros» en Progreso (`averageMacros`, `useMacroHistory`).
+- **Robustez (lote H):** `ErrorBoundary` raíz; recordatorios a 7 días (150 en Android, 60 en iOS); la API distingue «servicio ocupado» de «límite alcanzado».
+- **Revisión independiente (lote I):** tres revisiones de solo lectura sobre todo lo cambiado. Corregido: programar antes de cancelar lo obsoleto, toque de aviso atendido una vez (`clearLastNotificationResponse`) y con `navigate`, tarjeta de recordatorios sin sobrescribir ajustes, selector de hora de iOS con «Listo», margen de la barra de navegación con el teclado, errores dentro de las hojas (un toast queda bajo un `Modal`), recarga de Perfil tras restaurar, lector de códigos desactivado en la versión sin red y variables vacías de la API.
+- **Kit de release (lote J):** `render.yaml`, `npm run release:check`, `release:set-api-url`, entornos de EAS por perfil, `EAS_PROJECT_ID` y [`RELEASE.md`](RELEASE.md).
+
 **Pendiente tras el upgrade 2.0:**
-1. **APK:** el estable (sin red) se compila con EAS (requiere `eas login`). El experimental necesita la API desplegada en Render y `EXPO_PUBLIC_API_URL` + `EXPO_PUBLIC_APP_TOKEN` como variables de EAS.
-2. **Verificación en dispositivo** (nada de esto se ha podido probar sin móvil): teclado en Android con las hojas inferiores, gestos de deslizar, notificaciones (llegada, toque que abre la pantalla, que no lleguen si la comida ya está registrada) y contraste en modo oscuro.
-3. Mensaje propio cuando la tabla de IP del limitador de la API está llena (menor).
+1. **APK:** seguir [`RELEASE.md`](RELEASE.md). Hace falta tu sesión de Expo; la experimental, además, la API en Render, `GEMINI_API_KEY` y `APP_TOKEN`.
+2. **Funciones futuras decididas:** menús semanales con IA y Health Connect.
+3. **Verificación en dispositivo** (nada de esto se ha podido probar sin móvil): teclado en Android con las hojas inferiores, gestos de deslizar, notificaciones (llegada, toque que abre la pantalla, que no lleguen si la comida ya está registrada) y contraste en modo oscuro.
 
 ---
 

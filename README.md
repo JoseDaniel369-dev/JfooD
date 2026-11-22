@@ -130,23 +130,20 @@ TRUST_PROXY_HOPS=          # proxies de confianza; por defecto 1 en Render (vari
 
 ## Despliegue y builds de distribución
 
+> **Guía completa paso a paso: [`RELEASE.md`](RELEASE.md)** (despliegue, EAS, instalación y lista de comprobación en el móvil).
+
 ### API en Render Free
 
-1. Crea un servicio web en [Render](https://render.com) desde tu repositorio de GitHub.
-2. Selecciona el directorio raíz y el comando de arranque: `npm run start:api`.
-3. Añade una variable de entorno `GEMINI_API_KEY` con tu clave de Gemini. Render define `RENDER`, por lo que la API confía en 1 proxy para obtener la IP real del cliente (rate limit de 10 req/min por IP); si pones otro proxy delante (p. ej. Cloudflare), ajusta `TRUST_PROXY_HOPS`.
-4. Render inyecta `PORT` automáticamente; el servidor lo usa como fallback de `API_PORT`.
-5. Para evitar el cold start de ~1 min, crea un monitor gratuito en [UptimeRobot](https://uptimerobot.com) que haga ping a `https://TU_API.onrender.com/health` cada 5 min.
+El repositorio incluye un *blueprint* (`render.yaml`): en Render, **New → Blueprint** y elige el repositorio. Crea el servicio con `npm ci && npm run build` y lo arranca en modo producción con `npm run start -w @jfood/api` (`node dist/server.js`). **No uses `npm run start:api`**: es el modo desarrollo (`tsx watch`).
+
+1. Escribe en el panel de Render `GEMINI_API_KEY` (tu clave de Gemini) y `APP_TOKEN` (secreto compartido con la app). El resto de variables ya vienen en el blueprint.
+2. Render define `RENDER`, por lo que la API confía en 1 proxy para obtener la IP real del cliente (rate limit de 10 req/min por IP); si pones otro proxy delante (p. ej. Cloudflare), ajusta `TRUST_PROXY_HOPS`.
+3. Render inyecta `PORT` automáticamente; el servidor lo usa en lugar de `API_PORT`.
+4. Para evitar el cold start de ~1 min, crea un monitor gratuito en [UptimeRobot](https://uptimerobot.com) que haga ping a `https://TU_API.onrender.com/health` cada 5 min.
 
 ### Builds de la app con EAS
 
-Edita `apps/mobile/eas.json` y reemplaza `https://TU_API.onrender.com` por la URL real de tu API (la build falla si queda el valor de ejemplo o si la URL no es HTTPS):
-
-```json
-"env": {
-  "EXPO_PUBLIC_API_URL": "https://TU_API.onrender.com"
-}
-```
+Escribe la URL real de tu API en `apps/mobile/eas.json` con `npm run release:set-api-url -- https://tu-api.onrender.com` (la build falla si queda el valor de ejemplo `TU_API` o si la URL no es HTTPS). Antes de compilar, `npm run release:check` lanza todas las comprobaciones.
 
 Genera las APKs:
 
@@ -156,7 +153,7 @@ npx eas-cli@latest build --profile estable        # APK 100 % offline
 npx eas-cli@latest build --profile experimental   # APK con escáner Gemini
 ```
 
-Versión de la app `0.2.0`; el `versionCode` lo gestiona EAS (`appVersionSource: remote` + `autoIncrement`), así que cada build suma uno. Antes de compilar hay que iniciar sesión una vez con `npx eas-cli@latest login`. Si usas `APP_TOKEN` en la API, define el mismo valor como variable de EAS (`npx eas-cli@latest env:create`, nombre `EXPO_PUBLIC_APP_TOKEN`) en vez de escribirlo en `eas.json`, que se sube al repositorio.
+Versión de la app `0.2.0`; el `versionCode` lo gestiona EAS (`appVersionSource: remote` + `autoIncrement`), así que cada build suma uno. Antes de compilar hay que iniciar sesión una vez con `npx eas-cli@latest login`. Si usas `APP_TOKEN` en la API, define el mismo valor como variable de EAS en el entorno `preview` (`npx eas-cli@latest env:set --name EXPO_PUBLIC_APP_TOKEN --value … --environment preview --visibility plaintext`) en vez de escribirlo en `eas.json`, que se sube al repositorio. Cada perfil usa su propio entorno (`estable` → `production`, `experimental` → `preview`), así que el token solo llega a la experimental. Con `app.config.js` como script, pega el `projectId` que muestra `eas init` en `EAS_PROJECT_ID`.
 
 La variante estable no declara permisos de cámara ni fotos (se bloquean también en el manifiesto de Android); ninguna variante pide micrófono. La primera vez que se usa el escáner se muestra un aviso explicando que la foto se envía a Google (Gemini).
 

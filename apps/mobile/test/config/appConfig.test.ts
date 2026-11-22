@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { afterEach, test } from 'node:test';
 
@@ -84,4 +85,27 @@ test('builds fail early with the placeholder or an insecure API URL', () => {
 
   process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.20:3000';
   assert.doesNotThrow(() => buildConfig({ config: {} }));
+});
+
+test('without an EAS project id the config still loads and adds no EAS block', () => {
+  delete process.env.EXPO_PUBLIC_API_URL;
+  const config = buildConfig({ config: {} }) as { extra?: { eas?: unknown } };
+
+  assert.equal(config.extra?.eas, undefined);
+});
+
+test('eas.json: each build gets its own environment and an APK, and the offline build has no API', () => {
+  const eas = JSON.parse(readFileSync(new URL('../../eas.json', import.meta.url), 'utf8')) as {
+    cli: { appVersionSource: string };
+    build: Record<string, { environment: string; autoIncrement: boolean; android: { buildType: string }; env?: Record<string, string> }>;
+  };
+
+  assert.equal(eas.cli.appVersionSource, 'remote');
+  assert.equal(eas.build.estable?.environment, 'production');
+  assert.equal(eas.build.experimental?.environment, 'preview');
+  for (const profile of Object.values(eas.build)) {
+    assert.equal(profile.android.buildType, 'apk');
+    assert.equal(profile.autoIncrement, true);
+  }
+  assert.equal(eas.build.estable?.env, undefined, 'the offline build must not point at an API');
 });
