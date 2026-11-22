@@ -5,7 +5,8 @@ import { afterEach, test } from 'node:test';
 const require = createRequire(import.meta.url);
 const buildConfig = require('../../app.config.js') as (ctx: { config: object }) => {
   name: string;
-  android: { package: string };
+  version: string;
+  android: { package: string; blockedPermissions: string[] };
   plugins: unknown[];
 };
 
@@ -31,6 +32,19 @@ test('stable build: offline package, no camera, photo or microphone permissions'
   assert.equal(options?.cameraPermission, false);
   assert.equal(options?.photosPermission, false);
   assert.equal(options?.microphonePermission, false);
+});
+
+test('release version and permissions the app never uses are blocked', () => {
+  delete process.env.EXPO_PUBLIC_API_URL;
+  const stable = buildConfig({ config: {} });
+  assert.equal(stable.version, '0.2.0');
+  assert.ok(stable.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'));
+  assert.ok(stable.android.blockedPermissions.includes('android.permission.CAMERA'), 'offline build has no camera');
+
+  process.env.EXPO_PUBLIC_API_URL = 'https://api.example.com';
+  const experimental = buildConfig({ config: {} });
+  assert.ok(experimental.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'));
+  assert.equal(experimental.android.blockedPermissions.includes('android.permission.CAMERA'), false, 'the scanner needs it');
 });
 
 test('the camera plugin follows the same rules as the image picker', () => {

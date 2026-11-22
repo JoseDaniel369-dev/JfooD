@@ -156,7 +156,9 @@ npx eas-cli@latest build --profile estable        # APK 100 % offline
 npx eas-cli@latest build --profile experimental   # APK con escáner Gemini
 ```
 
-La variante estable no declara permisos de cámara ni fotos; ninguna variante pide micrófono. La primera vez que se usa el escáner se muestra un aviso explicando que la foto se envía a Google (Gemini).
+Versión de la app `0.2.0`; el `versionCode` lo gestiona EAS (`appVersionSource: remote` + `autoIncrement`), así que cada build suma uno. Antes de compilar hay que iniciar sesión una vez con `npx eas-cli@latest login`. Si usas `APP_TOKEN` en la API, define el mismo valor como variable de EAS (`npx eas-cli@latest env:create`, nombre `EXPO_PUBLIC_APP_TOKEN`) en vez de escribirlo en `eas.json`, que se sube al repositorio.
+
+La variante estable no declara permisos de cámara ni fotos (se bloquean también en el manifiesto de Android); ninguna variante pide micrófono. La primera vez que se usa el escáner se muestra un aviso explicando que la foto se envía a Google (Gemini).
 
 Ambos perfiles usan `distribution: internal` y generan un APK que puedes compartir directamente por sideload. La versión experimental se instala como `JfooD Experimental` (`com.jfood.app.experimental`) para que no sobrescriba la estable.
 

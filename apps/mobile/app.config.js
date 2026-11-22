@@ -22,7 +22,7 @@ module.exports = ({ config }) => {
     ...config,
     name: experimental ? 'JfooD Experimental' : 'JfooD',
     slug: 'jfood',
-    version: '0.1.0',
+    version: '0.2.0',
     orientation: 'portrait',
     scheme: 'jfood',
     icon: './assets/icon.png',
@@ -41,6 +41,14 @@ module.exports = ({ config }) => {
         monochromeImage: './assets/android-icon-monochrome.png',
       },
       predictiveBackGestureEnabled: false,
+      // Permissions that libraries add to the manifest but this app never uses.
+      // The offline build has no scanner, so it also drops the camera that
+      // expo-camera adds regardless of its plugin options.
+      blockedPermissions: [
+        'android.permission.RECORD_AUDIO',
+        'android.permission.SYSTEM_ALERT_WINDOW',
+        ...(experimental ? [] : ['android.permission.CAMERA']),
+      ],
     },
     plugins: [
       'expo-router',
