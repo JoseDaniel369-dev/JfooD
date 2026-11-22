@@ -63,3 +63,11 @@ test('computeWeekStats counts partial days as logged but keeps them out of the a
   assert.equal(result.averageKcal, 2000);
   assert.equal(result.days.at(-1)?.logged, true);
 });
+
+test('days after today never count towards the best streak', () => {
+  const stats = computeStreak(
+    ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'],
+    '2026-11-10',
+  );
+  assert.deepEqual(stats, { current: 2, best: 2, totalDays: 2 });
+});

@@ -51,6 +51,7 @@ export {
   parseMealRequestSchema,
   type ParseMealRequest,
   foodRecognitionSchema,
+  parseRecognitionResponse,
   recognizeRequestSchema,
   recognizedFoodSchema,
   type RecognizeRequest,

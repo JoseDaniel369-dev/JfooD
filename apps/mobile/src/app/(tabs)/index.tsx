@@ -66,17 +66,19 @@ export default function HomeScreen() {
   const { showToast } = useToast();
   const database = useSQLiteContext();
   const { day, error, loading, localDate, reload, refresh } = useDiaryDay();
-  const { stats } = useDiaryStats();
+  const { stats, reload: reloadStats } = useDiaryStats();
   const water = useWaterDay();
   const { goalMl: waterGoal } = useWaterGoal();
   const { name } = useDisplayName();
   const weight = useWeightLogs();
-  const { fresh, markSeen } = useAchievements();
+  const { fresh, markSeen, reload: reloadAchievements } = useAchievements();
   const [confettiBurst, setConfettiBurst] = useState(0);
   const [customWater, setCustomWater] = useState<string | null>(null);
   const [customWaterError, setCustomWaterError] = useState<string | null>(null);
   /** Set at once: two quick taps on "Añadir" must log once. */
   const addingCustomRef = useRef(false);
+  /** Set at once: two quick taps on "Repetir ayer" must copy once. */
+  const repeatingRef = useRef(false);
 
   // Celebrate achievements unlocked since the last visit, once.
   useEffect(() => {
@@ -205,6 +207,8 @@ export default function HomeScreen() {
       hapticSuccess();
       if (previousTotal < waterGoal && previousTotal + amountMl >= waterGoal) {
         showToast('¡Objetivo de agua conseguido!');
+        // Reaching the goal can unlock a "water" achievement.
+        void reloadAchievements();
       }
     } else {
       showToast('No se ha podido registrar el agua.', 'error');
@@ -213,6 +217,8 @@ export default function HomeScreen() {
   };
 
   const handleRepeatYesterday = async () => {
+    if (repeatingRef.current) return;
+    repeatingRef.current = true;
     try {
       const count = await copyDiaryDay(database, addDays(localDate, -1), localDate, nextMeal);
       if (count === 0) {
@@ -220,11 +226,16 @@ export default function HomeScreen() {
         return;
       }
       await refresh();
+      // Streak, weekly average and achievements depend on what was just logged.
+      void reloadStats();
+      void reloadAchievements();
       void scheduleReminders(database);
       hapticSuccess();
       showToast(`Añadido lo de ayer (${count}).`);
     } catch {
       showToast('No se ha podido copiar la comida de ayer.', 'error');
+    } finally {
+      repeatingRef.current = false;
     }
   };
 

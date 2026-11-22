@@ -1,6 +1,7 @@
 import { foodInputNutrientsSchema, type Nutrients } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { NUTRIENT_ASSIGNMENTS, nutrientParams } from '@/data/sqlite/nutrientColumns';
 
 export type EntryTable = 'diary_entries' | 'plan_entries';
@@ -41,7 +42,7 @@ export async function updateEntryNutrients(
   const values = parsed.data;
   const now = new Date().toISOString();
 
-  await database.withTransactionAsync(async () => {
+  await runInTransaction(database, async () => {
     const entry = await database.getFirstAsync<{ food_id: string | null }>(
       `SELECT food_id FROM ${table} WHERE id = ?`,
       [entryId],

@@ -60,3 +60,76 @@ export type ParseMealRequest = z.infer<typeof parseMealRequestSchema>;
 
 export type RecognizedFood = z.infer<typeof recognizedFoodSchema>;
 export type FoodRecognition = z.infer<typeof foodRecognitionSchema>;
+
+/**
+ * Keys that would carry nutrition facts. A model answer containing any of them is
+ * refused as a whole: nutrients must never come from the model.
+ */
+const NUTRIENT_KEY = /kcal|calor|energ|nutri|prote|carb|hidrat|\bfat|grasa|lipid|fib|sugar|az[uú]car|\bsalt|sodi/i;
+
+function hasNutrientKey(value: object): boolean {
+  return Object.keys(value).some((key) => NUTRIENT_KEY.test(key));
+}
+
+/**
+ * Reads what the model answered, forgiving harmless slips so one odd field does
+ * not throw away a whole good answer:
+ * - a missing/invalid `confidence` becomes null, a missing `warnings` becomes [];
+ * - unknown harmless keys (e.g. "unit") are dropped;
+ * - a food with no usable name or a non-positive weight is skipped, and a
+ *   warning says some foods could not be read.
+ * Anything that carries nutrition keys, or does not have a `foods` array, is
+ * refused (null). The result always satisfies the strict `foodRecognitionSchema`.
+ */
+export function parseRecognitionResponse(raw: unknown): FoodRecognition | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  if (hasNutrientKey(raw)) return null;
+
+  const { foods: rawFoods, warnings: rawWarnings } = raw as Record<string, unknown>;
+  if (!Array.isArray(rawFoods)) return null;
+
+  const foods: RecognizedFood[] = [];
+  let skipped = 0;
+
+  for (const item of rawFoods) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      skipped += 1;
+      continue;
+    }
+    if (hasNutrientKey(item)) return null;
+
+    const { name, estimatedGrams, confidence } = item as Record<string, unknown>;
+    const cleanName = typeof name === 'string' ? name.trim().slice(0, 120) : '';
+    const grams =
+      typeof estimatedGrams === 'number' && Number.isFinite(estimatedGrams)
+        ? Math.min(estimatedGrams, 10_000)
+        : 0;
+
+    if (cleanName === '' || grams <= 0) {
+      skipped += 1;
+      continue;
+    }
+
+    foods.push({
+      name: cleanName,
+      estimatedGrams: grams,
+      confidence:
+        typeof confidence === 'number' && Number.isFinite(confidence)
+          ? Math.min(Math.max(confidence, 0), 1)
+          : null,
+    });
+  }
+
+  const warnings = (Array.isArray(rawWarnings) ? rawWarnings : [])
+    .filter((warning): warning is string => typeof warning === 'string')
+    .map((warning) => warning.trim().slice(0, 300))
+    .filter((warning) => warning !== '')
+    .slice(0, 9);
+
+  if (skipped > 0) {
+    warnings.push('Algunos alimentos no se han podido interpretar.');
+  }
+
+  const parsed = foodRecognitionSchema.safeParse({ foods: foods.slice(0, 30), warnings });
+  return parsed.success ? parsed.data : null;
+}

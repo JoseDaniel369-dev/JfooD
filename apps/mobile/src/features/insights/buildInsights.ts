@@ -110,7 +110,13 @@ export function buildInsights(input: InsightInput): Insight[] {
 
   // 5. Protein is well behind late in the day.
   const protein = consumed.proteinGrams;
-  if (hour >= 17 && totalEntries > 0 && protein.knownTotal < goals.proteinGrams * 0.6) {
+  // Only when every entry has its protein: unknown protein is not "zero protein".
+  if (
+    hour >= 17 &&
+    totalEntries > 0 &&
+    protein.complete &&
+    protein.knownTotal < goals.proteinGrams * 0.6
+  ) {
     const missing = Math.round(goals.proteinGrams - protein.knownTotal);
     insights.push({
       kind: 'protein',

@@ -12,9 +12,22 @@ const buildConfig = require('../../app.config.js') as (ctx: { config: object }) 
 };
 
 const original = process.env.EXPO_PUBLIC_API_URL;
+const originalVariant = process.env.APP_VARIANT;
 afterEach(() => {
   if (original === undefined) delete process.env.EXPO_PUBLIC_API_URL;
   else process.env.EXPO_PUBLIC_API_URL = original;
+  if (originalVariant === undefined) delete process.env.APP_VARIANT;
+  else process.env.APP_VARIANT = originalVariant;
+});
+
+test('a development build declares the camera even without an API URL', () => {
+  delete process.env.EXPO_PUBLIC_API_URL;
+  process.env.APP_VARIANT = 'development';
+  const config = buildConfig({ config: {} });
+
+  assert.equal(config.android.package, 'com.jfood.app.experimental');
+  assert.equal(config.android.blockedPermissions.includes('android.permission.CAMERA'), false);
+  assert.equal(pickerOptions(config.plugins)?.cameraPermission !== false, true);
 });
 
 function pickerOptions(plugins: unknown[]) {
@@ -103,9 +116,13 @@ test('eas.json: each build gets its own environment and an APK, and the offline 
   assert.equal(eas.cli.appVersionSource, 'remote');
   assert.equal(eas.build.estable?.environment, 'production');
   assert.equal(eas.build.experimental?.environment, 'preview');
-  for (const profile of Object.values(eas.build)) {
-    assert.equal(profile.android.buildType, 'apk');
-    assert.equal(profile.autoIncrement, true);
+  for (const name of ['estable', 'experimental']) {
+    const profile = eas.build[name];
+    assert.equal(profile?.android.buildType, 'apk', name);
+    assert.equal(profile?.autoIncrement, true, name);
   }
+  // The development client declares the camera through APP_VARIANT (see app.config.js).
+  assert.equal(eas.build.development?.android.buildType, 'apk');
+  assert.equal(eas.build.development?.env?.APP_VARIANT, 'development');
   assert.equal(eas.build.estable?.env, undefined, 'the offline build must not point at an API');
 });

@@ -31,7 +31,8 @@ export function computeBmi(weightKg: number, heightCm: number): BmiResult | null
   }
 
   const heightMeters = heightCm / 100;
-  const value = weightKg / (heightMeters * heightMeters);
+  // Classify the value that is shown: 24.96 is displayed as 25.0 and must read "overweight".
+  const value = Math.round((weightKg / (heightMeters * heightMeters)) * 10) / 10;
   let category: BmiCategory;
 
   if (value < 18.5) {
@@ -45,7 +46,7 @@ export function computeBmi(weightKg: number, heightCm: number): BmiResult | null
   }
 
   return {
-    value: Math.round(value * 10) / 10,
+    value,
     category,
     label: BMI_CATEGORY_LABELS[category],
   };

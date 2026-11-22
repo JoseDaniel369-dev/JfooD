@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { SwipeableRow } from '@/components/SwipeableRow';
-import { entryNutrients, formatPartialAmount } from '@/features/diary/utils/totals';
+import { entryNutrients, formatGrams, formatPartialAmount } from '@/features/diary/utils/totals';
 import { foodEmoji } from '@/features/foods/utils/foodEmoji';
 import { hapticSelection } from '@/features/haptics/haptics';
 import { rowLayout } from '@/features/motion/springs';
@@ -185,7 +185,7 @@ export function MealList({
                       onDuplicate={onEntryDuplicate ? () => onEntryDuplicate(entry) : undefined}
                     >
                     <Pressable
-                      accessibilityLabel={`${entry.foodName}, ${entry.grams} gramos`}
+                      accessibilityLabel={`${entry.foodName}, ${formatGrams(entry.grams)} gramos`}
                       accessibilityRole="button"
                       onPress={() => onEntryPress?.(entry)}
                       style={({ pressed }) => [
@@ -198,7 +198,7 @@ export function MealList({
                       </View>
                       <View style={styles.entryMain}>
                         <Text style={styles.entryName}>{entry.foodName}</Text>
-                        <Text style={styles.entryGrams}>{entry.grams} g</Text>
+                        <Text style={styles.entryGrams}>{formatGrams(entry.grams)} g</Text>
                         <View style={styles.entryMacros}>
                           <MacroBadge
                             color={colors.protein}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseOptionalNumber } from '../../src/features/foods/utils/parseNumber';
+import { parseOptionalNumber, parseSpanishNumber } from '../../src/features/foods/utils/parseNumber';
 
 test('an empty field is unknown, not zero', () => {
   assert.deepEqual(parseOptionalNumber(''), { value: null, valid: true });
@@ -21,4 +21,23 @@ test('text that is not a number is flagged', () => {
   assert.deepEqual(parseOptionalNumber('abc'), { value: null, valid: false });
   assert.deepEqual(parseOptionalNumber('1,2,3'), { value: null, valid: false });
   assert.deepEqual(parseOptionalNumber('Infinity'), { value: null, valid: false });
+});
+
+test('numbers written with exponents, hex or letters are not numbers', () => {
+  for (const bad of ['1e3', '0x10', '12g', '--5', '1,2,3', '.', ',']) {
+    assert.deepEqual(parseOptionalNumber(bad), { value: null, valid: false }, bad);
+  }
+});
+
+test('parseSpanishNumber reads a thousands separator only when asked to', () => {
+  assert.equal(parseSpanishNumber('1.500', { thousands: true }), 1500);
+  assert.equal(parseSpanishNumber('1.500,5', { thousands: true }), 1500.5);
+  assert.equal(parseSpanishNumber('12.345.678', { thousands: true }), 12345678);
+  // Per 100 g values are small: "2.500" is 2.5, never 2500.
+  assert.equal(parseSpanishNumber('2.500'), 2.5);
+  // A leading zero is a decimal even when thousands are on.
+  assert.equal(parseSpanishNumber('0.500', { thousands: true }), 0.5);
+  assert.equal(parseSpanishNumber('1000', { thousands: true }), 1000);
+  assert.equal(parseSpanishNumber('-3,5'), -3.5);
+  assert.equal(parseSpanishNumber(''), null);
 });

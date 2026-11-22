@@ -265,7 +265,7 @@ export default function ProfileScreen() {
           {catalogUnavailable ? (
             <Text style={styles.aboutWarning}>
               ⚠️ El catálogo ampliado no se ha podido cargar en este móvil. Puedes seguir usando tus
-              alimentos y los 338 básicos.
+              alimentos y los básicos que trae la app.
             </Text>
           ) : null}
           <Text style={styles.aboutText}>

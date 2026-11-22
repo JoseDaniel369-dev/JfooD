@@ -28,7 +28,9 @@ export async function getDiaryStats(
       `SELECT DISTINCT meal.local_date
        FROM diary_meals AS meal
        INNER JOIN diary_entries AS entry ON entry.meal_id = meal.id
+       WHERE meal.local_date <= ?
        ORDER BY meal.local_date`,
+      today,
     ),
     database.getAllAsync<WeekRow>(
       `SELECT meal.local_date,

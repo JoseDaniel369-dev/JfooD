@@ -1,24 +1,24 @@
 import { gramsSchema } from '@jfood/core';
 
+import { parseSpanishNumber } from '../../foods/utils/parseNumber';
 import type { RecognizedFoodMatch } from '../types';
 
 /** Parses a typed amount ("12,5") and returns it only when it is a valid portion. */
 export function parseGrams(text: string): number | null {
-  const normalized = text.replace(',', '.').trim();
-  if (normalized === '') {
+  const value = parseSpanishNumber(text, { thousands: true });
+  if (value === null) {
     return null;
   }
-  const parsed = gramsSchema.safeParse(Number(normalized));
+  const parsed = gramsSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
 /** Message for an invalid amount, or null when the text is a valid portion. */
 export function describeGramsError(text: string): string | null {
-  const normalized = text.replace(',', '.').trim();
-  if (normalized === '' || !Number.isFinite(Number(normalized))) {
+  const value = parseSpanishNumber(text, { thousands: true });
+  if (value === null) {
     return 'Introduce una cantidad en gramos.';
   }
-  const value = Number(normalized);
   if (value <= 0) {
     return 'La cantidad debe ser mayor que 0.';
   }

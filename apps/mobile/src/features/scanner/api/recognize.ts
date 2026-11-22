@@ -30,13 +30,19 @@ export function warmUpServer(): void {
 }
 
 /** Identifies the foods in a photo (data URI or base64). */
-export function recognizeImage(imageBase64: string): Promise<RecognitionResult> {
-  return postRecognition('/recognize', { image: imageBase64 });
+export function recognizeImage(
+  imageBase64: string,
+  signal?: AbortSignal,
+): Promise<RecognitionResult> {
+  return postRecognition('/recognize', { image: imageBase64 }, signal);
 }
 
 /** Extracts the foods mentioned in a free-text description of a meal. */
-export function recognizeText(text: string): Promise<RecognitionResult> {
-  return postRecognition('/parse-meal', { text });
+export function recognizeText(
+  text: string,
+  signal?: AbortSignal,
+): Promise<RecognitionResult> {
+  return postRecognition('/parse-meal', { text }, signal);
 }
 
 /**
@@ -56,8 +62,13 @@ export function buildHeaders(
 async function postRecognition(
   path: string,
   payload: Record<string, string>,
+  externalSignal?: AbortSignal,
 ): Promise<RecognitionResult> {
   const controller = new AbortController();
+  // The caller (e.g. a screen that is closing) can cancel the request too.
+  const abortFromCaller = () => controller.abort();
+  if (externalSignal?.aborted) controller.abort();
+  externalSignal?.addEventListener('abort', abortFromCaller);
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, RECOGNIZE_TIMEOUT_MS);
@@ -102,5 +113,6 @@ async function postRecognition(
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    externalSignal?.removeEventListener('abort', abortFromCaller);
   }
 }

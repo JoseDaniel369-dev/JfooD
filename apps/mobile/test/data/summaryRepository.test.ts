@@ -85,3 +85,22 @@ test('water totals per day and the number of days that reached the goal', async 
   assert.equal(await countWaterGoalDays(sqlite, 2000), 2);
   assert.equal(await countWaterGoalDays(sqlite, 5000), 0);
 });
+
+test('entries on future days do not count as logged (streaks and achievements)', async () => {
+  const sqlite = (await createMigratedDatabase()).asSqlite();
+  const rice = await createFood(sqlite, { name: 'Arroz', caloriesKcal: 130 });
+
+  await addEntry(sqlite, { localDate: '2026-11-10', mealType: 'lunch', food: rice, grams: 100 });
+  // A week copied ahead of time.
+  for (const localDate of ['2026-11-12', '2026-11-13', '2026-11-14']) {
+    for (const mealType of ['breakfast', 'lunch', 'snack', 'dinner'] as const) {
+      await addEntry(sqlite, { localDate, mealType, food: rice, grams: 100 });
+    }
+  }
+
+  const stats = await getAchievementStats(sqlite, '2026-11-10');
+  assert.equal(stats.totalEntries, 1);
+  assert.deepEqual(stats.loggedDates, ['2026-11-10']);
+  assert.equal(stats.daysWithAllMeals, 0);
+  assert.equal(stats.distinctFoods, 1);
+});

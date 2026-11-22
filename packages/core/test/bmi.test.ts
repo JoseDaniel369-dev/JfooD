@@ -25,3 +25,11 @@ test('computeBmi includes Spanish labels', () => {
   assert.equal(computeBmi(70, 175)?.label, 'Normal');
   assert.equal(computeBmi(85, 175)?.label, 'Sobrepeso');
 });
+
+test('the category follows the rounded value that is shown', () => {
+  // 24.96 is shown as 25.0 and must be read as overweight, not "normal".
+  const result = computeBmi(72.1, 169.9);
+  assert.ok(result);
+  assert.equal(result.value, 25);
+  assert.equal(result.category, 'overweight');
+});

@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { isValidLocalDate } from '@/features/diary/utils/date';
+
 export const BACKUP_FORMAT = 'jfood-backup';
 /** Version of this file format (not of the SQLite schema). */
 export const BACKUP_VERSION = 1;
@@ -47,6 +49,24 @@ export const BACKUP_TABLES = {
 
 export type BackupTable = keyof typeof BACKUP_TABLES;
 const TABLE_NAMES = Object.keys(BACKUP_TABLES) as BackupTable[];
+
+/** Columns that hold a calendar day (YYYY-MM-DD): a malformed one would break charts and ordering. */
+const DATE_COLUMNS: Partial<Record<BackupTable, readonly string[]>> = {
+  diary_meals: ['local_date'],
+  plan_entries: ['local_date'],
+  weight_logs: ['local_date'],
+  water_logs: ['local_date'],
+  nutrition_goals: ['effective_from'],
+  user_profile: ['birth_date'],
+};
+
+/**
+ * Settings that describe THIS device's installation (which catalog/seed version
+ * was copied here), not the person's preferences. Restoring them from another
+ * device would make the app skip or repeat those installs, so they are never
+ * replaced. (Same keys as CATALOG_INSTALLED_KEY and SEED_VERSION_KEY.)
+ */
+const DEVICE_SETTING_KEYS = ['catalog_installed_version', 'seed_version'] as const;
 
 export interface BackupFile {
   format: typeof BACKUP_FORMAT;
@@ -150,6 +170,12 @@ export function parseBackup(value: unknown, latestSchemaVersion: number): Backup
         if (typeof cell === 'number' && !Number.isFinite(cell)) {
           throw new BackupError(`Número no válido en ${name}.${column}.`);
         }
+        if (
+          DATE_COLUMNS[table]?.includes(column) &&
+          (typeof cell !== 'string' || !isValidLocalDate(cell))
+        ) {
+          throw new BackupError(`Fecha no válida en ${name}.${column}.`);
+        }
         clean[column] = cell;
       }
       return clean;
@@ -207,11 +233,24 @@ export async function restoreBackup(
         if (table === 'app_settings' && backup.tables.app_settings === undefined) {
           continue;
         }
+        if (table === 'app_settings') {
+          await transaction.runAsync(
+            `DELETE FROM app_settings WHERE key NOT IN (${DEVICE_SETTING_KEYS.map(() => '?').join(', ')})`,
+            [...DEVICE_SETTING_KEYS],
+          );
+          continue;
+        }
         await transaction.runAsync(`DELETE FROM ${table}`);
       }
 
       for (const table of TABLE_NAMES) {
         for (const row of backup.tables[table] ?? []) {
+          if (
+            table === 'app_settings' &&
+            (DEVICE_SETTING_KEYS as readonly unknown[]).includes(row.key)
+          ) {
+            continue;
+          }
           // Only the columns present in the file: backups made before a column
           // existed fall back to that column's default.
           const columns = BACKUP_TABLES[table].filter(

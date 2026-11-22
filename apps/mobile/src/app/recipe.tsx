@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { computeRecipe } from '@jfood/core';
 
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
@@ -124,7 +125,7 @@ export default function RecipeScreen() {
       const per100g = computed.result.per100g;
       // One transaction: a failed portion must not leave a half-saved recipe
       // that a retry would then duplicate.
-      await database.withTransactionAsync(async () => {
+      await runInTransaction(database, async () => {
         const food = await createFood(database, {
           name: recipeName,
           brand: 'Receta',

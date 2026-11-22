@@ -29,10 +29,12 @@ test('parseWaterGoal accepts valid values', () => {
 test('parseWaterAmount reads a plain amount in millilitres and refuses anything else', () => {
   assert.equal(parseWaterAmount('330'), 330);
   assert.equal(parseWaterAmount(' 330 ml '), 330);
-  assert.equal(parseWaterAmount('1,5'), 2, 'a decimal is rounded to whole millilitres');
   assert.equal(parseWaterAmount('5000'), 5000);
+  assert.equal(parseWaterAmount('1.500'), 1500, 'a Spanish thousands separator');
+  assert.equal(parseWaterAmount('1.500 ml'), 1500);
 
-  for (const bad of ['', '   ', 'abc', '0', '-5', '5001', 'Infinity']) {
+  // "1,5" could be litres: it is refused instead of saved as 2 ml.
+  for (const bad of ['', '   ', 'abc', '0', '-5', '5001', 'Infinity', '1,5', '1e3', '0x10']) {
     assert.equal(parseWaterAmount(bad), null, bad);
   }
 });

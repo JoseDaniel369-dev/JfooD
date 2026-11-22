@@ -1,5 +1,5 @@
 import {
-  foodRecognitionSchema,
+  parseRecognitionResponse,
   type FoodRecognition,
 } from '@jfood/core';
 
@@ -121,12 +121,13 @@ async function requestRecognition(
     throw new GeminiError('Gemini response is not valid JSON');
   }
 
-  const result = foodRecognitionSchema.safeParse(parsed);
-  if (!result.success) {
+  // Forgiving about harmless slips, strict about nutrients (see parseRecognitionResponse).
+  const result = parseRecognitionResponse(parsed);
+  if (!result) {
     throw new GeminiError('Gemini response does not match recognition schema');
   }
 
-  return result.data;
+  return result;
 }
 
 function buildPrompt(): string {
@@ -176,8 +177,9 @@ export function sanitizeUserText(text: string): string {
 }
 
 function stripDataUri(base64: string): string {
-  const match = base64.match(/^data:[^;]+;base64,(.+)$/);
-  return match?.[1] ?? base64;
+  const match = base64.match(/^data:[^;]+;base64,([\s\S]+)$/);
+  // Line-wrapped base64 passes validation; Gemini wants it in one piece.
+  return (match?.[1] ?? base64).replace(/\s+/g, '');
 }
 
 export function detectMimeType(base64: string): string {

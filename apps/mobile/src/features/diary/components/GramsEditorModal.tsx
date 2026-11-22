@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { parseSpanishNumber } from '@/features/foods/utils/parseNumber';
 import { hapticSelection } from '@/features/haptics/haptics';
 import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
@@ -33,16 +35,10 @@ export function GramsEditorModal({
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = () => {
-    const normalized = value.replace(',', '.');
-    const parsed = Number(normalized);
+    const parsed = parseSpanishNumber(value, { thousands: true });
 
-    if (
-      !Number.isFinite(parsed) ||
-      normalized.trim() === '' ||
-      parsed <= 0 ||
-      parsed > 100_000
-    ) {
-      setError('Introduce una cantidad válida entre 1 y 100.000 g.');
+    if (parsed === null || parsed <= 0 || parsed > 100_000) {
+      setError('Introduce una cantidad válida: más de 0 y hasta 100.000 g.');
       return;
     }
 
@@ -57,7 +53,7 @@ export function GramsEditorModal({
       transparent
       visible={visible}
     >
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView behavior="padding" style={styles.backdrop}>
         <Card style={styles.dialog}>
           <Text style={styles.title}>Editar cantidad</Text>
           <Text style={styles.subtitle}>{foodName}</Text>
@@ -100,7 +96,7 @@ export function GramsEditorModal({
             </Pressable>
           </View>
         </Card>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

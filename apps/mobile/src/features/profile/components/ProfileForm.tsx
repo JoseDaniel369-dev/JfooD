@@ -124,9 +124,10 @@ export function ProfileForm({
 
   const errorFor = (key: keyof UserProfile) => fieldErrors[key];
 
-  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (selectedDate) {
+    // A dismissed Android dialog still reports the original date: only "set" counts.
+    if (event.type === 'set' && selectedDate) {
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       setBirthDate(`${selectedDate.getFullYear()}-${month}-${day}`);

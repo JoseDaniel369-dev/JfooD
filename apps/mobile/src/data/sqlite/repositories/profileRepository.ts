@@ -10,6 +10,7 @@ import {
   type UserProfile,
 } from '@jfood/core';
 
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { generateId } from '@/data/sqlite/utils/id';
 import { toLocalDate } from '@/features/diary/utils/date';
 
@@ -98,7 +99,7 @@ export async function saveProfile(
 
   let goals: NutritionGoals | null = null;
 
-  await database.withTransactionAsync(async () => {
+  await runInTransaction(database, async () => {
     let effectiveWeightKg = profile.weightKg;
     let writeWeight = true;
 

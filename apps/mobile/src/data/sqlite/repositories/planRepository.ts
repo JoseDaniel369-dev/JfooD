@@ -8,6 +8,7 @@ import {
   nutrientsFromRow,
   type NutrientRow,
 } from '@/data/sqlite/nutrientColumns';
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { ensureMeal } from '@/data/sqlite/repositories/diaryRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { addDays, assertLocalDate } from '@/features/diary/utils/date';
@@ -214,7 +215,7 @@ export async function copyPlanDay(
     return 0;
   }
 
-  await database.withTransactionAsync(async () => {
+  await runInTransaction(database, async () => {
     for (const row of rows) {
       const now = new Date().toISOString();
       await database.runAsync(
@@ -259,7 +260,7 @@ export async function copyPlanToDiary(
     return;
   }
 
-  await database.withTransactionAsync(async () => {
+  await runInTransaction(database, async () => {
     for (const row of rows) {
       const mealId = await ensureMeal(database, localDate, row.meal_type);
       const now = new Date().toISOString();

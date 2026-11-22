@@ -9,6 +9,7 @@ import {
   nutrientsFromRow,
   type NutrientRow,
 } from '@/data/sqlite/nutrientColumns';
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { CATALOG_SCHEMA } from '@/data/catalog/catalogSchema';
 import { isCatalogAttached } from '@/data/catalog/catalogState';
@@ -503,7 +504,7 @@ export async function duplicateFoodAsUser(
 
   let copy: Food | null = null;
   // One transaction: the copy never exists without its portions.
-  await database.withTransactionAsync(async () => {
+  await runInTransaction(database, async () => {
     copy = await createFood(database, {
       name,
       brand: original.brand,

@@ -34,32 +34,38 @@ export function useAchievements() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [fresh, setFresh] = useState<Achievement[]>([]);
 
+  const load = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const [stats, waterGoalDays, seen] = await Promise.all([
+          getAchievementStats(database),
+          countWaterGoalDays(database, goalMl),
+          getSetting(database, SEEN_KEY),
+        ]);
+        if (isCancelled()) return;
+
+        const list = evaluateAchievements(stats, toLocalDate(new Date()), waterGoalDays);
+        setAchievements(list);
+        setFresh(detectNewAchievements(list, parseSeenIds(seen)));
+      } catch {
+        // Achievements are a bonus: no list is better than an error.
+      }
+    },
+    [database, goalMl],
+  );
+
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-
-      void (async () => {
-        try {
-          const [stats, waterGoalDays, seen] = await Promise.all([
-            getAchievementStats(database),
-            countWaterGoalDays(database, goalMl),
-            getSetting(database, SEEN_KEY),
-          ]);
-          if (cancelled) return;
-
-          const list = evaluateAchievements(stats, toLocalDate(new Date()), waterGoalDays);
-          setAchievements(list);
-          setFresh(detectNewAchievements(list, parseSeenIds(seen)));
-        } catch {
-          // Achievements are a bonus: no list is better than an error.
-        }
-      })();
-
+      void load(() => cancelled);
       return () => {
         cancelled = true;
       };
-    }, [database, goalMl]),
+    }, [load]),
   );
+
+  /** Re-reads the progress after something that can unlock one (a copied meal, the water goal). */
+  const reload = useCallback(() => load(), [load]);
 
   const markSeen = useCallback(async () => {
     setFresh([]);
@@ -71,5 +77,5 @@ export function useAchievements() {
     }
   }, [achievements, database]);
 
-  return { achievements, fresh, markSeen };
+  return { achievements, fresh, markSeen, reload };
 }

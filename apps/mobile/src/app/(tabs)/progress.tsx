@@ -90,6 +90,7 @@ export default function ProgressScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<number>(7);
 
   const resetForm = useCallback(() => {
@@ -108,7 +109,8 @@ export default function ProgressScreen() {
     setFormError(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (confirmedOverwrite = false) => {
+    if (saving) return;
     setFormError(null);
 
     if (!editingDate && !isValidDate(date)) {
@@ -129,6 +131,12 @@ export default function ProgressScreen() {
       setFormError(
         `El peso debe estar entre ${PROFILE_LIMITS.minWeightKg} y ${PROFILE_LIMITS.maxWeightKg} kg.`,
       );
+      return;
+    }
+
+    // A new record on a day that already has one would silently replace it.
+    if (!editingDate && !confirmedOverwrite && logs.some((log) => log.localDate === date)) {
+      setShowOverwriteConfirm(true);
       return;
     }
 
@@ -168,9 +176,9 @@ export default function ProgressScreen() {
     })();
   };
 
-  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (selectedDate) {
+    if (event.type === 'set' && selectedDate) {
       setDate(toLocalDate(selectedDate));
     }
   };
@@ -379,7 +387,7 @@ export default function ProgressScreen() {
             <Button
               loading={saving}
               title={editingDate ? 'Guardar cambios' : 'Guardar'}
-              onPress={handleSave}
+              onPress={() => void handleSave()}
             />
           </View>
         </View>
@@ -440,6 +448,14 @@ export default function ProgressScreen() {
         </>
       ) : null}
 
+      <ConfirmDialog
+        confirmLabel="Reemplazar"
+        message={`Ya tienes un peso registrado el ${formatLocalDate(date)}. ¿Quieres reemplazarlo?`}
+        title="Ya hay un registro ese día"
+        visible={showOverwriteConfirm}
+        onClose={() => setShowOverwriteConfirm(false)}
+        onConfirm={() => void handleSave(true)}
+      />
       <ConfirmDialog
         confirmLabel="Eliminar"
         destructive
@@ -523,14 +539,16 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
   const scale = containerWidth > 0 ? containerWidth / width : 1;
 
   const linePath = points
-    .map((point, index) =>
-      index === 0
-        ? `M ${point.x} ${point.y}`
-        : `L ${point.x} ${point.y}`,
-    )
+    .map((point, index) => {
+      // Same offset as the dots below, so the line passes through them.
+      const x = point.x + padding.left;
+      const y = point.y + padding.top;
+      return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+    })
     .join(' ');
 
-  const areaPath = `${linePath} L ${points[points.length - 1]?.x ?? 0} ${chartHeight} L ${points[0]?.x ?? 0} ${chartHeight} Z`;
+  const baseline = chartHeight + padding.top;
+  const areaPath = `${linePath} L ${(points[points.length - 1]?.x ?? 0) + padding.left} ${baseline} L ${(points[0]?.x ?? 0) + padding.left} ${baseline} Z`;
 
   const selected = selectedIndex !== null ? points[selectedIndex] : null;
 

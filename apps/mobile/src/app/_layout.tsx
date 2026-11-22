@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
@@ -14,6 +14,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/nunito';
 import { ToastProvider } from '@/components/Toast';
+import { cleanStaleBackups } from '@/features/backup/files';
 import { useReminderScheduler } from '@/features/reminders/useReminderScheduler';
 import { initializeDatabase } from '@/data/sqlite/initializeDatabase';
 import {
@@ -25,35 +26,88 @@ import {
 } from '@/theme';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Nunito_400Regular,
     Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,
   });
 
-  if (!fontsLoaded) {
+  // A font that fails to load must not leave the app on a spinner forever:
+  // the text falls back to the system font.
+  if (!fontsLoaded && !fontError) {
     return <AppLoading />;
   }
 
   return (
     <GestureHandlerRootView style={stylesLoading.root}>
       <SafeAreaProvider>
-        <Suspense fallback={<AppLoading />}>
-          <SQLiteProvider
-            databaseName="jfood.db"
-            onInit={initializeDatabase}
-            useSuspense
-          >
-            <ThemeProvider>
-              <ToastProvider>
-                <RootNavigator />
-              </ToastProvider>
-            </ThemeProvider>
-          </SQLiteProvider>
-        </Suspense>
+        <DatabaseBoundary>
+          <ThemeProvider>
+            <ToastProvider>
+              <RootNavigator />
+            </ToastProvider>
+          </ThemeProvider>
+        </DatabaseBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/** Reports that the database is open and its children are on screen. */
+function DatabaseReady({ onReady, children }: PropsWithChildren<{ onReady: () => void }>) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return <>{children}</>;
+}
+
+/**
+ * Opens the database and shows a loading screen meanwhile. If opening or
+ * migrating fails, the error screen offers "Reintentar", which really tries
+ * again: the suspense flavour of SQLiteProvider keeps the failed promise and
+ * would fail the same way every time.
+ */
+function DatabaseBoundary({ children }: PropsWithChildren) {
+  const [attempt, setAttempt] = useState(0);
+  const [error, setError] = useState<Error | null>(null);
+  const [ready, setReady] = useState(false);
+
+  // The provider calls onError while rendering: defer the state update.
+  const handleError = useCallback((failure: Error) => {
+    queueMicrotask(() => setError(failure));
+  }, []);
+  const handleReady = useCallback(() => setReady(true), []);
+
+  if (error) {
+    return (
+      <ErrorBoundary
+        error={error}
+        retry={async () => {
+          setError(null);
+          setReady(false);
+          setAttempt((current) => current + 1);
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <SQLiteProvider
+        key={attempt}
+        databaseName="jfood.db"
+        onError={handleError}
+        onInit={initializeDatabase}
+      >
+        <DatabaseReady onReady={handleReady}>{children}</DatabaseReady>
+      </SQLiteProvider>
+      {ready ? null : (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <AppLoading />
+        </View>
+      )}
+    </>
   );
 }
 
@@ -96,6 +150,11 @@ function RootNavigator() {
   const { colors, scheme } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   useReminderScheduler();
+
+  // Backup files left in the cache by earlier exports hold health data.
+  useEffect(() => {
+    void cleanStaleBackups();
+  }, []);
 
   return (
     <>

@@ -28,17 +28,25 @@ interface ActionSheetProps {
   onClose: () => void;
 }
 
+/** Distance the sheet starts from (and returns to) below the screen. */
+const SHEET_OFFSCREEN = 640;
+
 export function ActionSheet({ visible, title, options, onClose }: ActionSheetProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [opacity] = useState(() => new Animated.Value(0));
-  const [translateY] = useState(() => new Animated.Value(300));
+  const [translateY] = useState(() => new Animated.Value(SHEET_OFFSCREEN));
   const [isOpen, setIsOpen] = useState(visible);
+  // Kept mounted while the close animation runs; a reopened sheet is shown again.
+  if (visible && !isOpen) setIsOpen(true);
   const onCloseRef = useRef(onClose);
   const animRef = useRef({ opacity, translateY });
-  const selfClosedRef = useRef(false);
+  /** True while the sheet is on screen (a sheet mounted closed never "closes"). */
+  const openRef = useRef(visible);
+  /** True from the first close request until the animation ends: later taps are ignored. */
+  const closingRef = useRef(false);
   const closeTokenRef = useRef(0);
 
   useEffect(() => {
@@ -50,6 +58,8 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
   }, [opacity, translateY]);
 
   const runCloseAnimation = useCallback((afterClose?: () => void) => {
+    if (closingRef.current || !openRef.current) return;
+    closingRef.current = true;
     const token = closeTokenRef.current;
     const { opacity: op, translateY: ty } = animRef.current;
     Animated.parallel([
@@ -59,22 +69,23 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
         useNativeDriver: true,
       }),
       Animated.timing(ty, {
-        toValue: 300,
+        toValue: SHEET_OFFSCREEN,
         duration: durations.normal,
         useNativeDriver: true,
         easing: (x) => easings.easeInOutCubic(x),
       }),
-    ]).start(() => {
-      if (token !== closeTokenRef.current) return;
+    ]).start(({ finished }) => {
+      // Interrupted (reopened meanwhile): the new open owns the state.
+      if (!finished || token !== closeTokenRef.current) return;
+      closingRef.current = false;
+      openRef.current = false;
       setIsOpen(false);
-      selfClosedRef.current = true;
       onCloseRef.current();
       afterClose?.();
     });
   }, []);
 
   const runOpenAnimation = useCallback(() => {
-    selfClosedRef.current = false;
     const { opacity: op, translateY: ty } = animRef.current;
     Animated.parallel([
       Animated.timing(op, {
@@ -93,12 +104,12 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
   useEffect(() => {
     if (visible) {
       closeTokenRef.current += 1;
-      selfClosedRef.current = false;
+      closingRef.current = false;
+      openRef.current = true;
       runOpenAnimation();
-    } else if (!selfClosedRef.current) {
-      runCloseAnimation();
     } else {
-      selfClosedRef.current = false;
+      // Closed by the parent (not through a tap): animate out once.
+      runCloseAnimation();
     }
   }, [visible, runOpenAnimation, runCloseAnimation]);
 

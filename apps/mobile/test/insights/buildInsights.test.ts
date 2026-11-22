@@ -126,3 +126,10 @@ test('never more tips than the limit, with the most important first', () => {
   assert.equal(tips.length, MAX_INSIGHTS);
   assert.equal(tips[0]?.kind, 'over-goal');
 });
+
+test('no protein tip when some entries have no protein data (unknown is not zero)', () => {
+  const tips = buildInsights(
+    input({ hour: 19, eaten: [{ caloriesKcal: 900, proteinGrams: 20 }, { caloriesKcal: 500 }] }),
+  );
+  assert.equal(kinds(tips).includes('protein'), false);
+});

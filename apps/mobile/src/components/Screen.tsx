@@ -2,7 +2,6 @@ import type { PropsWithChildren } from 'react';
 import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   type StyleProp,
@@ -24,7 +23,7 @@ export function Screen({ children, contentContainerStyle, fab = false }: ScreenP
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         style={styles.flex}
       >
         <ScrollView

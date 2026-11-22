@@ -184,3 +184,97 @@ test('answers split into several parts, including thought parts, are still parse
   assert.equal(response.statusCode, 200);
   assert.equal(response.json().foods[0].name, 'Pan');
 });
+
+test('one odd field from Gemini no longer discards the whole answer', async (context) => {
+  const app = buildApp({
+    logger: false,
+    environment: loadEnvironment({ GEMINI_API_KEY: 'k' }),
+  });
+  context.after(() => app.close());
+
+  mockFetch(context, async () =>
+    new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    // no "warnings", one food without "confidence" and one with a useless weight
+                    foods: [
+                      { name: 'Manzana', estimatedGrams: 150 },
+                      { name: 'Perejil', estimatedGrams: 0, confidence: 0.4 },
+                    ],
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      { status: 200 },
+    ),
+  );
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/recognize',
+    payload: { image: 'data:image/jpeg;base64,abcd' },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json().foods, [
+    { name: 'Manzana', estimatedGrams: 150, confidence: null },
+  ]);
+  assert.equal(response.json().warnings.length, 1);
+});
+
+test('line-wrapped base64 reaches Gemini in one piece', async (context) => {
+  const app = buildApp({
+    logger: false,
+    environment: loadEnvironment({ GEMINI_API_KEY: 'k' }),
+  });
+  context.after(() => app.close());
+
+  let sentBody = '';
+  mockFetch(context, async (_url, init) => {
+    sentBody = String((init as RequestInit).body);
+    return new Response(GEMINI_OK, { status: 200 });
+  });
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/recognize',
+    payload: { image: 'data:image/jpeg;base64,abcd\nefgh\r\nijkl' },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.ok(sentBody.includes("abcdefghijkl"), sentBody);
+});
+
+test('the per-minute rate limit answers in Spanish with its own code', async (context) => {
+  const app = buildApp({
+    logger: false,
+    environment: loadEnvironment({ GEMINI_API_KEY: 'k' }),
+  });
+  context.after(() => app.close());
+  mockFetch(context, async () => new Response(GEMINI_OK, { status: 200 }));
+
+  let last = await app.inject({
+    method: 'POST',
+    url: '/recognize',
+    payload: { image: 'data:image/jpeg;base64,abcd' },
+  });
+  for (let i = 0; i < 12 && last.statusCode !== 429; i += 1) {
+    last = await app.inject({
+      method: 'POST',
+      url: '/recognize',
+      payload: { image: 'data:image/jpeg;base64,abcd' },
+    });
+  }
+
+  assert.equal(last.statusCode, 429);
+  assert.equal(last.json().error.code, 'RATE_LIMITED');
+  assert.match(last.json().error.message, /Demasiadas peticiones/);
+});

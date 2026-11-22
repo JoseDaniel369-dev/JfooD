@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
-import { useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BackHandler, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
 import type { NutritionGoals } from '@jfood/core';
@@ -81,6 +81,21 @@ export default function OnboardingScreen() {
   const [nameDraft, setNameDraft] = useState('');
   const [meals, setMeals] = useState<MealKey[]>([]);
   const [burst, setBurst] = useState(0);
+
+  /** The step before this one, or null on the first (and on the last, which cannot be undone). */
+  const previousStep: OnboardingStep | null =
+    step === 'profile' ? 'welcome' : step === 'reminders' ? 'profile' : null;
+
+  // Android back goes to the previous step instead of leaving the app halfway.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (saving || step === 'done') return true;
+      if (previousStep === null) return false;
+      setStep(previousStep);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [previousStep, saving, step]);
 
   /** Set at once: a double tap on "Empezar" saves the name once and moves on once. */
   const startingRef = useRef(false);

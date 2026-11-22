@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 
+import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -22,6 +23,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useToast } from '@/components/Toast';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
+import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { isScannerEnabled } from '@/config/api';
 import { createFood } from '@/data/sqlite/repositories/foodRepository';
@@ -36,6 +38,7 @@ import { scheduleReminders } from '@/features/reminders/notifications';
 import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
+import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import {
   recognizeImage,
   recognizeText,
@@ -75,17 +78,20 @@ export default function ScannerScreen() {
   const { showToast } = useToast();
   const scannerEnabled = isScannerEnabled();
   const database = useSQLiteContext();
-  const { date, meal } = useLocalSearchParams<{
+  const { date, meal, target } = useLocalSearchParams<{
     date?: string;
     meal?: string;
+    target?: string;
   }>();
+  /** Opened from the planner: the foods go to the plan, not to the diary. */
+  const isPlanTarget = target === 'plan';
 
   const localDate =
     date && isValidLocalDate(date) ? date : toLocalDate(new Date());
   const initialMeal: MealType =
     MEALS.map((m) => m.type).includes(meal as MealType) ?
       (meal as MealType)
-    : 'breakfast';
+    : currentDefaultMeal();
 
   const { picking, launchCamera, launchLibrary } = useImagePicker();
 
@@ -107,10 +113,18 @@ export default function ScannerScreen() {
   // Rows whose typed amount is not a valid portion (keyed by match id).
   const [invalidIds, setInvalidIds] = useState<Record<string, boolean>>({});
   const analyzeRequestRef = useRef(0);
+  /** Aborts the running request when the screen closes (it would still spend the Gemini budget). */
+  const abortRef = useRef<AbortController | null>(null);
+  /** Set at once: two quick taps on "Añadir" must save once. */
+  const savingRef = useRef(false);
+  /** The unmatched row sent to the manual flow; dropped only if a food really gets created. */
+  const pendingManualRef = useRef<{ id: string; recognized: RecognizedFood } | null>(null);
   const [mealText, setMealText] = useState('');
   const [consentPending, setConsentPending] = useState<
     'camera' | 'library' | 'text' | null
   >(null);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const handleImage = useCallback(
     async (result: Awaited<ReturnType<typeof launchCamera>>) => {
@@ -140,15 +154,21 @@ export default function ScannerScreen() {
 
   /** Runs a recognition request (photo or text) and resolves the foods against the catalog. */
   const analyze = useCallback(
-    async (request: () => Promise<RecognitionResult>, fallback: string) => {
+    async (
+      request: (signal: AbortSignal) => Promise<RecognitionResult>,
+      fallback: string,
+    ) => {
       analyzeRequestRef.current += 1;
       const requestId = analyzeRequestRef.current;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       setStep('analyzing');
       setErrorMessage(null);
 
       try {
-        const result = await request();
+        const result = await request(controller.signal);
         if (requestId !== analyzeRequestRef.current) return;
 
         const resolved = await Promise.all(
@@ -182,7 +202,7 @@ export default function ScannerScreen() {
   const handleAnalyze = useCallback(async () => {
     if (!imageBase64) return;
     await analyze(
-      () => recognizeImage(imageBase64),
+      (signal) => recognizeImage(imageBase64, signal),
       'No se ha podido analizar la imagen.',
     );
   }, [analyze, imageBase64]);
@@ -190,7 +210,10 @@ export default function ScannerScreen() {
   const handleAnalyzeText = useCallback(async () => {
     const text = mealText.trim();
     if (text.length < 2) return;
-    await analyze(() => recognizeText(text), 'No se ha podido interpretar el texto.');
+    await analyze(
+      (signal) => recognizeText(text, signal),
+      'No se ha podido interpretar el texto.',
+    );
   }, [analyze, mealText]);
 
   const startCamera = useCallback(async () => {
@@ -264,11 +287,12 @@ export default function ScannerScreen() {
   );
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
 
     setSaving(true);
     try {
-      await database.withTransactionAsync(async () => {
+      await runInTransaction(database, async () => {
         const createdByName = new Map<string, Food>();
 
         for (const match of matches) {
@@ -291,45 +315,66 @@ export default function ScannerScreen() {
             createdByName.set(normalizeName(match.recognized.name), food);
           }
 
-          await addEntry(database, {
+          const entry = {
             localDate,
             mealType: targetMeal,
             food,
             grams: match.grams,
-          });
+          };
+          if (isPlanTarget) {
+            await addPlanEntry(database, entry);
+          } else {
+            await addEntry(database, entry);
+          }
         }
       });
 
       void scheduleReminders(database);
       hapticSuccess();
-      showToast('Añadido al diario.');
+      showToast(isPlanTarget ? 'Añadido al plan.' : 'Añadido al diario.');
       router.back();
     } catch {
+      savingRef.current = false;
       setSaving(false);
       showToast('No se han podido añadir los alimentos.', 'error');
     }
   };
 
   const handleManualCreate = (recognizedName: string, id?: string) => {
-    if (id !== undefined) {
-      // The food will be added from the manual flow: drop it here so it
-      // cannot be saved twice when the person comes back.
-      setMatches((previous) => removeMatch(previous, id));
-      setInvalidIds((previous) => {
-        const { [id]: _removed, ...rest } = previous;
-        return rest;
-      });
-    }
+    // The row stays until the food is really created (see the focus effect below):
+    // backing out of the manual flow must not lose it.
+    const row = id === undefined ? undefined : matches.find((m) => m.id === id);
+    pendingManualRef.current = row ? { id: row.id, recognized: row.recognized } : null;
     router.push({
       pathname: '/diary/add-food',
       params: {
         date: localDate,
         meal: targetMeal,
         create: '1',
+        ...(isPlanTarget ? { target: 'plan' } : {}),
         ...(recognizedName ? { name: recognizedName } : {}),
       },
     });
   };
+
+  // Back from the manual flow: if the food now exists, that flow already added it.
+  useFocusEffect(
+    useCallback(() => {
+      const pending = pendingManualRef.current;
+      if (!pending) return;
+      pendingManualRef.current = null;
+      void findLocalFoodMatch(database, pending.recognized)
+        .then((created) => {
+          if (!created) return;
+          setMatches((previous) => removeMatch(previous, pending.id));
+          setInvalidIds((previous) => {
+            const { [pending.id]: _removed, ...rest } = previous;
+            return rest;
+          });
+        })
+        .catch(() => undefined);
+    }, [database]),
+  );
 
   const reset = () => {
     analyzeRequestRef.current += 1;
@@ -392,7 +437,13 @@ export default function ScannerScreen() {
         <ErrorStep
           message={errorMessage}
           onManual={() => handleManualCreate('')}
-          onRetry={reset}
+          retryLabel={imageBase64 || mealText.trim().length >= 2 ? 'Reintentar' : undefined}
+          onRetry={() => {
+            if (imageBase64) void handleAnalyze();
+            else if (mealText.trim().length >= 2) void handleAnalyzeText();
+            else reset();
+          }}
+          onOther={reset}
         />
       ) : null}
 
@@ -401,7 +452,7 @@ export default function ScannerScreen() {
           <Button
             disabled={!canSave || saving}
             loading={saving}
-            title="Añadir al diario"
+            title={isPlanTarget ? 'Añadir al plan' : 'Añadir al diario'}
             onPress={handleSave}
           />
         </View>
@@ -796,15 +847,20 @@ function ErrorStep({
   message,
   onManual,
   onRetry,
+  onOther,
+  retryLabel,
 }: {
   message: string | null;
   onManual: () => void;
   onRetry: () => void;
+  /** Starts over with another photo or text (only offered when "retry" keeps the current one). */
+  onOther?: () => void;
+  retryLabel?: string;
 }) {
   return (
     <View style={useStyles().errorStep}>
       <EmptyState
-        actionLabel="Intentar de nuevo"
+        actionLabel={retryLabel ?? 'Intentar de nuevo'}
         icon="alert-circle-outline"
         message={
           message ??
@@ -813,6 +869,14 @@ function ErrorStep({
         title="Error de análisis"
         onAction={onRetry}
       />
+      {retryLabel ? (
+        <Button
+          icon="camera-outline"
+          title="Otra foto o texto"
+          variant="secondary"
+          onPress={onOther ?? onRetry}
+        />
+      ) : null}
       <Button
         icon="create-outline"
         title="Crear alimento manualmente"

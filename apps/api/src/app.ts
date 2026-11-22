@@ -55,22 +55,40 @@ export function buildApp(options: BuildAppOptions = {}) {
     request.log.error({ err: error }, 'Request failed');
 
     const statusCode = getClientErrorStatus(error);
-    const message =
-      statusCode === 500
-        ? 'Error interno del servidor'
-        : error instanceof Error
-          ? error.message
-          : 'Solicitud no válida';
+    const { code, message } = describeClientError(statusCode, error);
 
-    return reply.status(statusCode).send({
-      error: {
-        code: statusCode === 500 ? 'INTERNAL_ERROR' : 'INVALID_REQUEST',
-        message,
-      },
-    });
+    return reply.status(statusCode).send({ error: { code, message } });
   });
 
   return app;
+}
+
+/** Spanish messages for the errors Fastify and its plugins raise (the app shows them as they are). */
+function describeClientError(
+  statusCode: number,
+  error: unknown,
+): { code: string; message: string } {
+  switch (statusCode) {
+    case 429:
+      return {
+        code: 'RATE_LIMITED',
+        message: 'Demasiadas peticiones seguidas. Espera un minuto e inténtalo de nuevo.',
+      };
+    case 413:
+      return {
+        code: 'INVALID_REQUEST',
+        message: 'La imagen es demasiado grande. Prueba con una foto más pequeña.',
+      };
+    case 415:
+      return { code: 'INVALID_REQUEST', message: 'Formato de petición no admitido.' };
+    case 500:
+      return { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' };
+    default:
+      return {
+        code: 'INVALID_REQUEST',
+        message: error instanceof Error ? error.message : 'Solicitud no válida',
+      };
+  }
 }
 
 function getClientErrorStatus(error: unknown): number {

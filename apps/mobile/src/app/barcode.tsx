@@ -2,7 +2,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { isScannerEnabled } from '@/config/api';
@@ -119,7 +119,17 @@ export default function BarcodeScreen() {
           Necesitamos la cámara para leer el código de barras. La imagen no se
           guarda ni se envía: solo se lee el número.
         </Text>
-        <Button title="Permitir cámara" onPress={() => void requestPermission()} />
+        {permission.canAskAgain ? (
+          <Button title="Permitir cámara" onPress={() => void requestPermission()} />
+        ) : (
+          <>
+            <Text style={styles.text}>
+              Has bloqueado el permiso: actívalo en los ajustes de la app para poder escanear.
+            </Text>
+            <Button title="Abrir ajustes" onPress={() => void Linking.openSettings()} />
+          </>
+        )}
+        <Button title="Volver" variant="secondary" onPress={() => router.back()} />
       </View>
     );
   }

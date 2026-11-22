@@ -1,6 +1,6 @@
 {
   "name": "@jfood/mobile",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
@@ -47,7 +47,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test \"test/**/*.test.ts\"",
     "lint": "expo lint",
     "typecheck": "tsc -p tsconfig.test.json",
     "catalog:build": "tsx scripts/catalog/fetch-usda.ts && tsx scripts/catalog/build-usda.ts && tsx scripts/catalog/translate-names.ts && tsx scripts/catalog/fetch-off.ts && tsx scripts/catalog/build-off.ts && tsx scripts/catalog/assemble-catalog.ts",

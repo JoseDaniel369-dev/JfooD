@@ -23,7 +23,10 @@ const EAS_PROJECT_ID = '';
 
 module.exports = ({ config }) => {
   assertValidApiUrl(process.env.EXPO_PUBLIC_API_URL);
-  const experimental = Boolean(process.env.EXPO_PUBLIC_API_URL);
+  // A development build (eas.json "development" profile) also has the scanner: it
+  // is enabled in __DEV__ even without an API URL, so the camera must be declared.
+  const experimental =
+    Boolean(process.env.EXPO_PUBLIC_API_URL) || process.env.APP_VARIANT === 'development';
 
   return {
     ...config,

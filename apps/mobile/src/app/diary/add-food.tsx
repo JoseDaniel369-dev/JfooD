@@ -106,6 +106,8 @@ export default function AddFoodScreen() {
   const catalogFoods = catalogState.category === category ? catalogState.foods : [];
   const catalogHasMore = catalogState.category === category && catalogState.hasMore;
   const [loadingMore, setLoadingMore] = useState(false);
+  /** Set at once: a double tap on "Ver más" must load one page, not append it twice. */
+  const loadingMoreRef = useRef(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [addedCount, setAddedCount] = useState(0);
 
@@ -192,7 +194,8 @@ export default function AddFoodScreen() {
   }, [database, category]);
 
   const loadMoreCatalog = async () => {
-    if (loadingMore) return;
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     const requested = category;
     setLoadingMore(true);
     try {
@@ -206,6 +209,7 @@ export default function AddFoodScreen() {
     } catch {
       showToast('No se han podido cargar más alimentos.', 'error');
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
   };

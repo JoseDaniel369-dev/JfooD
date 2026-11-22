@@ -15,6 +15,7 @@ import {
   MAX_SERVING_LABEL_LENGTH,
   type Serving,
 } from '@/data/sqlite/repositories/servingRepository';
+import { parseSpanishNumber } from '@/features/foods/utils/parseNumber';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 /** Named portions of a food ("1 unidad = 60 g") used as shortcuts when logging. */
@@ -43,7 +44,7 @@ export function ServingsCard({ foodId }: { foodId: string }) {
 
   const handleAdd = async () => {
     try {
-      await saveServing(database, foodId, label, Number(grams.replace(',', '.')));
+      await saveServing(database, foodId, label, parseSpanishNumber(grams, { thousands: true }) ?? Number.NaN);
       setLabel('');
       setGrams('');
       await load();

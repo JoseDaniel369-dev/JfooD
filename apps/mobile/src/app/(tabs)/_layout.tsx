@@ -37,7 +37,11 @@ export default function TabsLayout() {
           {
             label: 'Escanear comida',
             icon: 'camera-outline' as const,
-            onPress: () => router.push('/scanner'),
+            onPress: () =>
+              router.push({
+                pathname: '/scanner',
+                params: { date: toLocalDate(new Date()), meal: currentDefaultMeal() },
+              }),
           },
           {
             label: 'Escanear código de barras',

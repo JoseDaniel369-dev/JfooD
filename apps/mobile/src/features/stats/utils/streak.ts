@@ -23,7 +23,8 @@ export interface WeekStats {
 }
 
 export function computeStreak(dates: string[], today: string): StreakStats {
-  const logged = new Set(dates);
+  // Days after today (entries copied ahead) are not logged yet.
+  const logged = new Set(dates.filter((date) => date <= today));
   const totalDays = logged.size;
 
   const anchor = logged.has(today) ? today : addDays(today, -1);

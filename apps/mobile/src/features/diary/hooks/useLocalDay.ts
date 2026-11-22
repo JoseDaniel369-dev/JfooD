@@ -61,7 +61,13 @@ export function useLocalDay<T>(
         }
       } catch {
         if (localDateRef.current === date) {
-          setState({ data: null, error: errorMessage, loading: false });
+          // A silent refresh that fails (after a write) keeps what is on screen:
+          // replacing the day with an error would hide data that is still valid.
+          setState((current) =>
+            !showLoading && current.data !== null
+              ? current
+              : { data: null, error: errorMessage, loading: false },
+          );
         }
       }
     },

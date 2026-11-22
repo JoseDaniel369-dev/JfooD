@@ -183,3 +183,50 @@ test('a backup that includes app settings replaces them', async () => {
   const rows = await target.getAllAsync<{ key: string }>('SELECT key FROM app_settings');
   assert.deepEqual(rows.map((r) => r.key), ['theme']);
 });
+
+test('a malformed calendar date in the file is refused before anything is restored', () => {
+  const base = { format: 'jfood-backup', version: 1, schemaVersion: 6, createdAt: '', tables: {} };
+
+  for (const [table, column] of [
+    ['weight_logs', 'local_date'],
+    ['diary_meals', 'local_date'],
+    ['water_logs', 'local_date'],
+    ['nutrition_goals', 'effective_from'],
+    ['user_profile', 'birth_date'],
+  ] as const) {
+    for (const bad of ['2026-13-40', '16/11/2026', '', null, 20261116]) {
+      assert.throws(
+        () => parseBackup({ ...base, tables: { [table]: [{ [column]: bad }] } }, LATEST_SCHEMA_VERSION),
+        /Fecha no válida/,
+        `${table}.${column} = ${String(bad)}`,
+      );
+    }
+  }
+  assert.doesNotThrow(() =>
+    parseBackup(
+      { ...base, tables: { weight_logs: [{ local_date: '2026-11-16', weight_kg: 70 }] } },
+      LATEST_SCHEMA_VERSION,
+    ),
+  );
+});
+
+test('restoring settings never overwrites what belongs to this device’s installation', async () => {
+  const source = await populated();
+  await setSetting(source.sqlite, 'catalog_installed_version', '99');
+  await setSetting(source.sqlite, 'seed_version', '99');
+  const json = JSON.parse(JSON.stringify(await exportBackup(source.sqlite)));
+
+  const target = await createMigratedDatabase();
+  await setSetting(target.asSqlite(), 'catalog_installed_version', '3');
+  await setSetting(target.asSqlite(), 'onboarding_done', '1');
+  await restoreBackup(target.asSqlite(), parseBackup(json, LATEST_SCHEMA_VERSION));
+
+  const rows = await target.getAllAsync<{ key: string; value: string }>(
+    'SELECT key, value FROM app_settings ORDER BY key',
+  );
+  const byKey = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  assert.equal(byKey.catalog_installed_version, '3', 'the device value is kept');
+  assert.equal(byKey.seed_version, undefined, 'a device key from another phone is not imported');
+  assert.equal(byKey.onboarding_done, undefined, 'preferences are replaced by the backup');
+  assert.equal(byKey.theme, 'dark');
+});

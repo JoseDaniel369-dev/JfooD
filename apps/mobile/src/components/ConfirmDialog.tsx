@@ -39,18 +39,54 @@ export function ConfirmDialog({
   const [opacity] = useState(() => new Animated.Value(0));
   const [scale] = useState(() => new Animated.Value(0.9));
   const [isOpen, setIsOpen] = useState(visible);
+  // Kept mounted while the close animation runs; a reopened dialog is shown again.
+  if (visible && !isOpen) setIsOpen(true);
   const onCloseRef = useRef(onClose);
-  const selfClosedRef = useRef(false);
+  /** True while the dialog is on screen (starts as `visible`, so a dialog mounted closed never "closes"). */
+  const openRef = useRef(visible);
+  /** True from the first close request until the close animation ends: later taps are ignored. */
+  const closingRef = useRef(false);
   const closeTokenRef = useRef(0);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   });
 
+  const runClose = useCallback(
+    (afterClose?: () => void) => {
+      if (closingRef.current || !openRef.current) return;
+      closingRef.current = true;
+      const token = closeTokenRef.current;
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: durations.fast,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 0.9,
+          duration: durations.fast,
+          useNativeDriver: true,
+          easing: (x) => easings.easeInOutCubic(x),
+        }),
+      ]).start(({ finished }) => {
+        // Interrupted (the dialog was reopened meanwhile): the new open owns the state.
+        if (!finished || token !== closeTokenRef.current) return;
+        closingRef.current = false;
+        openRef.current = false;
+        setIsOpen(false);
+        onCloseRef.current();
+        afterClose?.();
+      });
+    },
+    [opacity, scale],
+  );
+
   useEffect(() => {
     if (visible) {
       closeTokenRef.current += 1;
-      selfClosedRef.current = false;
+      closingRef.current = false;
+      openRef.current = true;
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
@@ -63,56 +99,12 @@ export function ConfirmDialog({
           ...springConfigs.gentle,
         }),
       ]).start();
-    } else if (!selfClosedRef.current) {
-      const token = closeTokenRef.current;
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: durations.fast,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 0.9,
-          duration: durations.fast,
-          useNativeDriver: true,
-          easing: (x) => easings.easeInOutCubic(x),
-        }),
-      ]).start(() => {
-        if (token !== closeTokenRef.current) return;
-        setIsOpen(false);
-        selfClosedRef.current = true;
-        onCloseRef.current();
-      });
     } else {
-      selfClosedRef.current = false;
+      // Closed by the parent (not through runClose): animate out once.
+      runClose();
     }
-  }, [visible, opacity, scale]);
+  }, [visible, opacity, scale, runClose]);
 
-  const runClose = useCallback(
-    (afterClose?: () => void) => {
-      const token = closeTokenRef.current;
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: durations.fast,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 0.9,
-          duration: durations.fast,
-          useNativeDriver: true,
-          easing: (x) => easings.easeInOutCubic(x),
-        }),
-      ]).start(() => {
-        if (token !== closeTokenRef.current) return;
-        setIsOpen(false);
-        selfClosedRef.current = true;
-        onCloseRef.current();
-        afterClose?.();
-      });
-    },
-    [opacity, scale],
-  );
 
   if (!visible && !isOpen) {
     return null;

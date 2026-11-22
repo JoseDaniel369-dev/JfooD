@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { assertLocalDate } from '@/features/diary/utils/date';
+import { assertLocalDate, toLocalDate } from '@/features/diary/utils/date';
 
 /** What was eaten on one day. Each total counts only the values that are known. */
 export interface DailyTotals {
@@ -80,28 +80,48 @@ export interface AchievementStats {
   weightDates: string[];
 }
 
+/**
+ * Only days up to `today` count: entries copied to future days (a planned
+ * week) are not "logged" yet and must not feed streaks or achievements.
+ */
 export async function getAchievementStats(
   database: SQLiteDatabase,
+  today: string = toLocalDate(new Date()),
 ): Promise<AchievementStats> {
+  assertLocalDate(today);
   const [totals, dates, allMeals, foods, recipes, weights] = await Promise.all([
-    database.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM diary_entries'),
+    database.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) AS count
+       FROM diary_entries AS entry
+       INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
+       WHERE meal.local_date <= ?`,
+      today,
+    ),
     database.getAllAsync<{ local_date: string }>(
       `SELECT DISTINCT meal.local_date
        FROM diary_meals AS meal
        INNER JOIN diary_entries AS entry ON entry.meal_id = meal.id
+       WHERE meal.local_date <= ?
        ORDER BY meal.local_date`,
+      today,
     ),
     database.getFirstAsync<{ count: number }>(
       `SELECT COUNT(*) AS count FROM (
          SELECT meal.local_date
          FROM diary_meals AS meal
          INNER JOIN diary_entries AS entry ON entry.meal_id = meal.id
+         WHERE meal.local_date <= ?
          GROUP BY meal.local_date
          HAVING COUNT(DISTINCT meal.meal_type) = 4
        )`,
+      today,
     ),
     database.getFirstAsync<{ count: number }>(
-      'SELECT COUNT(DISTINCT food_id) AS count FROM diary_entries WHERE food_id IS NOT NULL',
+      `SELECT COUNT(DISTINCT entry.food_id) AS count
+       FROM diary_entries AS entry
+       INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
+       WHERE entry.food_id IS NOT NULL AND meal.local_date <= ?`,
+      today,
     ),
     database.getFirstAsync<{ count: number }>(
       "SELECT COUNT(*) AS count FROM foods WHERE source = 'user' AND brand = 'Receta'",
