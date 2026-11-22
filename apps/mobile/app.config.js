@@ -19,7 +19,7 @@ function assertValidApiUrl(url) {
  * because this config is a script, it cannot be written for you: paste it here.
  * It is an identifier, not a secret, so it can live in git.
  */
-const EAS_PROJECT_ID = '';
+const EAS_PROJECT_ID = 'ab772630-fda7-499f-9a72-bad7b1601d57';
 
 module.exports = ({ config }) => {
   assertValidApiUrl(process.env.EXPO_PUBLIC_API_URL);
