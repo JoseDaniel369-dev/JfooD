@@ -8,7 +8,7 @@ import { getSetting, setSetting } from '@/data/sqlite/repositories/settingsRepos
 import { toLocalDate } from '@/features/diary/utils/date';
 
 import { MAX_PLANNED_REMINDERS, planReminders } from './planReminders';
-import { REMINDER_CHANNEL_ID, buildScheduleRequests } from './schedule';
+import { REMINDER_CHANNEL_ID, REMINDER_ID_PREFIX, buildScheduleRequests } from './schedule';
 import {
   REMINDERS_SETTING_KEY,
   anyReminderEnabled,
@@ -108,17 +108,33 @@ async function rebuild(database: SQLiteDatabase): Promise<void> {
     planReminders(settings, now, context, REMINDER_HORIZON_DAYS, MAX_SCHEDULED),
   );
 
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Schedule first: an identifier that already exists is replaced, so a failure
+  // or the app closing halfway leaves the previous plan, not an empty one.
+  const wanted = new Set<string>();
   for (const request of requests) {
-    await Notifications.scheduleNotificationAsync({
-      identifier: request.identifier,
-      content: { title: request.title, body: request.body, data: request.data },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: request.date,
-        channelId: REMINDER_CHANNEL_ID,
-      },
-    });
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: request.identifier,
+        content: { title: request.title, body: request.body, data: request.data },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: request.date,
+          channelId: REMINDER_CHANNEL_ID,
+        },
+      });
+      wanted.add(request.identifier);
+    } catch {
+      // One bad request must not stop the rest of the plan.
+    }
+  }
+
+  // Then drop the reminders that are no longer wanted (meal logged, setting changed).
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notification of pending) {
+    const { identifier } = notification;
+    if (identifier.startsWith(REMINDER_ID_PREFIX) && !wanted.has(identifier)) {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+    }
   }
 }
 

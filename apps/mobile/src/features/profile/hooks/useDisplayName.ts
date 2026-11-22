@@ -15,21 +15,21 @@ export function useDisplayName() {
   const database = useSQLiteContext();
   const [name, setName] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      getSetting(database, DISPLAY_NAME_KEY)
-        .then((stored) => {
-          if (!cancelled) setName(cleanDisplayName(stored));
-        })
-        .catch(() => {
-          // No name just means a plain greeting.
-        });
-      return () => {
-        cancelled = true;
-      };
-    }, [database]),
-  );
+  const load = useCallback(() => {
+    let cancelled = false;
+    getSetting(database, DISPLAY_NAME_KEY)
+      .then((stored) => {
+        if (!cancelled) setName(cleanDisplayName(stored));
+      })
+      .catch(() => {
+        // No name just means a plain greeting.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [database]);
+
+  useFocusEffect(load);
 
   const save = useCallback(
     async (next: string): Promise<boolean> => {
@@ -45,5 +45,5 @@ export function useDisplayName() {
     [database],
   );
 
-  return { name, save };
+  return { name, save, reload: () => void load() };
 }

@@ -63,5 +63,5 @@ export function useWaterGoal() {
     [database],
   );
 
-  return { ...state, setGoalMl };
+  return { ...state, setGoalMl, reload: load };
 }

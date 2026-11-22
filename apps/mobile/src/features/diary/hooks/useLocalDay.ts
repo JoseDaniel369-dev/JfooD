@@ -79,8 +79,6 @@ export function useLocalDay<T>(
       initialLoadDone.current = true;
       return;
     }
-    // Another day: never keep showing the previous day's data under the new date.
-    setState({ data: null, error: null, loading: true });
     void reload();
   }, [localDate, reload]);
 

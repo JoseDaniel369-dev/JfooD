@@ -53,8 +53,10 @@ export function averageMacros(days: readonly DailyTotals[]): MacroAverages {
     if (total > 0) {
       const p = Math.round((proteinKcal / total) * 100);
       const c = Math.round((carbKcal / total) * 100);
-      // The last share takes the rounding remainder, so they always add up to 100.
-      split = { protein: p, carbohydrates: c, fat: 100 - p - c };
+      // The last share takes the rounding remainder, so they always add up to 100
+      // (and never go below 0 when two shares both round up).
+      const f = 100 - p - c;
+      split = f >= 0 ? { protein: p, carbohydrates: c, fat: f } : { protein: p, carbohydrates: c + f, fat: 0 };
     }
   }
 

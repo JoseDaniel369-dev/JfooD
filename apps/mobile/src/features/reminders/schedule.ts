@@ -1,5 +1,8 @@
 import type { PlannedReminder, ReminderKind } from './planReminders';
 
+/** Every reminder identifier starts with this, so the app's own can be told apart. */
+export const REMINDER_ID_PREFIX = 'reminder-';
+
 /** Android notification channel every reminder goes through. */
 export const REMINDER_CHANNEL_ID = 'recordatorios';
 
@@ -50,7 +53,7 @@ export function isSafeReminderRoute(route: unknown): route is string {
 export function buildScheduleRequests(plan: readonly PlannedReminder[]): ScheduleRequest[] {
   return plan.map((reminder) => ({
     // "breakfast-2026-11-18-09:00" → "reminder-breakfast-2026-11-18-0900"
-    identifier: `reminder-${reminder.id.replace(/:/g, '')}`,
+    identifier: `${REMINDER_ID_PREFIX}${reminder.id.replace(/:/g, '')}`,
     title: reminder.title,
     body: reminder.body,
     data: { kind: reminder.kind, route: routeForReminder(reminder.kind) },

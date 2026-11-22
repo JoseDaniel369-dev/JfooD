@@ -223,6 +223,8 @@ export default function DiaryScreen() {
         onPress: () => setLocalDate(targetDate),
       });
     } catch {
+      // Close the sheet first: a toast would stay hidden under it.
+      setCopyingMeal(null);
       showToast('No se ha podido copiar la comida.', 'error');
     }
   };

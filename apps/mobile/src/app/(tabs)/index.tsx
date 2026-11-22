@@ -74,6 +74,7 @@ export default function HomeScreen() {
   const { fresh, markSeen } = useAchievements();
   const [confettiBurst, setConfettiBurst] = useState(0);
   const [customWater, setCustomWater] = useState<string | null>(null);
+  const [customWaterError, setCustomWaterError] = useState<string | null>(null);
   /** Set at once: two quick taps on "Añadir" must log once. */
   const addingCustomRef = useRef(false);
 
@@ -178,19 +179,22 @@ export default function HomeScreen() {
     if (addingCustomRef.current) return;
     const amount = parseWaterAmount(customWater ?? '');
     if (amount === null) {
-      showToast('Escribe una cantidad entre 1 y 5000 ml.', 'error');
+      setCustomWaterError('Escribe una cantidad entre 1 y 5000 ml.');
       return;
     }
     addingCustomRef.current = true;
     try {
-      await handleAddWater(amount);
-      setCustomWater(null);
+      if (await handleAddWater(amount)) {
+        setCustomWater(null);
+      } else {
+        setCustomWaterError('No se ha podido registrar el agua. Inténtalo de nuevo.');
+      }
     } finally {
       addingCustomRef.current = false;
     }
   };
 
-  const handleAddWater = async (amountMl: number) => {
+  const handleAddWater = async (amountMl: number): Promise<boolean> => {
     const previousTotal = waterTotalRef.current;
     waterTotalRef.current = previousTotal + amountMl;
     const added = await water.add(amountMl);
@@ -205,6 +209,7 @@ export default function HomeScreen() {
     } else {
       showToast('No se ha podido registrar el agua.', 'error');
     }
+    return added;
   };
 
   const handleRepeatYesterday = async () => {
@@ -462,7 +467,10 @@ export default function HomeScreen() {
       </Animated.View>
     </Screen>
     <BottomSheet
-      onClose={() => setCustomWater(null)}
+      onClose={() => {
+        setCustomWater(null);
+        setCustomWaterError(null);
+      }}
       title="¿Cuánta agua?"
       visible={customWater !== null}
     >
@@ -471,7 +479,10 @@ export default function HomeScreen() {
         autoFocus
         keyboardType="number-pad"
         maxLength={4}
-        onChangeText={setCustomWater}
+        onChangeText={(text) => {
+          setCustomWater(text);
+          setCustomWaterError(null);
+        }}
         onSubmitEditing={() => void handleAddCustomWater()}
         placeholder="ml"
         placeholderTextColor={colors.textMuted}
@@ -479,6 +490,7 @@ export default function HomeScreen() {
         style={styles.waterInput}
         value={customWater ?? ''}
       />
+      {customWaterError ? <Text style={styles.waterError}>{customWaterError}</Text> : null}
       <View style={styles.waterButtons}>
         {WATER_EXTRA_PRESETS.map((amount) => (
           <Chip key={amount} label={`${amount} ml`} onPress={() => setCustomWater(String(amount))} />
@@ -708,6 +720,11 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: spacing.sm,
+    },
+    waterError: {
+      ...typography.caption,
+      color: colors.danger,
+      textAlign: 'center',
     },
     waterInput: {
       backgroundColor: colors.surfaceMuted,

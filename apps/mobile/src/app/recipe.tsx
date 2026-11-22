@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { computeRecipe } from '@jfood/core';
@@ -99,6 +99,9 @@ export default function RecipeScreen() {
     setQuery('');
   };
 
+  /** Set at once: two taps in one frame must save one recipe. */
+  const savingRef = useRef(false);
+
   const handleSave = async () => {
     const recipeName = name.trim();
     if (!recipeName) {
@@ -114,6 +117,8 @@ export default function RecipeScreen() {
       return;
     }
 
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const per100g = computed.result.per100g;
@@ -138,6 +143,7 @@ export default function RecipeScreen() {
         'error',
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

@@ -44,7 +44,11 @@ export function useReminderScheduler(): void {
     const route = response.notification.request.content.data?.route;
     if (isSafeReminderRoute(route)) {
       // typedRoutes only knows literal paths; the allow-list above keeps this safe.
-      router.push(route as never);
+      // navigate (not push): the tabs may already be open, and must not stack twice.
+      router.navigate(route as never);
     }
+    // The response lives natively until cleared: without this a remount (for
+    // example "Reintentar" after an error) would replay the same tap.
+    Notifications.clearLastNotificationResponse();
   }, [response]);
 }

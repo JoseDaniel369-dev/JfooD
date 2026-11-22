@@ -54,13 +54,16 @@ export default function ProfileScreen() {
   const database = useSQLiteContext();
   const { showToast } = useToast();
   const { error, goals, load, loading, profile, saving, update } = useProfile();
-  const { name, save: saveName } = useDisplayName();
+  const { name, save: saveName, reload: reloadName } = useDisplayName();
   const { stats } = useDiaryStats();
 
-  const { goalMl: storedWaterGoal, setGoalMl } = useWaterGoal();
+  const { goalMl: storedWaterGoal, setGoalMl, reload: reloadWaterGoal } = useWaterGoal();
+  /** Bumped after a restore so the reminders card reads the restored settings. */
+  const [restoreCount, setRestoreCount] = useState(0);
   const [waterGoalDraft, setWaterGoalDraft] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const streak = stats ? computeStreak(stats.loggedDates, toLocalDate(new Date())).current : 0;
   const loggedDays = stats?.loggedDates.length ?? 0;
@@ -107,7 +110,8 @@ export default function ProfileScreen() {
       hapticSuccess();
       showToast('Nombre guardado.');
     } else {
-      showToast('No se ha podido guardar el nombre.', 'error');
+      // Inline: a toast would hide under the sheet.
+      setNameError('No se ha podido guardar el nombre. Inténtalo de nuevo.');
     }
   };
 
@@ -197,7 +201,7 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <Animated.View entering={staggerIn(3)}>
-        <RemindersCard />
+        <RemindersCard key={restoreCount} />
       </Animated.View>
 
       <Animated.View entering={staggerIn(4)}>
@@ -232,7 +236,11 @@ export default function ProfileScreen() {
         <BackupCard
           onRestored={() => {
             void load();
-            // The copy may carry other reminder settings.
+            // The copy may carry another name, water goal and reminder settings: reload
+            // them, or the next edit would save the old values over the restored ones.
+            reloadName();
+            void reloadWaterGoal();
+            setRestoreCount((count) => count + 1);
             void scheduleReminders(database);
           }}
         />
@@ -258,7 +266,10 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <BottomSheet
-        onClose={() => setNameDraft(null)}
+        onClose={() => {
+          setNameDraft(null);
+          setNameError(null);
+        }}
         title="¿Cómo te llamamos?"
         visible={nameDraft !== null}
       >
@@ -267,7 +278,10 @@ export default function ProfileScreen() {
           autoCapitalize="words"
           autoFocus
           maxLength={20}
-          onChangeText={setNameDraft}
+          onChangeText={(text) => {
+            setNameDraft(text);
+            setNameError(null);
+          }}
           onSubmitEditing={() => void handleNameSave()}
           placeholder="Tu nombre"
           placeholderTextColor={colors.textMuted}
@@ -275,6 +289,7 @@ export default function ProfileScreen() {
           style={styles.nameInput}
           value={nameDraft ?? ''}
         />
+        {nameError ? <Text style={styles.nameError}>{nameError}</Text> : null}
         <Text style={styles.aboutText}>Una palabra, hasta 20 letras. Se usa para saludarte.</Text>
         <Button title="Guardar" onPress={() => void handleNameSave()} />
       </BottomSheet>
@@ -468,6 +483,10 @@ function createStyles(colors: ThemeColors) {
     },
     waterButton: {
       width: 120,
+    },
+    nameError: {
+      ...typography.caption,
+      color: colors.danger,
     },
     nameInput: {
       backgroundColor: colors.surfaceMuted,

@@ -72,6 +72,7 @@ export function useWeightLogs() {
     async (localDate: string): Promise<void> => {
       try {
         await deleteWeightLog(database, localDate);
+        void scheduleReminders(database);
         await load();
       } catch {
         throw new Error(DELETE_ERROR);

@@ -64,6 +64,8 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
   const { height } = useWindowDimensions();
   const keyboardHeight = useKeyboardHeight();
   const keyboardOpen = keyboardHeight > 0;
+  // Android reports the keyboard without the navigation bar below it; iOS already includes it.
+  const keyboardGap = Platform.OS === 'android' ? insets.bottom : 0;
 
   // The Modal stays mounted until the slide-out animation has finished.
   const [mounted, setMounted] = useState(visible);
@@ -137,12 +139,15 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
         </Animated.View>
 
         {/* The sheet rides above the keyboard; its content scrolls when space runs out. */}
-        <View pointerEvents="box-none" style={[styles.keyboard, { paddingBottom: keyboardHeight }]}>
+        <View
+          pointerEvents="box-none"
+          style={[styles.keyboard, { paddingBottom: keyboardHeight > 0 ? keyboardHeight + keyboardGap : 0 }]}
+        >
           <Animated.View
             style={[
               styles.sheet,
               {
-                maxHeight: (height - keyboardHeight) * 0.92,
+                maxHeight: (height - keyboardHeight - keyboardGap) * 0.92,
                 paddingBottom: keyboardOpen ? spacing.lg : Math.max(insets.bottom, spacing.lg),
               },
               sheetStyle,

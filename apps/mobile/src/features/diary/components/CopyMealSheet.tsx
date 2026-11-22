@@ -30,6 +30,12 @@ export function CopyMealSheet({ visible, mealLabel, fromDate, onClose, onCopy }:
   /** Set at once: two quick taps on a day must copy once. */
   const busyRef = useRef(false);
 
+  // The iOS calendar has no cancel button: closing the sheet must not leave it open for the next one.
+  const close = () => {
+    setPicking(false);
+    onClose();
+  };
+
   const today = toLocalDate(new Date());
   const targets = buildCopyTargets(today, fromDate);
 
@@ -45,15 +51,16 @@ export function CopyMealSheet({ visible, mealLabel, fromDate, onClose, onCopy }:
     }
   };
 
-  const handlePick = (_event: DateTimePickerEvent, selected?: Date) => {
+  const handlePick = (event: DateTimePickerEvent, selected?: Date) => {
     setPicking(false);
-    if (selected) {
+    // A dismissed Android dialog still reports the original date.
+    if (event.type === 'set' && selected) {
       void copyTo(toLocalDate(selected));
     }
   };
 
   return (
-    <BottomSheet onClose={onClose} title={`Copiar ${mealLabel} a…`} visible={visible}>
+    <BottomSheet onClose={close} title={`Copiar ${mealLabel} a…`} visible={visible}>
       <Text style={styles.hint}>
         Desde {formatLocalDate(fromDate)}. Los alimentos se añaden a lo que ya haya ese día.
       </Text>

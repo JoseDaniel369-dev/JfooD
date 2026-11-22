@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { isScannerEnabled } from '@/config/api';
 import {
   createFood,
   findFoodByBarcode,
@@ -93,6 +94,18 @@ export default function BarcodeScreen() {
     busy.current = false;
     setStatus({ kind: 'scanning' });
   };
+
+  if (!isScannerEnabled()) {
+    return (
+      <View style={[styles.screen, styles.centered]}>
+        <Text style={styles.title}>No disponible en esta versión</Text>
+        <Text style={styles.text}>
+          El lector de códigos de barras necesita conexión y solo está en la versión experimental.
+        </Text>
+        <Button title="Volver" onPress={() => router.back()} />
+      </View>
+    );
+  }
 
   if (!permission) {
     return <View style={styles.screen} />;

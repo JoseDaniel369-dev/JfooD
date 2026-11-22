@@ -1,7 +1,7 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -21,7 +21,6 @@ import {
   type ReminderPermission,
 } from './notifications';
 import {
-  anyReminderEnabled,
   formatTime,
   isValidWaterWindow,
   toMinutes,
@@ -85,6 +84,14 @@ export function RemindersCard() {
   const [settings, setSettings] = useState<ReminderSettings | null>(null);
   const [permission, setPermission] = useState<ReminderPermission>('undetermined');
   const [picker, setPicker] = useState<PickerTarget | null>(null);
+  /** iOS spinner: the time being scrolled to; applied only when "Listo" is pressed. */
+  const [pickerDraft, setPickerDraft] = useState<Date | null>(null);
+  /**
+   * Always the latest settings. `change` can wait on the system permission
+   * dialog for a long time: it must not apply its edit to a stale snapshot and
+   * overwrite what was changed meanwhile.
+   */
+  const settingsRef = useRef<ReminderSettings | null>(null);
 
   // Also runs when coming back from the system settings with the permission changed.
   useFocusEffect(
@@ -97,6 +104,7 @@ export function RemindersCard() {
             getReminderPermission(),
           ]);
           if (cancelled) return;
+          settingsRef.current = stored;
           setSettings(stored);
           setPermission(granted);
           // A permission granted meanwhile (from the system settings) takes effect now.
@@ -122,11 +130,13 @@ export function RemindersCard() {
   }, []);
 
   const commit = async (next: ReminderSettings, previous: ReminderSettings) => {
+    settingsRef.current = next;
     setSettings(next);
     try {
       await saveReminderSettings(database, next);
       void scheduleReminders(database);
     } catch {
+      settingsRef.current = previous;
       setSettings(previous);
       showToast('No se han podido guardar los recordatorios.', 'error');
     }
@@ -146,7 +156,13 @@ export function RemindersCard() {
         return;
       }
     }
-    await commit(apply(settings), settings);
+    const base = settingsRef.current ?? settings;
+    await commit(apply(base), base);
+  };
+
+  const openPicker = (target: PickerTarget) => {
+    setPickerDraft(null);
+    setPicker(target);
   };
 
   const toggleMeal = (key: MealKey, enabled: boolean) =>
@@ -158,26 +174,40 @@ export function RemindersCard() {
   const setWeekday = (key: WeeklyKey, weekday: Weekday) =>
     change((current) => ({ ...current, [key]: { ...current[key], weekday } }));
 
-  const handlePick = (_event: DateTimePickerEvent, selected?: Date) => {
-    const target = picker;
-    if (Platform.OS === 'android') {
-      setPicker(null);
-    }
-    if (!target || !selected) return;
-
+  /** Saves the chosen time into the reminder the picker was opened for. */
+  const applyTime = (target: PickerTarget, selected: Date) => {
+    const current = settingsRef.current ?? settings;
     const time = formatTime(selected.getHours(), selected.getMinutes());
     if (target.kind === 'waterFrom' || target.kind === 'waterTo') {
-      const from = target.kind === 'waterFrom' ? time : settings.water.from;
-      const to = target.kind === 'waterTo' ? time : settings.water.to;
+      const from = target.kind === 'waterFrom' ? time : current.water.from;
+      const to = target.kind === 'waterTo' ? time : current.water.to;
       if (!isValidWaterWindow(from, to)) {
         showToast('La hora de inicio debe ser anterior a la de fin.', 'error');
         return;
       }
-      void change((current) => ({ ...current, water: { ...current.water, from, to } }));
+      void change((latest) => ({ ...latest, water: { ...latest.water, from, to } }));
       return;
     }
     const key = target.kind;
-    void change((current) => ({ ...current, [key]: { ...current[key], time } }));
+    void change((latest) => ({ ...latest, [key]: { ...latest[key], time } }));
+  };
+
+  const handlePick = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      // The Android dialog reports once; a dismissed one must not save anything.
+      const target = picker;
+      setPicker(null);
+      if (target && selected && event.type === 'set') applyTime(target, selected);
+      return;
+    }
+    // The iOS spinner reports on every tick: wait for "Listo" before saving anything.
+    if (selected) setPickerDraft(selected);
+  };
+
+  const closeIosPicker = () => {
+    if (picker && pickerDraft) applyTime(picker, pickerDraft);
+    setPicker(null);
+    setPickerDraft(null);
   };
 
   const setEvery = (delta: number) => {
@@ -187,7 +217,8 @@ export function RemindersCard() {
     void change((current) => ({ ...current, water: { ...current.water, everyHours } }));
   };
 
-  const showDeniedNotice = permission === 'denied' && anyReminderEnabled(settings);
+  // Shown whenever the system refuses notifications, so the way to fix it is always at hand.
+  const showDeniedNotice = permission === 'denied';
 
   return (
     <Card>
@@ -221,7 +252,7 @@ export function RemindersCard() {
         >
           <TimeButton
             label={`Hora del recordatorio de ${label.toLowerCase()}`}
-            onPress={() => setPicker({ kind: key })}
+            onPress={() => openPicker({ kind: key })}
             time={settings[key].time}
           />
         </ReminderRow>
@@ -239,13 +270,13 @@ export function RemindersCard() {
           <Text style={styles.small}>De</Text>
           <TimeButton
             label="Primera hora del recordatorio de agua"
-            onPress={() => setPicker({ kind: 'waterFrom' })}
+            onPress={() => openPicker({ kind: 'waterFrom' })}
             time={settings.water.from}
           />
           <Text style={styles.small}>a</Text>
           <TimeButton
             label="Última hora del recordatorio de agua"
-            onPress={() => setPicker({ kind: 'waterTo' })}
+            onPress={() => openPicker({ kind: 'waterTo' })}
             time={settings.water.to}
           />
         </View>
@@ -277,7 +308,7 @@ export function RemindersCard() {
         emoji="⚖️"
         label="Pesarte"
         timeLabel="Hora del recordatorio de pesarte"
-        onPickTime={() => setPicker({ kind: 'weigh' })}
+        onPickTime={() => openPicker({ kind: 'weigh' })}
         onToggle={(value) => void toggleWeekly('weigh', value)}
         onWeekday={(weekday) => void setWeekday('weigh', weekday)}
         value={settings.weigh}
@@ -286,7 +317,7 @@ export function RemindersCard() {
         emoji="📊"
         label="Resumen semanal"
         timeLabel="Hora del recordatorio del resumen semanal"
-        onPickTime={() => setPicker({ kind: 'weeklySummary' })}
+        onPickTime={() => openPicker({ kind: 'weeklySummary' })}
         onToggle={(value) => void toggleWeekly('weeklySummary', value)}
         onWeekday={(weekday) => void setWeekday('weeklySummary', weekday)}
         value={settings.weeklySummary}
@@ -299,10 +330,10 @@ export function RemindersCard() {
             is24Hour
             mode="time"
             onChange={handlePick}
-            value={timeToDate(timeOf(settings, picker))}
+            value={pickerDraft ?? timeToDate(timeOf(settings, picker))}
           />
           {Platform.OS === 'ios' ? (
-            <Button size="small" title="Listo" variant="secondary" onPress={() => setPicker(null)} />
+            <Button size="small" title="Listo" variant="secondary" onPress={closeIosPicker} />
           ) : null}
         </>
       ) : null}

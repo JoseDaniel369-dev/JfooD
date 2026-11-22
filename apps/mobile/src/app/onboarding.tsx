@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
@@ -93,7 +93,12 @@ export default function OnboardingScreen() {
   const toggleMeal = (key: MealKey) =>
     setMeals((current) => (current.includes(key) ? current.filter((m) => m !== key) : [...current, key]));
 
+  /** Set at once: a second tap while the permission dialog is open must do nothing. */
+  const remindersBusyRef = useRef(false);
+
   const handleReminders = async (chosen: MealKey[]) => {
+    if (remindersBusyRef.current) return;
+    remindersBusyRef.current = true;
     if (chosen.length > 0) {
       setSaving(true);
       try {
@@ -114,6 +119,7 @@ export default function OnboardingScreen() {
         setSaving(false);
       }
     }
+    remindersBusyRef.current = false;
     setStep('done');
     setBurst(1);
     hapticSuccess();
