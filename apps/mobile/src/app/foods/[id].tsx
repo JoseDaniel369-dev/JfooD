@@ -25,6 +25,7 @@ import {
   hapticSuccess,
   hapticWarning,
 } from '@/features/haptics/haptics';
+import { formatGrams } from '@/features/diary/utils/totals';
 import { animateNextLayout } from '@/features/motion/motion';
 import { isEditableSource, type Food } from '@/features/foods/types';
 import { parseOptionalNumber } from '@/features/foods/utils/parseNumber';
@@ -250,21 +251,24 @@ export default function FoodDetailScreen() {
             <Text style={styles.sectionTitle}>Valores por 100 g</Text>
             <View style={styles.macroRow}>
               <MacroItem
+                color={colors.accent}
                 label="Calorías"
                 unit="kcal"
                 value={food.caloriesKcal}
               />
               <MacroItem
+                color={colors.protein}
                 label="Proteínas"
                 unit="g"
                 value={food.proteinGrams}
               />
               <MacroItem
+                color={colors.carbohydrates}
                 label="Hidratos"
                 unit="g"
                 value={food.carbohydrateGrams}
               />
-              <MacroItem label="Grasas" unit="g" value={food.fatGrams} />
+              <MacroItem color={colors.fat} label="Grasas" unit="g" value={food.fatGrams} />
             </View>
             <View style={styles.macroRow}>
               <MacroItem label="Fibra" unit="g" value={food.fiberGrams} />
@@ -406,19 +410,29 @@ function MacroItem({
   label,
   value,
   unit,
+  color,
 }: {
   label: string;
   value: number | null;
   unit: string;
+  /** Colour of the nutrient (calories, protein, carbs, fat); the rest have none. */
+  color?: string;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={styles.macroItem}>
-      <Text style={styles.macroLabel}>{label}</Text>
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value === null ? 'desconocido' : `${formatGrams(value)} ${unit}`}`}
+      style={styles.macroItem}
+    >
+      <View style={styles.macroHeader}>
+        {color ? <View style={[styles.macroDot, { backgroundColor: color }]} /> : null}
+        <Text style={styles.macroLabel}>{label}</Text>
+      </View>
       <Text style={styles.macroValue}>
-        {value === null ? '—' : value}
+        {value === null ? '—' : formatGrams(value)}
         <Text style={styles.macroUnit}> {unit}</Text>
       </Text>
     </View>
@@ -459,7 +473,8 @@ function Field({
   );
 }
 
-const fieldStyle = { flex: 1 } as const;
+// Two columns: three per row made labels such as "Azúcares (g)" wrap.
+const fieldStyle = { flexBasis: '47%', flexGrow: 1 } as const;
 
 function formatOptional(value: number | null): string {
   return value === null ? '' : String(value);
@@ -479,6 +494,16 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       flex: 1,
       gap: spacing.xs,
+    },
+    macroHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    macroDot: {
+      borderRadius: radius.pill,
+      height: 8,
+      width: 8,
     },
     macroLabel: {
       ...typography.caption,
@@ -539,6 +564,7 @@ function createStyles(colors: ThemeColors) {
       padding: spacing.md,
     },
     macroFieldsRow: {
+      flexWrap: 'wrap',
       flexDirection: 'row',
       gap: spacing.md,
     },

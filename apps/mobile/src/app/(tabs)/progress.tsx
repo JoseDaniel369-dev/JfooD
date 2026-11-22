@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import type { ScrollViewInstance } from 'react-native';
+import { StyleSheet, type ScrollViewInstance } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -8,7 +9,9 @@ import { useAchievements } from '@/features/achievements/useAchievements';
 import { AchievementsSection } from '@/features/progress/components/AchievementsSection';
 import { CaloriesSection } from '@/features/progress/components/CaloriesSection';
 import { MacrosSection } from '@/features/progress/components/MacrosSection';
+import { fadeUp } from '@/features/motion/springs';
 import { WeightSection } from '@/features/progress/components/WeightSection';
+import { spacing } from '@/theme';
 
 const SECTIONS = [
   { value: 'weight', label: 'Peso' },
@@ -18,6 +21,13 @@ const SECTIONS = [
 ] as const;
 
 type Section = (typeof SECTIONS)[number]['value'];
+
+const styles = StyleSheet.create({
+  // The cards of a section keep the same rhythm as the screen's own children.
+  section: {
+    gap: spacing.lg,
+  },
+});
 
 export default function ProgressScreen() {
   const [section, setSection] = useState<Section>('weight');
@@ -35,12 +45,14 @@ export default function ProgressScreen() {
         value={section}
       />
 
-      {section === 'weight' ? (
-        <WeightSection scrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: true })} />
-      ) : null}
-      {section === 'calories' ? <CaloriesSection /> : null}
-      {section === 'macros' ? <MacrosSection /> : null}
-      {section === 'achievements' ? <AchievementsSection achievements={achievements} /> : null}
+      <Animated.View key={section} entering={fadeUp()} style={styles.section}>
+        {section === 'weight' ? (
+          <WeightSection scrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: true })} />
+        ) : null}
+        {section === 'calories' ? <CaloriesSection /> : null}
+        {section === 'macros' ? <MacrosSection /> : null}
+        {section === 'achievements' ? <AchievementsSection achievements={achievements} /> : null}
+      </Animated.View>
     </Screen>
   );
 }

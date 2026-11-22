@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
@@ -136,7 +137,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={[stylesLoading.loading, stylesError.container, { backgroundColor: palette.background }]}>
-      <Text style={stylesError.emoji}>😕</Text>
+      <Ionicons color={palette.textMuted} name="alert-circle-outline" size={56} />
       <Text accessibilityRole="header" style={[stylesError.title, { color: palette.text }]}>
         Algo ha salido mal
       </Text>

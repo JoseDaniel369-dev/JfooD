@@ -1,12 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import type { NutritionGoals } from '@jfood/core';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -16,6 +14,7 @@ import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Screen } from '@/components/Screen';
 import { Segmented, type SegmentedOption } from '@/components/Segmented';
 import { SectionHeader } from '@/components/SectionHeader';
+import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { getCatalogProblem } from '@/data/catalog/catalogDatabase';
 import { CATALOG_COUNTS } from '@/data/catalog/catalogVersion';
@@ -24,6 +23,7 @@ import { toLocalDate } from '@/features/diary/utils/date';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { avatarInitial } from '@/features/home/greeting';
 import { staggerIn } from '@/features/motion/springs';
+import { GoalsSummary } from '@/features/profile/components/GoalsSummary';
 import { ProfileForm, type ProfileSubmitMeta } from '@/features/profile/components/ProfileForm';
 import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -35,7 +35,7 @@ import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
 import { parseWaterGoal } from '@/features/water/utils/goal';
 import {
   fonts,
-  heroGradient,
+  onHeroTrack,
   radius,
   spacing,
   typography,
@@ -134,27 +134,25 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <Animated.View entering={staggerIn(0)}>
-        <LinearGradient
-          colors={[...heroGradient]}
-          end={{ x: 1, y: 1 }}
-          start={{ x: 0, y: 0 }}
-          style={styles.hero}
-        >
+        <Card style={styles.hero} variant="hero">
           <View style={styles.avatar}>
             {initial ? (
               <Text style={styles.avatarInitial}>{initial}</Text>
             ) : (
-              <Text style={styles.avatarEmoji}>🌱</Text>
+              <Ionicons color={colors.onHero} name="leaf" size={28} />
             )}
           </View>
           <View style={styles.heroCopy}>
-            <Text numberOfLines={1} style={styles.heroName}>
+            <Text accessibilityRole="header" numberOfLines={1} style={styles.heroName}>
               {name ?? 'Tu perfil'}
             </Text>
-            <Text style={styles.heroStats}>
-              🔥 {streak} {streak === 1 ? 'día' : 'días'} de racha · {loggedDays}{' '}
-              {loggedDays === 1 ? 'día registrado' : 'días registrados'}
-            </Text>
+            <View style={styles.heroStatsRow}>
+              <Ionicons color={colors.celebrate} name="flame" size={16} />
+              <Text style={styles.heroStats}>
+                {streak} {streak === 1 ? 'día' : 'días'} de racha · {loggedDays}{' '}
+                {loggedDays === 1 ? 'día registrado' : 'días registrados'}
+              </Text>
+            </View>
           </View>
           <AnimatedPressable
             accessibilityLabel="Cambiar nombre"
@@ -165,7 +163,7 @@ export default function ProfileScreen() {
           >
             <Ionicons color={colors.onHero} name="pencil" size={18} />
           </AnimatedPressable>
-        </LinearGradient>
+        </Card>
       </Animated.View>
 
       {error && !profile ? <ErrorState message={error} onRetry={() => void load()} /> : null}
@@ -178,7 +176,7 @@ export default function ProfileScreen() {
 
       {goals ? (
         <Animated.View entering={staggerIn(1)}>
-          <GoalsSummary goals={goals} goalText={describeGoal(profile)} />
+          <GoalsSummary goalText={describeGoal(profile)} goals={goals} />
         </Animated.View>
       ) : null}
 
@@ -218,26 +216,28 @@ export default function ProfileScreen() {
             options={THEME_OPTIONS}
             value={preference}
           />
-
-          <Text style={styles.label}>Objetivo de agua (ml/día)</Text>
-          <View style={styles.waterRow}>
-            <TextInput
-              accessibilityLabel="Objetivo de agua en mililitros"
-              keyboardType="number-pad"
-              onChangeText={setWaterGoalDraft}
-              placeholder={String(storedWaterGoal)}
-              placeholderTextColor={colors.textMuted}
-              style={styles.waterInput}
-              value={waterGoalDraft ?? String(storedWaterGoal)}
-            />
-            <View style={styles.waterButton}>
-              <Button size="small" title="Guardar" onPress={handleWaterGoalChange} />
-            </View>
-          </View>
         </Card>
       </Animated.View>
 
       <Animated.View entering={staggerIn(5)}>
+        <Card>
+          <SectionHeader caption="Cuánta agua quieres beber al día" title="Objetivo de agua" />
+          <View style={styles.waterRow}>
+            <TextField
+              accessibilityLabel="Objetivo de agua en mililitros"
+              keyboardType="number-pad"
+              label="Mililitros por día"
+              onChangeText={setWaterGoalDraft}
+              placeholder={String(storedWaterGoal)}
+              style={styles.waterField}
+              value={waterGoalDraft ?? String(storedWaterGoal)}
+            />
+            <Button size="small" title="Guardar" onPress={handleWaterGoalChange} />
+          </View>
+        </Card>
+      </Animated.View>
+
+      <Animated.View entering={staggerIn(6)}>
         <BackupCard
           onRestored={() => {
             void load();
@@ -251,11 +251,11 @@ export default function ProfileScreen() {
         />
       </Animated.View>
 
-      <Animated.View entering={staggerIn(6)}>
+      <Animated.View entering={staggerIn(7)}>
         <Card>
           <SectionHeader title="Acerca de JfooD" />
           <Text style={styles.aboutText}>
-            🔒 Tus datos se quedan en este móvil: no hay cuenta ni nube. Las funciones con
+            Tus datos se quedan en este móvil: no hay cuenta ni nube. Las funciones con
             internet (escáner, código de barras) solo envían la imagen o el código que tú eliges.
           </Text>
           <Text style={styles.aboutText}>
@@ -315,23 +315,22 @@ export default function ProfileScreen() {
         title="¿Cómo te llamamos?"
         visible={nameDraft !== null}
       >
-        <TextInput
+        <TextField
           accessibilityLabel="Tu nombre"
           autoCapitalize="words"
           autoFocus
+          error={nameError}
+          inputStyle={styles.nameInput}
           maxLength={20}
-          onChangeText={(text) => {
+          onChangeText={(text: string) => {
             setNameDraft(text);
             setNameError(null);
           }}
           onSubmitEditing={() => void handleNameSave()}
           placeholder="Tu nombre"
-          placeholderTextColor={colors.textMuted}
           returnKeyType="done"
-          style={styles.nameInput}
           value={nameDraft ?? ''}
         />
-        {nameError ? <Text style={styles.nameError}>{nameError}</Text> : null}
         <Text style={styles.aboutText}>Una palabra, hasta 20 letras. Se usa para saludarte.</Text>
         <Button title="Guardar" onPress={() => void handleNameSave()} />
       </BottomSheet>
@@ -359,62 +358,16 @@ function describeGoal(profile: Parameters<typeof profileKey>[0]): string | null 
     : `Objetivo: ganar ${rate} kg por semana`;
 }
 
-function GoalsSummary({ goals, goalText }: { goals: NutritionGoals; goalText: string | null }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <Card variant="hero">
-      <Text style={styles.goalsTitle}>Tus objetivos diarios</Text>
-      {goalText ? <Text style={styles.goalsSubtitle}>{goalText}</Text> : null}
-      <View style={styles.goalsRow}>
-        <GoalItem color={colors.accent} label="Calorías" unit="kcal" value={goals.caloriesKcal} />
-        <GoalItem color={colors.onHero} label="Proteínas" unit="g" value={goals.proteinGrams} />
-        <GoalItem color={colors.onHero} label="Hidratos" unit="g" value={goals.carbohydrateGrams} />
-        <GoalItem color={colors.onHero} label="Grasas" unit="g" value={goals.fatGrams} />
-      </View>
-    </Card>
-  );
-}
-
-function GoalItem({
-  label,
-  value,
-  unit,
-  color,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-  color: string;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <View style={styles.goalItem}>
-      <View style={[styles.goalDot, { backgroundColor: color }]} />
-      <Text style={styles.goalLabel}>{label}</Text>
-      <Text style={styles.goalValue}>
-        {Math.round(value)}
-        <Text style={styles.goalUnit}> {unit}</Text>
-      </Text>
-    </View>
-  );
-}
-
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     hero: {
       alignItems: 'center',
-      borderRadius: radius.xl,
       flexDirection: 'row',
       gap: spacing.lg,
-      padding: spacing.xl,
     },
     avatar: {
       alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: onHeroTrack,
       borderRadius: radius.pill,
       height: 64,
       justifyContent: 'center',
@@ -425,10 +378,6 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fonts.brand,
       fontSize: fontSizes.titleLarge,
     },
-    avatarEmoji: {
-      fontSize: fontSizes.titleLarge,
-      fontFamily: fonts.regular,
-    },
     heroCopy: {
       flex: 1,
       gap: spacing.xs,
@@ -438,14 +387,19 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fonts.heading,
       fontSize: fontSizes.heading,
     },
+    heroStatsRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
     heroStats: {
       ...typography.caption,
-      color: colors.onHero,
-      opacity: 0.9,
+      color: colors.onHeroMuted,
+      flex: 1,
     },
     editName: {
       alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: onHeroTrack,
       borderRadius: radius.pill,
       height: 44,
       justifyContent: 'center',
@@ -464,48 +418,6 @@ function createStyles(colors: ThemeColors) {
       lineHeight: 20,
       textAlign: 'center',
     },
-    goalsSubtitle: {
-      color: colors.onHero,
-      fontSize: fontSizes.caption,
-      fontFamily: fonts.regular,
-      opacity: 0.85,
-    },
-    goalsTitle: {
-      color: colors.onHero,
-      fontFamily: fonts.heading,
-      fontSize: typography.title.fontSize,
-    },
-    goalsRow: {
-      flexDirection: 'row',
-      gap: spacing.md,
-    },
-    goalItem: {
-      alignItems: 'center',
-      flex: 1,
-      gap: spacing.xs,
-    },
-    goalDot: {
-      borderRadius: radius.pill,
-      height: 8,
-      width: 8,
-    },
-    goalLabel: {
-      color: colors.onHero,
-      fontSize: fontSizes.small,
-      fontFamily: fonts.regular,
-      opacity: 0.75,
-    },
-    goalValue: {
-      color: colors.onHero,
-      fontSize: fontSizes.bodyLarge,
-      fontFamily: fonts.heading,
-    },
-    goalUnit: {
-      color: colors.onHero,
-      fontSize: fontSizes.small,
-      fontFamily: fonts.regular,
-      opacity: 0.7,
-    },
     label: {
       ...typography.body,
       color: colors.text,
@@ -513,37 +425,15 @@ function createStyles(colors: ThemeColors) {
       marginTop: spacing.md,
     },
     waterRow: {
-      alignItems: 'center',
+      alignItems: 'flex-end',
       flexDirection: 'row',
       gap: spacing.md,
     },
-    waterInput: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
+    waterField: {
       flex: 1,
-      fontSize: fontSizes.bodyLarge,
-      fontFamily: fonts.regular,
-      padding: spacing.md,
-    },
-    waterButton: {
-      width: 120,
-    },
-    nameError: {
-      ...typography.caption,
-      color: colors.danger,
     },
     nameInput: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
       fontSize: fontSizes.title,
-      fontFamily: fonts.regular,
-      padding: spacing.md,
     },
     aboutText: {
       ...typography.caption,

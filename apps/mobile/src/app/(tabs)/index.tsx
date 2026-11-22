@@ -41,6 +41,7 @@ import { NEXT_MEAL_LABELS, greetingLine } from '@/features/home/greeting';
 import { buildInsights } from '@/features/insights/buildInsights';
 import { InsightCarousel } from '@/features/insights/components/InsightCarousel';
 import { staggerIn } from '@/features/motion/springs';
+import { useShake } from '@/features/motion/useShake';
 import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
 import { computeChange } from '@/features/progress/utils/trend';
@@ -77,6 +78,7 @@ export default function HomeScreen() {
   const [customWaterError, setCustomWaterError] = useState<string | null>(null);
   /** Set at once: two quick taps on "Añadir" must log once. */
   const addingCustomRef = useRef(false);
+  const { shakeStyle, shake } = useShake();
   /** Set at once: two quick taps on "Repetir ayer" must copy once. */
   const repeatingRef = useRef(false);
 
@@ -179,6 +181,7 @@ export default function HomeScreen() {
     const amount = parseWaterAmount(customWater ?? '');
     if (amount === null) {
       setCustomWaterError('Escribe una cantidad entre 1 y 5000 ml.');
+      shake();
       return;
     }
     addingCustomRef.current = true;
@@ -204,6 +207,7 @@ export default function HomeScreen() {
       hapticSuccess();
       if (previousTotal < waterGoal && previousTotal + amountMl >= waterGoal) {
         showToast('¡Objetivo de agua conseguido!');
+        setConfettiBurst((burst) => burst + 1);
         // Reaching the goal can unlock a "water" achievement.
         void reloadAchievements();
       }
@@ -451,6 +455,7 @@ export default function HomeScreen() {
       title="¿Cuánta agua?"
       visible={customWater !== null}
     >
+      <Animated.View style={shakeStyle}>
       <TextField
         accessibilityLabel="Cantidad de agua en mililitros"
         autoFocus
@@ -467,6 +472,7 @@ export default function HomeScreen() {
         returnKeyType="done"
         value={customWater ?? ''}
       />
+      </Animated.View>
       <View style={styles.waterButtons}>
         {WATER_EXTRA_PRESETS.map((amount) => (
           <Chip key={amount} label={`${amount} ml`} onPress={() => setCustomWater(String(amount))} />

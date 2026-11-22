@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
@@ -41,6 +42,7 @@ import type { Food } from '@/features/foods/types';
 import { FOOD_CATEGORIES } from '@/features/foods/utils/categories';
 import { normalizeBarcode } from '@/features/foods/utils/openFoodFacts';
 import { hapticSuccess } from '@/features/haptics/haptics';
+import { staggerIn } from '@/features/motion/springs';
 import { scheduleReminders } from '@/features/reminders/notifications';
 import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
@@ -387,8 +389,8 @@ export default function AddFoodScreen() {
           <Pressable
             accessibilityLabel="Borrar búsqueda"
             accessibilityRole="button"
-            hitSlop={8}
             onPress={() => handleQueryChange('')}
+            style={styles.clearButton}
           >
             <Ionicons color={colors.textMuted} name="close-circle" size={20} />
           </Pressable>
@@ -400,6 +402,7 @@ export default function AddFoodScreen() {
         horizontal
         keyboardShouldPersistTaps="handled"
         showsHorizontalScrollIndicator={false}
+        style={styles.bleed}
       >
         <Chip icon="create-outline" label="Crear" onPress={() => openCreate('')} />
         <Chip icon="restaurant-outline" label="Receta" onPress={() => router.push('/recipe')} />
@@ -421,6 +424,7 @@ export default function AddFoodScreen() {
           horizontal
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator={false}
+          style={styles.bleed}
         >
           {FOOD_CATEGORIES.map((item) => (
             <Chip
@@ -454,14 +458,15 @@ export default function AddFoodScreen() {
         </View>
       ) : (
         <View style={styles.list}>
-          {visible.map((food) => (
-            <FoodRow
-              key={food.id}
-              food={food}
-              onInfo={(item) => void openInfo(item)}
-              onPress={(item) => void handleSelect(item)}
-              onToggleFavorite={(item) => void handleToggleFavorite(item)}
-            />
+          {visible.map((food, index) => (
+            <Animated.View key={food.id} entering={staggerIn(index, 30)}>
+              <FoodRow
+                food={food}
+                onInfo={(item) => void openInfo(item)}
+                onPress={(item) => void handleSelect(item)}
+                onToggleFavorite={(item) => void handleToggleFavorite(item)}
+              />
+            </Animated.View>
           ))}
           {!searchActive && activeTab === 'catalog' && catalogHasMore ? (
             <Button
@@ -520,11 +525,25 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fonts.regular,
       paddingVertical: spacing.md,
     },
+    // The chip rows run to the edges of the screen instead of stopping at the page padding.
+    bleed: {
+      flexGrow: 0,
+      marginHorizontal: -spacing.xl,
+    },
     shortcuts: {
       gap: spacing.sm,
+      paddingHorizontal: spacing.xl,
     },
     categories: {
       gap: spacing.sm,
+      paddingHorizontal: spacing.xl,
+    },
+    clearButton: {
+      alignItems: 'center',
+      height: 44,
+      justifyContent: 'center',
+      marginRight: -spacing.md,
+      width: 44,
     },
     list: {
       gap: spacing.sm,

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackHandler, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
 import type { NutritionGoals } from '@jfood/core';
@@ -13,11 +13,12 @@ import { Chip } from '@/components/Chip';
 import { Confetti } from '@/components/Confetti';
 import { Screen } from '@/components/Screen';
 import { StepIndicator } from '@/components/StepIndicator';
+import { TextField } from '@/components/TextField';
 import { setSetting } from '@/data/sqlite/repositories/settingsRepository';
 import { saveProfile } from '@/data/sqlite/repositories/profileRepository';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { staggerIn } from '@/features/motion/springs';
-import { useCountUp } from '@/features/motion/useCountUp';
+import { GoalsSummary } from '@/features/profile/components/GoalsSummary';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
 import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
 import { ONBOARDING_DONE_KEY } from '@/features/profile/onboarding';
@@ -214,20 +215,16 @@ export default function OnboardingScreen() {
             ))}
           </View>
 
-          <View style={styles.nameBlock}>
-            <Text style={styles.nameLabel}>¿Cómo te llamamos? (opcional)</Text>
-            <TextInput
-              accessibilityLabel="Tu nombre"
-              autoCapitalize="words"
-              maxLength={20}
-              onChangeText={setNameDraft}
-              placeholder="Tu nombre"
-              placeholderTextColor={colors.textMuted}
-              returnKeyType="done"
-              style={styles.nameInput}
-              value={nameDraft}
-            />
-          </View>
+          <TextField
+            accessibilityLabel="Tu nombre"
+            autoCapitalize="words"
+            label="¿Cómo te llamamos? (opcional)"
+            maxLength={20}
+            onChangeText={setNameDraft}
+            placeholder="Tu nombre"
+            returnKeyType="done"
+            value={nameDraft}
+          />
 
           <Button title="Empezar" onPress={() => void handleStart()} />
           <Button title="Saltar por ahora" variant="ghost" onPress={() => void handleSkip()} />
@@ -250,7 +247,10 @@ export default function OnboardingScreen() {
             submitLabel="Calcular mis objetivos"
           />
 
-          <Button title="Saltar por ahora" variant="ghost" onPress={() => void handleSkip()} />
+          <View style={styles.footerRow}>
+            <Button icon="arrow-back" title="Atrás" variant="ghost" onPress={() => setStep('welcome')} />
+            <Button title="Saltar por ahora" variant="ghost" onPress={() => void handleSkip()} />
+          </View>
         </Animated.View>
       ) : null}
 
@@ -281,16 +281,19 @@ export default function OnboardingScreen() {
             title={meals.length > 0 ? 'Activar avisos' : 'Continuar'}
             onPress={() => void handleReminders(meals)}
           />
-          {meals.length > 0 ? (
-            <Button title="Ahora no" variant="ghost" onPress={() => void handleReminders([])} />
-          ) : null}
+          <View style={styles.footerRow}>
+            <Button icon="arrow-back" title="Atrás" variant="ghost" onPress={() => setStep('profile')} />
+            {meals.length > 0 ? (
+              <Button title="Ahora no" variant="ghost" onPress={() => void handleReminders([])} />
+            ) : null}
+          </View>
         </Animated.View>
       ) : null}
 
       {step === 'done' ? (
         <Animated.View entering={FadeInRight.springify().damping(20)} key="done" style={styles.step}>
           <View style={styles.stepHeader}>
-            <Text style={styles.stepTitle}>¡Todo listo! 🎉</Text>
+            <Text style={styles.stepTitle}>¡Todo listo!</Text>
             <Text style={styles.stepSubtitle}>
               {goals
                 ? 'Estos son tus objetivos diarios. Podrás cambiarlos cuando quieras desde tu perfil.'
@@ -298,20 +301,7 @@ export default function OnboardingScreen() {
             </Text>
           </View>
 
-          {goals ? (
-            <Card variant="hero">
-              <Text style={styles.goalsLabel}>CALORÍAS</Text>
-              <Text style={styles.goalsCalories}>
-                <AnimatedNumber value={goals.caloriesKcal} />
-                <Text style={styles.goalsUnit}> kcal</Text>
-              </Text>
-              <View style={styles.goalsRow}>
-                <GoalChip color={colors.onHero} label="Proteínas" value={goals.proteinGrams} />
-                <GoalChip color={colors.onHero} label="Hidratos" value={goals.carbohydrateGrams} />
-                <GoalChip color={colors.onHero} label="Grasas" value={goals.fatGrams} />
-              </View>
-            </Card>
-          ) : null}
+          {goals ? <GoalsSummary goals={goals} /> : null}
 
           <Button title="Empezar" onPress={() => void handleFinish()} />
         </Animated.View>
@@ -329,33 +319,6 @@ async function finishOnboarding(database: SQLiteDatabase): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-function AnimatedNumber({ value }: { value: number }) {
-  const display = useCountUp(value, 800, 0);
-  return <>{display}</>;
-}
-
-function GoalChip({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <View style={styles.goalChip}>
-      <Text style={styles.goalChipLabel}>{label}</Text>
-      <Text style={[styles.goalChipValue, { color }]}>
-        <AnimatedNumber value={value} /> g
-      </Text>
-    </View>
-  );
 }
 
 function createStyles(colors: ThemeColors) {
@@ -418,23 +381,10 @@ function createStyles(colors: ThemeColors) {
     step: {
       gap: spacing.lg,
     },
-    nameBlock: {
-      gap: spacing.sm,
-    },
-    nameLabel: {
-      ...typography.body,
-      color: colors.text,
-      fontFamily: fonts.heading,
-    },
-    nameInput: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: fontSizes.title,
-      fontFamily: fonts.regular,
-      padding: spacing.md,
+    footerRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
     },
     choices: {
       flexDirection: 'row',
@@ -454,46 +404,6 @@ function createStyles(colors: ThemeColors) {
       ...typography.body,
       color: colors.textMuted,
       lineHeight: 21,
-    },
-    goalsLabel: {
-      color: colors.onHero,
-      fontSize: typography.label.fontSize,
-      fontFamily: fonts.heading,
-      letterSpacing: typography.label.letterSpacing,
-      opacity: 0.75,
-    },
-    goalsCalories: {
-      color: colors.onHero,
-      fontSize: fontSizes.numeral,
-      fontFamily: fonts.heading,
-      letterSpacing: -1.5,
-    },
-    goalsUnit: {
-      color: colors.onHero,
-      fontSize: fontSizes.body,
-      fontFamily: fonts.regular,
-      opacity: 0.7,
-    },
-    goalsRow: {
-      flexDirection: 'row',
-      gap: spacing.md,
-    },
-    goalChip: {
-      backgroundColor: 'rgba(255,255,255,0.14)',
-      borderRadius: radius.md,
-      flex: 1,
-      gap: 2,
-      padding: spacing.md,
-    },
-    goalChipLabel: {
-      color: colors.onHero,
-      fontSize: fontSizes.small,
-      fontFamily: fonts.regular,
-      opacity: 0.75,
-    },
-    goalChipValue: {
-      fontSize: fontSizes.body,
-      fontFamily: fonts.heading,
     },
   });
 }

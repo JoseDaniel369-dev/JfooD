@@ -67,6 +67,15 @@ El plan por fases, el estado detallado y las instrucciones para retomar el desar
 - **Recordatorios locales** (Perfil → Recordatorios): desayuno, comida, cena, agua, pesarte y resumen semanal. Todo está apagado por defecto y el permiso de notificaciones se pide al activar el primero. Se programan los próximos 3 días en el móvil (sin servidor, sin conexión), se reprograman al abrir la app y al registrar comidas o peso, y **no avisan de lo que ya has hecho hoy**. Al tocar un aviso se abre la pantalla correspondiente.
 - **Perfil y onboarding:** avatar con tu inicial, nombre editable, apariencia, copia de seguridad y «Acerca de» con las fuentes de datos. El primer arranque son 4 pasos: nombre, datos, recordatorios y objetivos.
 
+## Refresco visual y auditoría (noviembre de 2026)
+
+- **Errores corregidos:** diálogos que ejecutaban la acción dos veces, escáner que guardaba en el diario al venir del plan, cantidades en formato español mal leídas («1.500» ml), racha y logros inflados por días futuros, transacciones solapadas, respuestas de Gemini rechazadas por un campo suelto, archivo de copia borrado antes de compartirlo y selector de fecha que guardaba 2000-01-01.
+- **Diseño:** una sola escala tipográfica en Nunito, componentes compartidos (`TextField`, `CalorieHero`, hojas inferiores para todos los paneles), modo oscuro con su propio degradado, iconos Ionicons para acciones y emojis solo para comida.
+- **Pantallas:** Inicio más ligero, gráfica de peso con ejes y arrastre, historial reciente primero, objetivos con los colores de cada macro, escáner con barra de guardado fija y línea de escaneo en el código de barras.
+- **Arranque:** la pantalla de bienvenida se mantiene hasta que la base de datos está lista, y «Reintentar» tras un fallo de arranque vuelve a abrirla de verdad.
+
+Detalle completo en [`PLAN.md`](PLAN.md) §3.14.
+
 ## Datos del usuario, objetivos y recetas
 
 - **Copia de seguridad:** Perfil → «Tus datos» exporta un JSON versionado y restaura desde un archivo. La restauración es atómica: si algo no es válido, no se cambia nada.

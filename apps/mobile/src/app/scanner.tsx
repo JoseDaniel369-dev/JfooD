@@ -2,25 +2,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { runInTransaction } from '@/data/sqlite/utils/transaction';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Chip } from '@/components/Chip';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
 import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
@@ -35,7 +33,8 @@ import { normalizeName } from '@/features/foods/utils/normalize';
 import type { Food } from '@/features/foods/types';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { scheduleReminders } from '@/features/reminders/notifications';
-import { durations, easings } from '@/features/motion/motion';
+import { isReducedMotion } from '@/features/motion/motion';
+import { fadeUp } from '@/features/motion/springs';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
@@ -75,8 +74,6 @@ const PRIVACY_MESSAGE =
   'Para identificar los alimentos, la foto o el texto se envía a tu servidor de JfooD y de ahí a Google (Gemini). El servidor no lo guarda. Según las condiciones de Google para el nivel gratuito, Google puede usar el contenido para mejorar sus productos. No hagas fotos de personas ni de documentos.';
 
 export default function ScannerScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
   const scannerEnabled = isScannerEnabled();
   const database = useSQLiteContext();
@@ -389,8 +386,18 @@ export default function ScannerScreen() {
     setStep('camera');
   };
 
+  const saveBar =
+    step === 'results' && matches.length > 0 ? (
+      <Button
+        disabled={!canSave || saving}
+        loading={saving}
+        title={isPlanTarget ? 'Añadir al plan' : 'Añadir al diario'}
+        onPress={handleSave}
+      />
+    ) : null;
+
   return (
-    <Screen>
+    <Screen footer={saveBar}>
       <ScreenHeader
         subtitle={
           scannerEnabled ?
@@ -448,16 +455,6 @@ export default function ScannerScreen() {
         />
       ) : null}
 
-      {step === 'results' ? (
-        <View style={styles.saveRow}>
-          <Button
-            disabled={!canSave || saving}
-            loading={saving}
-            title={isPlanTarget ? 'Añadir al plan' : 'Añadir al diario'}
-            onPress={handleSave}
-          />
-        </View>
-      ) : null}
       <ConfirmDialog
         confirmLabel="Entendido, continuar"
         message={PRIVACY_MESSAGE}
@@ -519,14 +516,13 @@ function CameraStep({
 
       <Card style={styles.cameraCard}>
         <Text style={styles.cameraTitle}>O descríbela con texto</Text>
-        <TextInput
+        <TextField
           accessibilityLabel="Describe lo que has comido"
+          inputStyle={styles.textArea}
           maxLength={500}
           multiline
           onChangeText={onChangeText}
           placeholder="Ej. 2 huevos revueltos y un café con leche"
-          placeholderTextColor={colors.textMuted}
-          style={styles.textArea}
           value={mealText}
         />
         <Button
@@ -572,28 +568,10 @@ function PreviewStep({
   onRetake: () => void;
 }) {
   const styles = useStyles();
-  const [opacity] = useState(() => new Animated.Value(0));
-  const [scale] = useState(() => new Animated.Value(0.96));
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: durations.normal,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: durations.normal,
-        useNativeDriver: true,
-        easing: (x) => easings.easeOutBack(x),
-      }),
-    ]).start();
-  }, [opacity, scale]);
 
   return (
     <View style={styles.previewStep}>
-      <Animated.View style={{ opacity, transform: [{ scale }] }}>
+      <Animated.View entering={fadeUp()}>
         <Image source={{ uri: imageUri }} style={styles.previewImage} />
       </Animated.View>
       <View style={styles.previewButtons}>
@@ -611,46 +589,29 @@ function PreviewStep({
 function AnalyzingStep() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [shimmer] = useState(() => new Animated.Value(0));
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmer, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmer, {
-          toValue: 0,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [shimmer]);
+    // A slow pulse says "working"; with reduced motion the rows just stay still.
+    if (isReducedMotion()) return;
+    pulse.set(withRepeat(withTiming(0.45, { duration: 900 }), -1, true));
+  }, [pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
   return (
-    <View style={styles.centered}>
-      <ActivityIndicator color={colors.primary} size="large" />
-      <Animated.View
-        style={[
-          styles.skeleton,
-          {
-            backgroundColor: colors.surfaceMuted,
-            opacity: shimmer.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.5, 1],
-            }),
-          },
-        ]}
-      />
-      <Text style={styles.analyzingText}>Analizando imagen…</Text>
-      <Text style={styles.analyzingSubtext}>
-        Esto puede tardar unos segundos.
-      </Text>
+    <View
+      accessibilityLabel="Analizando. Esto puede tardar unos segundos."
+      accessibilityLiveRegion="polite"
+      style={styles.analyzing}
+    >
+      <Text style={styles.analyzingText}>Analizando tu comida…</Text>
+      <Text style={styles.analyzingSubtext}>Esto puede tardar unos segundos.</Text>
+      <View style={styles.skeletonList}>
+        {[0, 1, 2].map((row) => (
+          <Animated.View key={row} style={[styles.skeletonRow, pulseStyle]} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -698,7 +659,7 @@ function ResultsStep({
           <View style={styles.warnings}>
             {warnings.map((warning, index) => (
               <View key={index} style={styles.warningRow}>
-                <Ionicons color={colors.accent} name="warning-outline" size={16} />
+                <Ionicons color={colors.warning} name="warning-outline" size={16} />
                 <Text style={styles.warningText}>{warning}</Text>
               </View>
             ))}
@@ -726,25 +687,12 @@ function ResultsStep({
         <Text style={styles.sectionTitle}>Comida destino</Text>
         <View style={styles.mealOptions}>
           {MEALS.map(({ type, label }) => (
-            <Pressable
+            <Chip
               key={type}
-              accessibilityRole="button"
-              accessibilityState={{ selected: targetMeal === type }}
+              label={label}
               onPress={() => onChangeMeal(type)}
-              style={[
-                styles.mealOption,
-                targetMeal === type && styles.mealOptionSelected,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.mealOptionText,
-                  targetMeal === type && styles.mealOptionTextSelected,
-                ]}
-              >
-                {label}
-              </Text>
-            </Pressable>
+              selected={targetMeal === type}
+            />
           ))}
         </View>
       </Card>
@@ -948,12 +896,6 @@ function createStyles(colors: ThemeColors) {
       resizeMode: 'cover',
       width: '100%',
     },
-    skeleton: {
-      borderRadius: radius.md,
-      height: 120,
-      marginTop: spacing.lg,
-      width: '100%',
-    },
     previewButtons: {
       flexDirection: 'row',
       gap: spacing.md,
@@ -961,11 +903,20 @@ function createStyles(colors: ThemeColors) {
     buttonFlex: {
       flex: 1,
     },
-    centered: {
+    analyzing: {
       alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.xl,
+    },
+    skeletonList: {
+      alignSelf: 'stretch',
       gap: spacing.md,
-      justifyContent: 'center',
-      minHeight: 240,
+      marginTop: spacing.lg,
+    },
+    skeletonRow: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      height: 64,
     },
     analyzingText: {
       ...typography.title,
@@ -987,7 +938,7 @@ function createStyles(colors: ThemeColors) {
     },
     warningRow: {
       alignItems: 'flex-start',
-      backgroundColor: `${colors.accent}15`,
+      backgroundColor: colors.carbohydratesLight,
       borderRadius: radius.md,
       flexDirection: 'row',
       gap: spacing.sm,
@@ -1020,15 +971,7 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fonts.semibold,
     },
     textArea: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: fontSizes.bodyLarge,
-      fontFamily: fonts.regular,
-      minHeight: 88,
-      padding: spacing.md,
+      minHeight: 96,
       textAlignVertical: 'top',
     },
     resultConfidence: {
@@ -1037,7 +980,7 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fonts.regular,
     },
     resultMatch: {
-      color: colors.success,
+      color: colors.successText,
       fontSize: fontSizes.small,
       fontFamily: fonts.regular,
     },
@@ -1088,29 +1031,6 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: spacing.sm,
-    },
-    mealOption: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-    },
-    mealOptionSelected: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    mealOptionText: {
-      color: colors.text,
-      fontSize: fontSizes.compact,
-      fontFamily: fonts.semibold,
-    },
-    mealOptionTextSelected: {
-      color: colors.textOnPrimary,
-    },
-    saveRow: {
-      marginTop: 'auto',
     },
     errorStep: {
       gap: spacing.md,

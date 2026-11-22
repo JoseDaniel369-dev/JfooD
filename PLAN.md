@@ -1,6 +1,6 @@
 # JfooD — Plan de desarrollo y traspaso
 
-**Última actualización:** 17 de noviembre de 2026 (auditoría integral)
+**Última actualización:** 22 de noviembre de 2026 (auditoría de errores y refresco visual)
 **Estado:** Fases 0, 1, 2, 3, 4, 4.5, 5, 6, 7 y R completadas; se han aplicado las correcciones de la segunda auditoría post-Fase R. La app cuenta con un refresh visual, modo oscuro, racha/estadísticas, registro de agua, gestión del catálogo de alimentos, gráfico de línea en Progreso, onboarding y un rediseño animado e intuitivo; está lista para compilar y distribuir dos APKs.
 
 Este documento es la referencia para retomar el proyecto en una sesión nueva y para ejecutar las fases en orden. Antes de tocar código, la sesión entrante debe leer también `README.md` y `apps/mobile/AGENTS.md`. La Fase R (rediseño animado) ya está completada.
@@ -220,10 +220,42 @@ Petición: una lista enorme de alimentos para elegir, con calorías, sin que el 
 - **Regenerar:** `npm run catalog:build` (descarga, traduce lo pendiente y ensambla) o `npm run catalog:assemble` con lo ya descargado. `scripts/catalog/translation-review.md` lista los ~300 alimentos más básicos para revisar sus nombres.
 - **Pendiente de verificar en un móvil:** que `importDatabaseFromAssetAsync` + `ATTACH` funcionan en Android (los tests cubren el SQL y el empaquetado se comprueba con `expo export`; la salvaguarda devuelve a la app al comportamiento anterior si falla).
 
+### 3.14 Auditoría de errores y refresco visual (22 de noviembre de 2026)
+
+Petición: pulido visual, mejoras generales y auditoría de errores. Se ejecutó en tres fases sobre la rama `feat/refresco-visual-y-auditoria`.
+
+**Fase A — Errores corregidos** (con tests de regresión):
+- `ConfirmDialog` y `ActionSheet` ejecutaban la acción dos veces si se tocaba de nuevo durante el cierre (copiar día, duplicar, eliminar, restaurar copia).
+- El escáner ignoraba `target=plan` (guardaba en el diario), arrancaba siempre en Desayuno y perdía la foto al reintentar; ahora respeta el plan, usa la comida de la hora, reintenta con la misma foto, cancela la petición al salir y no guarda dos veces.
+- `parseSpanishNumber` (`features/foods/utils/parseNumber.ts`): «1.500» ml = 1500 (antes 2 ml), «1,5» se rechaza, no admite `1e3`/`0x10`; usado en agua, gramos y raciones.
+- Racha, mejores días y logros ya no cuentan los días futuros (comidas copiadas por adelantado).
+- `runInTransaction` (`data/sqlite/utils/transaction.ts`) pone en cola las transacciones sobre la conexión compartida; evita que dos solapadas se deshagan entre sí.
+- API/core: lectura tolerante de la respuesta de Gemini (`parseRecognitionResponse`; sigue rechazando cualquier nutriente), errores 429/413/415 en español, base64 con saltos de línea, IMC clasificado tras redondear.
+- Copia de seguridad: el archivo exportado no se borra antes de que lo lea Gmail/Drive (se limpia al arrancar), el selector admite cualquier tipo, se validan las fechas y no se pisan `catalog_installed_version`/`seed_version` al restaurar.
+- Android: `KeyboardAvoidingView` con `padding` en todas las pantallas (edge-to-edge no redimensiona la ventana); build de desarrollo (`eas.json` → `development`, `APP_VARIANT`) con permiso de cámara.
+- Selector de fecha cancelado ya no guarda 2000-01-01; confirmación al reemplazar un peso; botón atrás del onboarding; «Abrir ajustes» con la cámara bloqueada; el arranque reintenta de verdad si falla la base de datos (`DatabaseBoundary`, sin suspense) y no se queda en un spinner si fallan las fuentes.
+- CI: el glob de tests va entrecomillado (`"test/**/*.test.ts"`); sin comillas, `sh` omitía `test/date.test.ts`.
+
+**Fase B — Sistema de diseño:**
+- Tipografía: Nunito en todos los textos (se eliminaron los `fontWeight` sobre familias de un solo peso y los textos en fuente del sistema), escala `fontSizes` + `lineHeight` en `typography`.
+- Tokens: `onHeroMuted`, `surfaceRaised`, `successText`, `heroGradientDark`, `onHeroTrack` (con tests de contraste AA); se eliminaron los tokens sin uso.
+- Componentes: `TextField`, `CalorieHero` (Inicio y Diario), `InsightCarousel`, `GoalsSummary`, `Screen` con `footer` y `scrollRef`; `Chip` con `icon`; `Segmented` de 44 dp con indicador visible en oscuro.
+- `ActionSheet` y los editores de gramos y nutrientes se reconstruyeron sobre `BottomSheet`; `ConfirmDialog`, `Toast` y `EmptyState` pasaron a Reanimated (respetan «reducir animaciones»).
+- Iconografía: Ionicons para acciones y métricas; emojis solo para comida, comidas y logros. Vocabulario unificado («Hidratos», «Almuerzo»).
+- Accesibilidad: objetivos táctiles ≥ 44 dp, roles de cabecera, etiquetas del WeekStrip, `maxFontSizeMultiplier` en elementos de tamaño fijo, anuncios de toasts en iOS.
+- Arranque: la pantalla de bienvenida nativa se mantiene hasta que la base de datos está lista.
+
+**Fase C — Pantallas:** Inicio (un solo héroe, consejo único con paginación, agua a ancho completo), Diario (filas planas), Progreso (`WeightSection` + `WeightChart` con ejes, fechas y arrastre; color del cambio según el objetivo, nunca rojo; historial reciente primero con «Ver todo»), Perfil y Onboarding (tarjeta de objetivos compartida, botón «Atrás»), Escáner (barra de guardado fija, un solo indicador de carga), Código de barras (línea de escaneo), Receta (macros con color), Añadir alimento (chips de borde a borde) y ficha del alimento (dos columnas).
+
+**Decisiones que se desviaron del plan:**
+- La lista de resultados de «Añadir alimento» sigue siendo un `ScrollView` con paginación de 40 (no `FlatList`): la pantalla entera ya es un `ScrollView` y anidar listas virtualizadas es peor; el catálogo se pagina.
+- La barra de pestañas usa `inset + 8` (mínimo 16) cuando el sistema informa del inset y 48 dp cuando no, en lugar de 64 dp fijos. **Hay que validarlo en el móvil**: si los botones del sistema tapan las etiquetas, subir `MIN_BOTTOM_INSET` en `AppTabBar.tsx`.
+- Un cambio de fecha en el Diario sigue mostrando el día anterior unos milisegundos bajo la fecha nueva (arreglarlo metería un parpadeo de carga en cada deslizamiento).
+
 **Pendiente tras el upgrade 2.0:**
 1. **APK:** seguir [`RELEASE.md`](RELEASE.md). Hace falta tu sesión de Expo; la experimental, además, la API en Render, `GEMINI_API_KEY` y `APP_TOKEN`.
 2. **Funciones futuras decididas:** menús semanales con IA y Health Connect.
-3. **Verificación en dispositivo** (nada de esto se ha podido probar sin móvil): teclado en Android con las hojas inferiores, gestos de deslizar, notificaciones (llegada, toque que abre la pantalla, que no lleguen si la comida ya está registrada) y contraste en modo oscuro.
+3. **Verificación en dispositivo** (nada de esto se ha podido probar sin móvil): teclado en Android con las hojas inferiores y las pantallas (ahora con `padding`), gestos de deslizar y de arrastrar la gráfica de peso, notificaciones (llegada, toque que abre la pantalla, que no lleguen si la comida ya está registrada), contraste en modo oscuro, altura de la barra de pestañas y arranque sin parpadeo.
 
 ---
 

@@ -1,8 +1,15 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useMemo, useRef, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { isScannerEnabled } from '@/config/api';
@@ -13,6 +20,8 @@ import {
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
+import { isReducedMotion } from '@/features/motion/motion';
+import { fadeUp } from '@/features/motion/springs';
 import {
   fetchProduct,
   normalizeBarcode,
@@ -29,11 +38,20 @@ type Status =
 export default function BarcodeScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const database = useSQLiteContext();
   const params = useLocalSearchParams<{ date?: string; meal?: string; target?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [status, setStatus] = useState<Status>({ kind: 'scanning' });
   const busy = useRef(false);
+
+  // A line sweeping the frame while the camera is looking for a code.
+  const sweep = useSharedValue(0);
+  useEffect(() => {
+    if (isReducedMotion()) return;
+    sweep.set(withRepeat(withTiming(1, { duration: 1600 }), -1, true));
+  }, [sweep]);
+  const sweepStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sweep.value * (FRAME_HEIGHT - 6) }] }));
 
   const date = params.date && isValidLocalDate(params.date) ? params.date : toLocalDate(new Date());
   const meal = params.meal ?? currentDefaultMeal();
@@ -108,7 +126,11 @@ export default function BarcodeScreen() {
   }
 
   if (!permission) {
-    return <View style={styles.screen} />;
+    return (
+      <View style={[styles.screen, styles.centered]}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
   }
 
   if (!permission.granted) {
@@ -147,18 +169,27 @@ export default function BarcodeScreen() {
         style={styles.camera}
       />
       <View pointerEvents="none" style={styles.frameWrap}>
-        <View style={styles.frame} />
+        <View style={styles.frame}>
+          {status.kind === 'scanning' ? (
+            <Animated.View style={[styles.sweepLine, sweepStyle]} />
+          ) : null}
+        </View>
       </View>
 
-      <View style={styles.panel}>
+      <View style={[styles.panel, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
         {status.kind === 'scanning' ? (
-          <Text style={styles.text}>Apunta al código de barras del envase.</Text>
+          <Animated.Text entering={fadeUp()} style={styles.text}>
+            Apunta al código de barras del envase.
+          </Animated.Text>
         ) : null}
         {status.kind === 'looking' ? (
-          <Text style={styles.text}>Buscando el producto…</Text>
+          <Animated.View entering={fadeUp()} style={styles.lookingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.text}>Buscando el producto…</Text>
+          </Animated.View>
         ) : null}
         {status.kind === 'not_found' ? (
-          <>
+          <Animated.View entering={fadeUp()} style={styles.statusBlock}>
             <Text style={styles.title}>Producto no encontrado</Text>
             <Text style={styles.text}>
               El código {status.barcode} no está en Open Food Facts. Puedes
@@ -180,14 +211,14 @@ export default function BarcodeScreen() {
               }
             />
             <Button title="Escanear otro" variant="secondary" onPress={reset} />
-          </>
+          </Animated.View>
         ) : null}
         {status.kind === 'error' ? (
-          <>
+          <Animated.View entering={fadeUp()} style={styles.statusBlock}>
             <Text style={styles.title}>No se ha podido buscar</Text>
             <Text style={styles.text}>{status.message}</Text>
             <Button title="Reintentar" onPress={reset} />
-          </>
+          </Animated.View>
         ) : null}
         <Text style={styles.attribution}>
           Datos de productos: Open Food Facts (licencia ODbL).
@@ -196,6 +227,8 @@ export default function BarcodeScreen() {
     </View>
   );
 }
+
+const FRAME_HEIGHT = 150;
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
@@ -215,8 +248,23 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.onHero,
       borderRadius: radius.lg,
       borderWidth: 3,
-      height: 150,
+      height: FRAME_HEIGHT,
+      overflow: 'hidden',
       width: '78%',
+    },
+    sweepLine: {
+      backgroundColor: colors.accent,
+      borderRadius: radius.pill,
+      height: 3,
+      width: '100%',
+    },
+    lookingRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    statusBlock: {
+      gap: spacing.md,
     },
     panel: {
       backgroundColor: colors.surface,

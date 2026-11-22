@@ -95,7 +95,13 @@ Esto es lo único que no se puede verificar sin un dispositivo. Pruébalo con la
 6. **Progreso → Macros** con algunos días registrados; **Agua → Otra…**.
 7. **Modo oscuro** (Perfil → Apariencia) y «reducir animaciones» del sistema: sin pantallas rotas ni texto ilegible.
 8. **Copia de seguridad:** Perfil → Tus datos → exportar; restaura en la otra APK y comprueba que siguen los recordatorios, el nombre y el catálogo.
-9. **Solo experimental:** escáner por foto, por texto («2 huevos y un café») y por código de barras. La primera petición tras un rato puede tardar hasta ~1 minuto (la API gratuita «se duerme»).
+9. **Solo experimental:** escáner por foto, por texto («2 huevos y un café») y por código de barras. La primera petición tras un rato puede tardar hasta ~1 minuto (la API gratuita «se duerme»). Desde el Planificador, «Añadir alimento» → «Escanear» debe guardar en el **plan**, no en el diario.
+10. **Refresco visual (noviembre de 2026):**
+    - **Barra de pestañas:** que los botones del sistema no tapen las etiquetas y que no quede demasiado alta. Si algo se solapa, sube `MIN_BOTTOM_INSET` en `apps/mobile/src/components/AppTabBar.tsx`.
+    - **Teclado:** abre un campo bajo en Progreso (peso), Receta y Perfil (altura): debe verse entero sobre el teclado.
+    - **Arranque:** sin parpadeo entre la pantalla de bienvenida y la app, en claro y en oscuro.
+    - **Gráfica de peso** (Progreso → Peso, con 2+ registros): arrastra el dedo para ver cada día; el desplazamiento vertical de la pantalla debe seguir funcionando.
+    - **Doble toque:** en «Copiar al diario» del Planificador y en «Repetir ayer» de Inicio debe copiar una sola vez.
 
 ### Cosas que son normales
 
