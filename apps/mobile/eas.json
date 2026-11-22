@@ -30,7 +30,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://TU_API.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://jfood.onrender.com"
       }
     }
   }

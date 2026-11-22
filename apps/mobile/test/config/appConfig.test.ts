@@ -135,3 +135,14 @@ test('eas.json: each build gets its own environment and an APK, and the offline 
   assert.equal(eas.build.development?.env?.APP_VARIANT, 'development');
   assert.equal(eas.build.estable?.env, undefined, 'the offline build must not point at an API');
 });
+
+test('react-native-worklets resolves from Reanimated (its Gradle task fails the Android build otherwise)', () => {
+  // Reanimated's build.gradle.kts runs scripts/validate-worklets-build.js, which does
+  // require('react-native-worklets/package.json') from Reanimated's own folder. In this
+  // monorepo the package must therefore be installed next to Reanimated (root node_modules),
+  // not nested in apps/mobile/node_modules (the root package.json declares it for that reason).
+  const reanimatedRequire = createRequire(require.resolve('react-native-reanimated/package.json'));
+  const worklets = reanimatedRequire('react-native-worklets/package.json') as { version: string };
+
+  assert.match(worklets.version, /^0\.13\./);
+});
