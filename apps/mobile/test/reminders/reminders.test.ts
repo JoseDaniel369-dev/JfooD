@@ -16,6 +16,7 @@ import {
   anyReminderEnabled,
   formatTime,
   isTimeOfDay,
+  isValidWaterWindow,
   parseReminderSettings,
   toMinutes,
   type ReminderSettings,
@@ -195,4 +196,11 @@ test('only the screens a reminder can open are accepted from a notification payl
   for (const bad of ['/foods/abc', 'https://example.com', '/diary/add-food?meal=snack', '', null, undefined, 7]) {
     assert.equal(isSafeReminderRoute(bad), false, String(bad));
   }
+});
+
+test('the water window needs a start before its end', () => {
+  assert.equal(isValidWaterWindow('10:00', '20:00'), true);
+  assert.equal(isValidWaterWindow('20:00', '10:00'), false);
+  assert.equal(isValidWaterWindow('10:00', '10:00'), false);
+  assert.equal(isValidWaterWindow('25:00', '26:00'), false);
 });

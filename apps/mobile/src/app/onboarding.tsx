@@ -2,19 +2,31 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeInRight } from 'react-native-reanimated';
 
 import type { NutritionGoals } from '@jfood/core';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Chip } from '@/components/Chip';
+import { Confetti } from '@/components/Confetti';
 import { Screen } from '@/components/Screen';
+import { StepIndicator } from '@/components/StepIndicator';
 import { setSetting } from '@/data/sqlite/repositories/settingsRepository';
 import { saveProfile } from '@/data/sqlite/repositories/profileRepository';
 import { hapticSuccess } from '@/features/haptics/haptics';
-import { FadeInView } from '@/features/motion/FadeInView';
+import { staggerIn } from '@/features/motion/springs';
 import { useCountUp } from '@/features/motion/useCountUp';
 import { ProfileForm } from '@/features/profile/components/ProfileForm';
+import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
+import { ONBOARDING_DONE_KEY } from '@/features/profile/onboarding';
+import {
+  requestReminderPermission,
+  saveReminderSettings,
+  scheduleReminders,
+} from '@/features/reminders/notifications';
+import { DEFAULT_REMINDER_SETTINGS } from '@/features/reminders/settings';
 import { useToast } from '@/components/Toast';
 import {
   fonts,
@@ -25,9 +37,17 @@ import {
   type ThemeColors,
 } from '@/theme';
 
-type OnboardingStep = 'welcome' | 'profile' | 'goals';
+type OnboardingStep = 'welcome' | 'profile' | 'reminders' | 'done';
 
-const ONBOARDING_DONE_KEY = 'onboarding_done';
+const STEPS: OnboardingStep[] = ['welcome', 'profile', 'reminders', 'done'];
+
+type MealKey = 'breakfast' | 'lunch' | 'dinner';
+
+const MEAL_CHOICES: { key: MealKey; emoji: string; label: string }[] = [
+  { key: 'breakfast', emoji: '🍳', label: 'Desayuno · 9:00' },
+  { key: 'lunch', emoji: '🥗', label: 'Comida · 14:00' },
+  { key: 'dinner', emoji: '🍝', label: 'Cena · 21:00' },
+];
 
 const VALUE_PROPS = [
   {
@@ -53,9 +73,51 @@ export default function OnboardingScreen() {
   const database = useSQLiteContext();
   const { showToast } = useToast();
 
+  const { save: saveName } = useDisplayName();
+
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [saving, setSaving] = useState(false);
   const [goals, setGoals] = useState<NutritionGoals | null>(null);
+  const [nameDraft, setNameDraft] = useState('');
+  const [meals, setMeals] = useState<MealKey[]>([]);
+  const [burst, setBurst] = useState(0);
+
+  const handleStart = async () => {
+    // The name is optional: a failure to save it must not block the onboarding.
+    if (nameDraft.trim() !== '') {
+      await saveName(nameDraft);
+    }
+    setStep('profile');
+  };
+
+  const toggleMeal = (key: MealKey) =>
+    setMeals((current) => (current.includes(key) ? current.filter((m) => m !== key) : [...current, key]));
+
+  const handleReminders = async (chosen: MealKey[]) => {
+    if (chosen.length > 0) {
+      setSaving(true);
+      try {
+        if (await requestReminderPermission()) {
+          await saveReminderSettings(database, {
+            ...DEFAULT_REMINDER_SETTINGS,
+            breakfast: { ...DEFAULT_REMINDER_SETTINGS.breakfast, enabled: chosen.includes('breakfast') },
+            lunch: { ...DEFAULT_REMINDER_SETTINGS.lunch, enabled: chosen.includes('lunch') },
+            dinner: { ...DEFAULT_REMINDER_SETTINGS.dinner, enabled: chosen.includes('dinner') },
+          });
+          void scheduleReminders(database);
+        } else {
+          showToast('Sin permiso de notificaciones no podemos avisarte. Puedes activarlo en Perfil.', 'error');
+        }
+      } catch {
+        showToast('No se han podido guardar los recordatorios. Puedes activarlos en Perfil.', 'error');
+      } finally {
+        setSaving(false);
+      }
+    }
+    setStep('done');
+    setBurst(1);
+    hapticSuccess();
+  };
 
   const handleSkip = async () => {
     const ok = await finishOnboarding(database);
@@ -71,7 +133,7 @@ export default function OnboardingScreen() {
     try {
       const calculated = await saveProfile(database, data);
       setGoals(calculated);
-      setStep('goals');
+      setStep('reminders');
       hapticSuccess();
     } catch {
       showToast('No se ha podido guardar tu perfil.', 'error');
@@ -91,8 +153,10 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
+      <StepIndicator current={STEPS.indexOf(step)} steps={STEPS.length} />
+
       {step === 'welcome' ? (
-        <>
+        <Animated.View entering={FadeInRight.springify().damping(20)} key="welcome" style={styles.step}>
           <View style={styles.welcomeHeader}>
             <View style={styles.brandIcon}>
               <Ionicons color={colors.textOnPrimary} name="leaf" size={34} />
@@ -105,7 +169,7 @@ export default function OnboardingScreen() {
 
           <View style={styles.valueProps}>
             {VALUE_PROPS.map((prop, index) => (
-              <FadeInView key={prop.title} delay={index * 100}>
+              <Animated.View key={prop.title} entering={staggerIn(index + 1)}>
                 <Card style={styles.valueCard}>
                   <View style={styles.valueIcon}>
                     <Ionicons color={colors.primary} name={prop.icon} size={24} />
@@ -115,26 +179,33 @@ export default function OnboardingScreen() {
                     <Text style={styles.valueText}>{prop.text}</Text>
                   </View>
                 </Card>
-              </FadeInView>
+              </Animated.View>
             ))}
           </View>
 
-          <Button
-            title="Empezar"
-            onPress={() => setStep('profile')}
-          />
-          <Button
-            title="Saltar por ahora"
-            variant="ghost"
-            onPress={() => void handleSkip()}
-          />
-        </>
+          <View style={styles.nameBlock}>
+            <Text style={styles.nameLabel}>¿Cómo te llamamos? (opcional)</Text>
+            <TextInput
+              accessibilityLabel="Tu nombre"
+              autoCapitalize="words"
+              maxLength={20}
+              onChangeText={setNameDraft}
+              placeholder="Tu nombre"
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
+              style={styles.nameInput}
+              value={nameDraft}
+            />
+          </View>
+
+          <Button title="Empezar" onPress={() => void handleStart()} />
+          <Button title="Saltar por ahora" variant="ghost" onPress={() => void handleSkip()} />
+        </Animated.View>
       ) : null}
 
       {step === 'profile' ? (
-        <>
+        <Animated.View entering={FadeInRight.springify().damping(20)} key="profile" style={styles.step}>
           <View style={styles.stepHeader}>
-            <Text style={styles.stepEyebrow}>PASO 1 DE 2</Text>
             <Text style={styles.stepTitle}>Cuéntanos sobre ti</Text>
             <Text style={styles.stepSubtitle}>
               Con tu peso, altura y edad calculamos tus objetivos diarios con
@@ -148,49 +219,74 @@ export default function OnboardingScreen() {
             submitLabel="Calcular mis objetivos"
           />
 
-          <Button
-            title="Saltar por ahora"
-            variant="ghost"
-            onPress={() => void handleSkip()}
-          />
-        </>
+          <Button title="Saltar por ahora" variant="ghost" onPress={() => void handleSkip()} />
+        </Animated.View>
       ) : null}
 
-      {step === 'goals' && goals ? (
-        <>
+      {step === 'reminders' ? (
+        <Animated.View entering={FadeInRight.springify().damping(20)} key="reminders" style={styles.step}>
           <View style={styles.stepHeader}>
-            <Text style={styles.stepEyebrow}>PASO 2 DE 2</Text>
-            <Text style={styles.stepTitle}>Tus objetivos diarios</Text>
+            <Text style={styles.stepTitle}>¿Quieres un empujoncito?</Text>
             <Text style={styles.stepSubtitle}>
-              Estos valores se usan en el diario y en la pantalla de inicio.
-              Podrás cambiarlos cuando quieras desde tu perfil.
+              Elige a qué comidas quieres un aviso. Si ya la has registrado, no te molestamos.
+              Se pueden cambiar cuando quieras desde Perfil.
             </Text>
           </View>
 
-          <Card variant="hero">
-            <Text style={styles.goalsLabel}>CALORÍAS</Text>
-            <Text style={styles.goalsCalories}>
-              <AnimatedNumber value={goals.caloriesKcal} />
-              <Text style={styles.goalsUnit}> kcal</Text>
-            </Text>
-            <View style={styles.goalsRow}>
-              <GoalChip
-                color={colors.onHero}
-                label="Proteínas"
-                value={goals.proteinGrams}
+          <View style={styles.choices}>
+            {MEAL_CHOICES.map((choice) => (
+              <Chip
+                key={choice.key}
+                emoji={choice.emoji}
+                label={choice.label}
+                onPress={() => toggleMeal(choice.key)}
+                selected={meals.includes(choice.key)}
               />
-              <GoalChip
-                color={colors.onHero}
-                label="Carbos"
-                value={goals.carbohydrateGrams}
-              />
-              <GoalChip color={colors.onHero} label="Grasas" value={goals.fatGrams} />
-            </View>
-          </Card>
+            ))}
+          </View>
 
-          <Button title="Ir a la app" onPress={() => void handleFinish()} />
-        </>
+          <Button
+            loading={saving}
+            title={meals.length > 0 ? 'Activar avisos' : 'Continuar'}
+            onPress={() => void handleReminders(meals)}
+          />
+          {meals.length > 0 ? (
+            <Button title="Ahora no" variant="ghost" onPress={() => void handleReminders([])} />
+          ) : null}
+        </Animated.View>
       ) : null}
+
+      {step === 'done' ? (
+        <Animated.View entering={FadeInRight.springify().damping(20)} key="done" style={styles.step}>
+          <View style={styles.stepHeader}>
+            <Text style={styles.stepTitle}>¡Todo listo! 🎉</Text>
+            <Text style={styles.stepSubtitle}>
+              {goals
+                ? 'Estos son tus objetivos diarios. Podrás cambiarlos cuando quieras desde tu perfil.'
+                : 'Ya puedes empezar a registrar tus comidas. Tus objetivos los calculas desde Perfil.'}
+            </Text>
+          </View>
+
+          {goals ? (
+            <Card variant="hero">
+              <Text style={styles.goalsLabel}>CALORÍAS</Text>
+              <Text style={styles.goalsCalories}>
+                <AnimatedNumber value={goals.caloriesKcal} />
+                <Text style={styles.goalsUnit}> kcal</Text>
+              </Text>
+              <View style={styles.goalsRow}>
+                <GoalChip color={colors.onHero} label="Proteínas" value={goals.proteinGrams} />
+                <GoalChip color={colors.onHero} label="Carbos" value={goals.carbohydrateGrams} />
+                <GoalChip color={colors.onHero} label="Grasas" value={goals.fatGrams} />
+              </View>
+            </Card>
+          ) : null}
+
+          <Button title="Empezar" onPress={() => void handleFinish()} />
+        </Animated.View>
+      ) : null}
+
+      <Confetti burst={burst} />
     </Screen>
   );
 }
@@ -288,12 +384,33 @@ function createStyles(colors: ThemeColors) {
       color: colors.textMuted,
       lineHeight: 18,
     },
-    stepHeader: {
+    step: {
+      gap: spacing.lg,
+    },
+    nameBlock: {
       gap: spacing.sm,
     },
-    stepEyebrow: {
-      ...typography.label,
-      color: colors.primary,
+    nameLabel: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    nameInput: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 18,
+      padding: spacing.md,
+    },
+    choices: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    stepHeader: {
+      gap: spacing.sm,
     },
     stepTitle: {
       color: colors.text,

@@ -35,3 +35,9 @@ export const NEXT_MEAL_LABELS: Record<MealType, { label: string; emoji: string }
   snack: { label: 'la merienda', emoji: '🍎' },
   dinner: { label: 'la cena', emoji: '🍝' },
 };
+
+/** The letter shown in the profile avatar, or null when there is no name. */
+export function avatarInitial(name: string | null | undefined): string | null {
+  const clean = cleanDisplayName(name);
+  return clean ? clean.charAt(0).toLocaleUpperCase('es') : null;
+}

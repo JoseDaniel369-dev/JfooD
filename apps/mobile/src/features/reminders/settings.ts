@@ -141,3 +141,8 @@ export function anyReminderEnabled(settings: ReminderSettings): boolean {
     settings.weeklySummary.enabled
   );
 }
+
+/** True when the water reminders have a window that can fire (start before end). */
+export function isValidWaterWindow(from: TimeOfDay, to: TimeOfDay): boolean {
+  return isTimeOfDay(from) && isTimeOfDay(to) && toMinutes(from) < toMinutes(to);
+}

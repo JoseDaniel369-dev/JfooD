@@ -1,74 +1,66 @@
-import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { durations, easings } from '@/features/motion/motion';
+import { springs } from '@/features/motion/springs';
 import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-});
+const DOT = 8;
+const ACTIVE_WIDTH = 28;
 
 interface StepIndicatorProps {
   steps: number;
+  /** Zero-based index of the current step. */
   current: number;
 }
 
+/** Progress dots: the current step stretches into a pill. */
 export function StepIndicator({ steps, current }: StepIndicatorProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
-      {Array.from({ length: steps }).map((_, index) => (
-        <StepDot
-          key={index}
-          active={index <= current}
-          colors={colors}
-          isLast={index === steps - 1}
-        />
+    <View
+      accessibilityLabel={`Paso ${current + 1} de ${steps}`}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 1, max: steps, now: current + 1 }}
+      style={styles.row}
+    >
+      {Array.from({ length: steps }, (_, index) => (
+        <StepDot key={index} colors={colors} current={index === current} done={index < current} />
       ))}
     </View>
   );
 }
 
-function StepDot({
-  active,
-  colors,
-  isLast,
-}: {
-  active: boolean;
-  colors: ThemeColors;
-  isLast: boolean;
-}) {
-  const [width] = useState(() => new Animated.Value(active ? 24 : 8));
+function StepDot({ colors, current, done }: { colors: ThemeColors; current: boolean; done: boolean }) {
+  const width = useSharedValue(current ? ACTIVE_WIDTH : DOT);
 
   useEffect(() => {
-    const animation = Animated.timing(width, {
-      toValue: active ? 24 : 8,
-      duration: durations.normal,
-      useNativeDriver: false,
-      easing: (x) => easings.easeOutCubic(x),
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [active, width]);
+    width.set(withSpring(current ? ACTIVE_WIDTH : DOT, springs.soft));
+  }, [current, width]);
+
+  const style = useAnimatedStyle(() => ({ width: width.value }));
 
   return (
     <Animated.View
       style={[
-        {
-          backgroundColor: active ? colors.primary : colors.border,
-          borderRadius: radius.pill,
-          height: 8,
-          marginRight: isLast ? 0 : spacing.sm,
-          width,
-        },
+        styles.dot,
+        { backgroundColor: current || done ? colors.primary : colors.border },
+        style,
       ]}
     />
   );
 }
 
-
+const styles = StyleSheet.create({
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+  },
+  dot: {
+    borderRadius: radius.pill,
+    height: DOT,
+  },
+});

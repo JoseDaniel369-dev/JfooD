@@ -9,9 +9,9 @@ import { isScannerEnabled } from '@/config/api';
 import { getSetting } from '@/data/sqlite/repositories/settingsRepository';
 import { toLocalDate } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
+import { ONBOARDING_DONE_KEY } from '@/features/profile/onboarding';
 import { useTheme, type ThemeColors } from '@/theme';
 
-const ONBOARDING_DONE_KEY = 'onboarding_done';
 
 export default function TabsLayout() {
   const { colors } = useTheme();

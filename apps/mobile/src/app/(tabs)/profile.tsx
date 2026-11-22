@@ -1,27 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { NutritionGoals } from '@jfood/core';
 
+import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { BottomSheet } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
+import { Segmented, type SegmentedOption } from '@/components/Segmented';
 import { SectionHeader } from '@/components/SectionHeader';
-import { Button } from '@/components/Button';
 import { useToast } from '@/components/Toast';
-import {
-  ProfileForm,
-  type ProfileSubmitMeta,
-} from '@/features/profile/components/ProfileForm';
 import { BackupCard } from '@/features/backup/BackupCard';
+import { toLocalDate } from '@/features/diary/utils/date';
+import { hapticSuccess } from '@/features/haptics/haptics';
+import { avatarInitial } from '@/features/home/greeting';
+import { staggerIn } from '@/features/motion/springs';
+import { ProfileForm, type ProfileSubmitMeta } from '@/features/profile/components/ProfileForm';
+import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
 import { useProfile } from '@/features/profile/hooks/useProfile';
-import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
-import { parseWaterGoal } from '@/features/water/utils/goal';
+import { scheduleReminders } from '@/features/reminders/notifications';
+import { RemindersCard } from '@/features/reminders/RemindersCard';
+import { useDiaryStats } from '@/features/stats/hooks/useDiaryStats';
+import { computeStreak } from '@/features/stats/utils/streak';
 import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
+import { parseWaterGoal } from '@/features/water/utils/goal';
 import {
   fonts,
+  heroGradient,
   radius,
   spacing,
   typography,
@@ -30,28 +42,35 @@ import {
   type ThemePreference,
 } from '@/theme';
 
-const THEME_OPTIONS: { value: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: 'system', label: 'Sistema', icon: 'contrast-outline' },
-  { value: 'light', label: 'Claro', icon: 'sunny-outline' },
-  { value: 'dark', label: 'Oscuro', icon: 'moon-outline' },
+const THEME_OPTIONS: SegmentedOption<ThemePreference>[] = [
+  { value: 'system', label: 'Sistema' },
+  { value: 'light', label: 'Claro' },
+  { value: 'dark', label: 'Oscuro' },
 ];
 
 export default function ProfileScreen() {
   const { colors, preference, setPreference } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const database = useSQLiteContext();
   const { showToast } = useToast();
   const { error, goals, load, loading, profile, saving, update } = useProfile();
+  const { name, save: saveName } = useDisplayName();
+  const { stats } = useDiaryStats();
 
   const { goalMl: storedWaterGoal, setGoalMl } = useWaterGoal();
   const [waterGoalDraft, setWaterGoalDraft] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
 
-  const handleSave = async (
-    data: Parameters<typeof update>[0],
-    meta: ProfileSubmitMeta,
-  ) => {
+  const streak = stats ? computeStreak(stats.loggedDates, toLocalDate(new Date())).current : 0;
+  const loggedDays = stats?.loggedDates.length ?? 0;
+  const initial = avatarInitial(name);
+
+  const handleSave = async (data: Parameters<typeof update>[0], meta: ProfileSubmitMeta) => {
     const result = await update(data, { loadedWeightKg: meta.loadedWeightKg });
     if (result) {
       hapticSuccess();
+      setEditingProfile(false);
       showToast('Perfil y objetivos guardados.');
     }
   };
@@ -81,6 +100,17 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleNameSave = async () => {
+    const saved = await saveName(nameDraft ?? '');
+    if (saved) {
+      setNameDraft(null);
+      hapticSuccess();
+      showToast('Nombre guardado.');
+    } else {
+      showToast('No se ha podido guardar el nombre.', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <Screen>
@@ -89,16 +119,47 @@ export default function ProfileScreen() {
     );
   }
 
+  const showForm = editingProfile || !profile;
+  const version = Constants.expoConfig?.version ?? '';
+
   return (
     <Screen>
-      <ScreenHeader
-        title="Perfil y objetivos"
-        subtitle="Calculados a partir de tus datos, sin crear una cuenta"
-      />
+      <Animated.View entering={staggerIn(0)}>
+        <LinearGradient
+          colors={[...heroGradient]}
+          end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }}
+          style={styles.hero}
+        >
+          <View style={styles.avatar}>
+            {initial ? (
+              <Text style={styles.avatarInitial}>{initial}</Text>
+            ) : (
+              <Text style={styles.avatarEmoji}>🌱</Text>
+            )}
+          </View>
+          <View style={styles.heroCopy}>
+            <Text numberOfLines={1} style={styles.heroName}>
+              {name ?? 'Tu perfil'}
+            </Text>
+            <Text style={styles.heroStats}>
+              🔥 {streak} {streak === 1 ? 'día' : 'días'} de racha · {loggedDays}{' '}
+              {loggedDays === 1 ? 'día registrado' : 'días registrados'}
+            </Text>
+          </View>
+          <AnimatedPressable
+            accessibilityLabel="Cambiar nombre"
+            accessibilityRole="button"
+            haptic
+            onPress={() => setNameDraft(name ?? '')}
+            style={styles.editName}
+          >
+            <Ionicons color={colors.onHero} name="pencil" size={18} />
+          </AnimatedPressable>
+        </LinearGradient>
+      </Animated.View>
 
-      {error && !profile ? (
-        <ErrorState message={error} onRetry={() => void load()} />
-      ) : null}
+      {error && !profile ? <ErrorState message={error} onRetry={() => void load()} /> : null}
 
       {error && profile ? (
         <Card style={styles.errorBanner}>
@@ -106,86 +167,117 @@ export default function ProfileScreen() {
         </Card>
       ) : null}
 
-      {goals ? <GoalsSummary goals={goals} goalText={describeGoal(profile)} /> : null}
+      {goals ? (
+        <Animated.View entering={staggerIn(1)}>
+          <GoalsSummary goals={goals} goalText={describeGoal(profile)} />
+        </Animated.View>
+      ) : null}
 
-      <ProfileForm
-        key={profileKey(profile)}
-        initial={profile}
-        onSubmit={(data, meta) => void handleSave(data, meta)}
-        saving={saving}
-      />
-
-      <Card>
-        <SectionHeader title="Preferencias" />
-
-        <Text style={styles.label}>Tema</Text>
-        <View style={styles.themeRow}>
-          {THEME_OPTIONS.map((option) => (
-            <Pressable
-              key={option.value}
-              accessibilityLabel={option.label}
-              accessibilityRole="button"
-              accessibilityState={{ selected: preference === option.value }}
-              onPress={() => {
-                hapticSelection();
-                void handleThemeChange(option.value);
-              }}
-              style={({ pressed }) => [
-                styles.themeButton,
-                preference === option.value && styles.themeButtonActive,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons
-                color={
-                  preference === option.value
-                    ? colors.textOnPrimary
-                    : colors.text
-                }
-                name={option.icon}
-                size={18}
-              />
-              <Text
-                style={[
-                  styles.themeButtonText,
-                  preference === option.value && styles.themeButtonTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Objetivo de agua (ml/día)</Text>
-        <View style={styles.waterRow}>
-          <TextInput
-            accessibilityLabel="Objetivo de agua en mililitros"
-            keyboardType="number-pad"
-            onChangeText={setWaterGoalDraft}
-            placeholder={String(storedWaterGoal)}
-            placeholderTextColor={colors.textMuted}
-            style={styles.waterInput}
-            value={waterGoalDraft ?? String(storedWaterGoal)}
-          />
-          <View style={styles.waterButton}>
-            <Button
-              size="small"
-              title="Guardar"
-              onPress={handleWaterGoalChange}
+      <Animated.View entering={staggerIn(2)} style={styles.section}>
+        {showForm ? (
+          <>
+            <ProfileForm
+              key={profileKey(profile)}
+              initial={profile}
+              onSubmit={(data, meta) => void handleSave(data, meta)}
+              saving={saving}
             />
+            {profile ? (
+              <Button title="Cancelar" variant="ghost" onPress={() => setEditingProfile(false)} />
+            ) : null}
+          </>
+        ) : (
+          <Button
+            icon="create-outline"
+            title="Editar mis datos y objetivo"
+            variant="secondary"
+            onPress={() => setEditingProfile(true)}
+          />
+        )}
+      </Animated.View>
+
+      <Animated.View entering={staggerIn(3)}>
+        <RemindersCard />
+      </Animated.View>
+
+      <Animated.View entering={staggerIn(4)}>
+        <Card>
+          <SectionHeader title="Apariencia" />
+          <Segmented
+            accessibilityLabel="Tema de la aplicación"
+            onChange={(value) => void handleThemeChange(value)}
+            options={THEME_OPTIONS}
+            value={preference}
+          />
+
+          <Text style={styles.label}>Objetivo de agua (ml/día)</Text>
+          <View style={styles.waterRow}>
+            <TextInput
+              accessibilityLabel="Objetivo de agua en mililitros"
+              keyboardType="number-pad"
+              onChangeText={setWaterGoalDraft}
+              placeholder={String(storedWaterGoal)}
+              placeholderTextColor={colors.textMuted}
+              style={styles.waterInput}
+              value={waterGoalDraft ?? String(storedWaterGoal)}
+            />
+            <View style={styles.waterButton}>
+              <Button size="small" title="Guardar" onPress={handleWaterGoalChange} />
+            </View>
           </View>
-        </View>
-      </Card>
+        </Card>
+      </Animated.View>
 
-      <BackupCard onRestored={() => void load()} />
+      <Animated.View entering={staggerIn(5)}>
+        <BackupCard
+          onRestored={() => {
+            void load();
+            // The copy may carry other reminder settings.
+            void scheduleReminders(database);
+          }}
+        />
+      </Animated.View>
 
-      <View style={styles.notice}>
-        <Text style={styles.noticeText}>
-          Tus objetivos se recalcularán con la ecuación de Mifflin-St Jeor
-          usando tu peso, altura, edad, sexo y nivel de actividad.
-        </Text>
-      </View>
+      <Animated.View entering={staggerIn(6)}>
+        <Card>
+          <SectionHeader title="Acerca de JfooD" />
+          <Text style={styles.aboutText}>
+            🔒 Tus datos se quedan en este móvil: no hay cuenta ni nube. Las funciones con
+            internet (escáner, código de barras) solo envían la imagen o el código que tú eliges.
+          </Text>
+          <Text style={styles.aboutText}>
+            🥗 El catálogo base usa valores orientativos de USDA FoodData Central (dominio
+            público). Los productos por código de barras vienen de Open Food Facts (licencia ODbL).
+          </Text>
+          <Text style={styles.aboutText}>
+            🧮 Tus objetivos se calculan con la ecuación de Mifflin-St Jeor a partir de tu peso,
+            altura, edad, sexo y nivel de actividad. Son una guía, no un consejo médico.
+          </Text>
+          {version ? <Text style={styles.version}>Versión {version}</Text> : null}
+        </Card>
+      </Animated.View>
+
+      <BottomSheet
+        onClose={() => setNameDraft(null)}
+        title="¿Cómo te llamamos?"
+        visible={nameDraft !== null}
+      >
+        <TextInput
+          accessibilityLabel="Tu nombre"
+          autoCapitalize="words"
+          autoFocus
+          maxLength={20}
+          onChangeText={setNameDraft}
+          onSubmitEditing={() => void handleNameSave()}
+          placeholder="Tu nombre"
+          placeholderTextColor={colors.textMuted}
+          returnKeyType="done"
+          style={styles.nameInput}
+          value={nameDraft ?? ''}
+        />
+        <Text style={styles.aboutText}>Una palabra, hasta 20 letras. Se usa para saludarte.</Text>
+        <Button title="Guardar" onPress={() => void handleNameSave()} />
+      </BottomSheet>
     </Screen>
   );
 }
@@ -210,13 +302,7 @@ function describeGoal(profile: Parameters<typeof profileKey>[0]): string | null 
     : `Objetivo: ganar ${rate} kg por semana`;
 }
 
-function GoalsSummary({
-  goals,
-  goalText,
-}: {
-  goals: NutritionGoals;
-  goalText: string | null;
-}) {
+function GoalsSummary({ goals, goalText }: { goals: NutritionGoals; goalText: string | null }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -225,18 +311,8 @@ function GoalsSummary({
       <Text style={styles.goalsTitle}>Tus objetivos diarios</Text>
       {goalText ? <Text style={styles.goalsSubtitle}>{goalText}</Text> : null}
       <View style={styles.goalsRow}>
-        <GoalItem
-          color={colors.accent}
-          label="Calorías"
-          unit="kcal"
-          value={goals.caloriesKcal}
-        />
-        <GoalItem
-          color={colors.onHero}
-          label="Proteínas"
-          unit="g"
-          value={goals.proteinGrams}
-        />
+        <GoalItem color={colors.accent} label="Calorías" unit="kcal" value={goals.caloriesKcal} />
+        <GoalItem color={colors.onHero} label="Proteínas" unit="g" value={goals.proteinGrams} />
         <GoalItem color={colors.onHero} label="Carbos" unit="g" value={goals.carbohydrateGrams} />
         <GoalItem color={colors.onHero} label="Grasas" unit="g" value={goals.fatGrams} />
       </View>
@@ -272,6 +348,54 @@ function GoalItem({
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    hero: {
+      alignItems: 'center',
+      borderRadius: radius.xl,
+      flexDirection: 'row',
+      gap: spacing.lg,
+      padding: spacing.xl,
+    },
+    avatar: {
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: radius.pill,
+      height: 64,
+      justifyContent: 'center',
+      width: 64,
+    },
+    avatarInitial: {
+      color: colors.onHero,
+      fontFamily: fonts.brand,
+      fontSize: 30,
+    },
+    avatarEmoji: {
+      fontSize: 30,
+    },
+    heroCopy: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    heroName: {
+      color: colors.onHero,
+      fontFamily: fonts.heading,
+      fontSize: 22,
+    },
+    heroStats: {
+      ...typography.caption,
+      color: colors.onHero,
+      opacity: 0.9,
+    },
+    editName: {
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: radius.pill,
+      height: 44,
+      justifyContent: 'center',
+      width: 44,
+    },
+    section: {
+      gap: spacing.sm,
+    },
     errorBanner: {
       backgroundColor: colors.dangerLight,
     },
@@ -325,37 +449,7 @@ function createStyles(colors: ThemeColors) {
       ...typography.body,
       color: colors.text,
       fontWeight: '700',
-      marginBottom: spacing.xs,
-    },
-    themeRow: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-      marginBottom: spacing.md,
-    },
-    themeButton: {
-      alignItems: 'center',
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      flex: 1,
-      flexDirection: 'row',
-      gap: spacing.sm,
-      justifyContent: 'center',
-      minHeight: 48,
-      padding: spacing.md,
-    },
-    themeButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    themeButtonText: {
-      ...typography.body,
-      color: colors.text,
-      fontWeight: '700',
-    },
-    themeButtonTextActive: {
-      color: colors.textOnPrimary,
+      marginTop: spacing.md,
     },
     waterRow: {
       alignItems: 'center',
@@ -375,19 +469,24 @@ function createStyles(colors: ThemeColors) {
     waterButton: {
       width: 120,
     },
-    notice: {
-      backgroundColor: colors.primaryLight,
+    nameInput: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
       borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 18,
       padding: spacing.md,
     },
-    noticeText: {
-      color: colors.primary,
-      fontSize: 12,
-      lineHeight: 18,
-      textAlign: 'center',
+    aboutText: {
+      ...typography.caption,
+      color: colors.textMuted,
+      lineHeight: 19,
     },
-    pressed: {
-      opacity: 0.8,
+    version: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
     },
   });
 }
