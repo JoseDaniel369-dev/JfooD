@@ -31,6 +31,11 @@ export function staggerIn(index: number, step = 55) {
     .stiffness(140);
 }
 
+/** One block fading up with a soft spring, after `delayMs`. */
+export function fadeUp(delayMs = 0) {
+  return FadeInDown.delay(delayMs).springify().damping(18).stiffness(140);
+}
+
 /** Rows that move smoothly when an item is added or removed above them. */
 export const rowLayout = LinearTransition.springify().damping(20).stiffness(180);
 

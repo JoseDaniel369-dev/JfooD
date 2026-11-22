@@ -191,7 +191,22 @@ Informe completo y plan de correcciones en el plan de la sesión. Corregido en e
 - **Lote 13:** `POST /parse-meal`: registro por texto con el mismo contrato estricto.
 - **Lote 14:** raciones por alimento (migración 006). **Lote 15:** recetas como alimentos (`computeRecipe`). **Lote 16:** ESLint en api/core.
 
-**Sigue pendiente:** catálogo base offline (BEDCA/Open Food Facts: requiere decidir fuente y licencia), micronutrientes (fibra, azúcares, sal: cambia `Nutrients` y los snapshots), resumen semanal y generación de menús con IA, rediseño completo de Progreso y de «Añadir alimento» en una pantalla con hoja de cantidad, Health Connect, suelo de 64 dp de la barra de pestañas (probar en dispositivo), índices redundantes (sin síntoma) y verificación en dispositivo de todo lo anterior.
+**Sigue pendiente:** generación de menús con IA, Health Connect, índices redundantes (sin síntoma) y verificación en dispositivo de todo lo anterior. (El catálogo base, los micronutrientes, el resumen semanal y el rediseño de Progreso y «Añadir alimento» se hicieron en el upgrade 2.0, §3.12.)
+
+### 3.12 Upgrade 2.0 (noviembre de 2026)
+
+Plan completo: «JfooD 2.0 — Rediseño, funciones nuevas y APK». Cada lote es un commit con `npm test`, `typecheck` y `lint` en verde.
+
+- **Rediseño y funciones:** identidad (icono, splash), tema esmeralda/naranja, biblioteca de componentes con Reanimated y gestos (`AnimatedPressable`, `BottomSheet`, `SwipeableRow`, `WeekStrip`, `Segmented`, `Chip`, `Skeleton`, `Confetti`, `WaterBottle`, `AppTabBar`), Inicio, Diario, Planificador, Añadir alimento (hoja de cantidad), Progreso, Resumen semanal y logros; catálogo base de 338 alimentos (USDA CC0 + referencias españolas) y micronutrientes (migración 007).
+- **Auditoría (lote B):** logros que se repetían al perder y recuperar uno (`mergeSeenIds`), «Reintentar» del resumen, selector de periodo de Progreso que desaparecía, día de Diario ignorado al tocar el mismo desde Inicio, «Crear X» sin nombre, doble toque que añadía dos veces, hoja inferior tapada por el teclado (ahora con scroll y altura según el teclado), aviso de agua duplicado, `duplicate*` que devolvía `true` sin insertar, receta y ración atómicas, catálogo que ya no resucita alimentos borrados (`seedCatalog` mira solo `seed_version`; `force` tras restaurar una copia sin catálogo), copia con filas vacías y reembolso de cuota de la API tras medianoche UTC.
+- **Recordatorios (lote C):** `features/reminders/` — `planReminders` (puro) → `buildScheduleRequests` → `scheduleReminders` (`expo-notifications`, canal `recordatorios`, disparo `DATE` único por aviso, sin permiso de alarmas exactas). Se reprograma al abrir la app, al volver a primer plano y tras añadir/copiar/borrar comidas o pesarse. `getReminderContext` omite lo ya hecho hoy. Al tocar el aviso solo se navega a rutas de la lista permitida (`isSafeReminderRoute`).
+- **Perfil y onboarding (lote D):** avatar, nombre, `RemindersCard`, apariencia, «Acerca de»; onboarding de 4 pasos con `StepIndicator` animado y confeti; clave `onboarding_done` compartida.
+- **Pulido (lote E):** código muerto eliminado (`DayNavigator`, `useSwipeDays`, `FeaturePlaceholder`, `StreakRing`, `Fab`, `FadeInView`, `usePressScale`), `Button`/`Card`/`EmptyState`/`ProfileForm` migrados a Reanimated y `LoadingState` convertido en esqueleto.
+
+**Pendiente tras el upgrade 2.0:**
+1. **APK:** el estable (sin red) se compila con EAS (requiere `eas login`). El experimental necesita la API desplegada en Render y `EXPO_PUBLIC_API_URL` + `EXPO_PUBLIC_APP_TOKEN` como variables de EAS.
+2. **Verificación en dispositivo** (nada de esto se ha podido probar sin móvil): teclado en Android con las hojas inferiores, gestos de deslizar, notificaciones (llegada, toque que abre la pantalla, que no lleguen si la comida ya está registrada) y contraste en modo oscuro.
+3. Mensaje propio cuando la tabla de IP del limitador de la API está llena (menor).
 
 ---
 

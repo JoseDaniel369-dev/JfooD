@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -36,7 +37,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
 import { addDays, formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
-import { FadeInView } from '@/features/motion/FadeInView';
+import { fadeUp } from '@/features/motion/springs';
 import { animateNextLayout } from '@/features/motion/motion';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
@@ -300,9 +301,9 @@ export default function ProgressScreen() {
             ))}
           </View>
           {chartLogs.length > 1 ? (
-            <FadeInView key={chartPeriod}>
+            <Animated.View key={chartPeriod} entering={fadeUp()}>
               <WeightLineChart logs={chartLogs} />
-            </FadeInView>
+            </Animated.View>
           ) : (
             <Text style={styles.summaryDate}>
               Hay menos de dos registros en este periodo. Prueba con uno más largo.
@@ -600,8 +601,9 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
       </Svg>
 
       {selected ? (
-        <FadeInView
+        <Animated.View
           key={selected.localDate}
+          entering={fadeUp()}
           onLayout={(event) => setTooltipWidth(event.nativeEvent.layout.width)}
           style={[
             styles.tooltip,
@@ -620,7 +622,7 @@ function WeightLineChart({ logs }: { logs: WeightLog[] }) {
           <Text style={styles.tooltipDate}>
             {formatShortDay(selected.localDate)}
           </Text>
-        </FadeInView>
+        </Animated.View>
       ) : null}
     </View>
   );

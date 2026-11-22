@@ -1,46 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { durations } from '@/features/motion/motion';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
 
+/** Placeholder shapes (with a shimmer) while a screen loads its data. */
 export function LoadingState() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const [opacity] = useState(() => new Animated.Value(0.6));
-
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: durations.slow,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.6,
-          duration: durations.slow,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [opacity]);
-
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
-      <ActivityIndicator color={colors.primary} size="large" />
-      <Text style={styles.message}>Cargando tus datos…</Text>
-    </Animated.View>
+    <View accessibilityLabel="Cargando tus datos" accessibilityLiveRegion="polite" accessible>
+      <ScreenSkeleton />
+    </View>
   );
 }
 

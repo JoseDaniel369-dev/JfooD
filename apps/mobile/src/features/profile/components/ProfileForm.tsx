@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMemo, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import {
   ACTIVITY_LEVELS,
@@ -91,7 +92,7 @@ export function ProfileForm({
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const { translateX, shake } = useShake();
+  const { shakeStyle, shake } = useShake();
 
   const handleSubmit = () => {
     const parsed = userProfileSchema.safeParse({
@@ -133,7 +134,7 @@ export function ProfileForm({
   };
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ translateX }] }]}>
+    <Animated.View style={[styles.container, shakeStyle]}>
       <Card>
         <SectionHeader title="Datos personales" />
         <Text style={styles.label}>Peso actual (kg)</Text>

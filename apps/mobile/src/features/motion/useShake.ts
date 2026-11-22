@@ -1,46 +1,32 @@
-import { useCallback, useState } from 'react';
-import { Animated, Easing } from 'react-native';
+import { useCallback } from 'react';
+import {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { durations } from './motion';
+const STEP_MS = 50;
 
+/** A short side-to-side shake (a form that was refused). Apply `shakeStyle` to an Animated.View. */
 export function useShake() {
-  const [translateX] = useState(() => new Animated.Value(0));
+  const translateX = useSharedValue(0);
 
   const shake = useCallback(() => {
-    const step = durations.fast / 4;
-    Animated.sequence([
-      Animated.timing(translateX, {
-        toValue: -8,
-        duration: step,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-      Animated.timing(translateX, {
-        toValue: 8,
-        duration: step,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-      Animated.timing(translateX, {
-        toValue: -6,
-        duration: step,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-      Animated.timing(translateX, {
-        toValue: 6,
-        duration: step,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: step,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-    ]).start();
+    translateX.set(
+      withSequence(
+        withTiming(-8, { duration: STEP_MS }),
+        withTiming(8, { duration: STEP_MS }),
+        withTiming(-6, { duration: STEP_MS }),
+        withTiming(6, { duration: STEP_MS }),
+        withTiming(0, { duration: STEP_MS }),
+      ),
+    );
   }, [translateX]);
 
-  return { translateX, shake };
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return { shakeStyle, shake };
 }

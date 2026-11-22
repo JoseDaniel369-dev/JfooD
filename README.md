@@ -58,6 +58,15 @@ El motor ya calcula nutrientes por gramos y conserva los valores desconocidos co
 
 El plan por fases, el estado detallado y las instrucciones para retomar el desarrollo en una sesión nueva están en [`PLAN.md`](PLAN.md).
 
+## JfooD 2.0: rediseño, logros y recordatorios
+
+- **Interfaz viva:** paleta esmeralda + naranja, emojis de comida, anillos y barras animados con Reanimated, y gestos (`react-native-gesture-handler`): hojas inferiores arrastrables, filas que se deslizan para **borrar con «Deshacer»** o duplicar, tira semanal L-D y barra de pestañas con botón «+» central. Se respeta «reducir animaciones».
+- **Inicio:** saludo con tu nombre, hero con calorías y macros, «siguiente comida» con tus alimentos habituales y «repetir ayer», botella de agua, racha, peso y consejos del día.
+- **Añadir alimento:** buscador, pestañas (Recientes, Favoritos, Más usados, Catálogo por categorías) y hoja de cantidad con raciones, vista previa y «Añadir y seguir».
+- **Progreso:** peso, calorías de 30 días frente al objetivo y **logros** (con confeti la primera vez que se desbloquean). **Resumen semanal** con comparación con la semana anterior.
+- **Recordatorios locales** (Perfil → Recordatorios): desayuno, comida, cena, agua, pesarte y resumen semanal. Todo está apagado por defecto y el permiso de notificaciones se pide al activar el primero. Se programan los próximos 3 días en el móvil (sin servidor, sin conexión), se reprograman al abrir la app y al registrar comidas o peso, y **no avisan de lo que ya has hecho hoy**. Al tocar un aviso se abre la pantalla correspondiente.
+- **Perfil y onboarding:** avatar con tu inicial, nombre editable, apariencia, copia de seguridad y «Acerca de» con las fuentes de datos. El primer arranque son 4 pasos: nombre, datos, recordatorios y objetivos.
+
 ## Datos del usuario, objetivos y recetas
 
 - **Copia de seguridad:** Perfil → «Tus datos» exporta un JSON versionado y restaura desde un archivo. La restauración es atómica: si algo no es válido, no se cambia nada.

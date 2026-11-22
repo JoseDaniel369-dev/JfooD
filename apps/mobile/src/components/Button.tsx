@@ -1,16 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { hapticImpact } from '@/features/haptics/haptics';
-import { usePressScale } from '@/features/motion/usePressScale';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'danger' | 'ghost';
@@ -37,7 +30,6 @@ export function Button({
 }: ButtonProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { scale, onPressIn, onPressOut } = usePressScale();
 
   const isBlock = variant === 'primary' || variant === 'accent' || variant === 'danger';
   const iconColor =
@@ -50,13 +42,7 @@ export function Button({
           : colors.primary;
 
   return (
-    <Animated.View
-      style={[
-        styles.animatedContainer,
-        { transform: [{ scale }] },
-      ]}
-    >
-      <Pressable
+    <AnimatedPressable
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading }}
         disabled={disabled || loading}
@@ -64,14 +50,11 @@ export function Button({
           hapticImpact();
           onPress();
         }}
-        onPressIn={disabled || loading ? undefined : onPressIn}
-        onPressOut={disabled || loading ? undefined : onPressOut}
-        style={({ pressed }) => [
+        style={[
           styles.base,
           size === 'small' && styles.small,
           styles[variant],
           (disabled || loading) && styles.disabled,
-          pressed && !disabled && !loading && styles.pressed,
         ]}
       >
         {loading ? (
@@ -86,18 +69,15 @@ export function Button({
             </Text>
           </View>
         )}
-      </Pressable>
-    </Animated.View>
+    </AnimatedPressable>
   );
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    animatedContainer: {
-      alignSelf: 'stretch',
-    },
     base: {
       alignItems: 'center',
+      alignSelf: 'stretch',
       borderRadius: radius.md,
       justifyContent: 'center',
       minHeight: 48,
@@ -152,9 +132,6 @@ function createStyles(colors: ThemeColors) {
     },
     disabled: {
       opacity: 0.5,
-    },
-    pressed: {
-      opacity: 0.9,
     },
   });
 }

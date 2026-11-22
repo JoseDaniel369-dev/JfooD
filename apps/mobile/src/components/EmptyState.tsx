@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import ReanimatedView from 'react-native-reanimated';
 
-import { FadeInView } from '@/features/motion/FadeInView';
+import { fadeUp } from '@/features/motion/springs';
 import { durations, easings } from '@/features/motion/motion';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
@@ -46,7 +47,7 @@ export function EmptyState({
   }, [scale, opacity]);
 
   return (
-    <FadeInView style={styles.container} translateY={12}>
+    <ReanimatedView.View entering={fadeUp()} style={styles.container}>
       <Animated.View style={[styles.iconRing, { opacity, transform: [{ scale }] }]}>
         <View style={styles.iconCircle}>
           <Ionicons color={colors.primary} name={icon} size={28} />
@@ -64,7 +65,7 @@ export function EmptyState({
           <Text style={styles.actionText}>{actionLabel}</Text>
         </Pressable>
       ) : null}
-    </FadeInView>
+    </ReanimatedView.View>
   );
 }
 

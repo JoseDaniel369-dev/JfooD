@@ -2,8 +2,9 @@ import type { PropsWithChildren } from 'react';
 import { useMemo } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated from 'react-native-reanimated';
 
-import { FadeInView } from '@/features/motion/FadeInView';
+import { fadeUp } from '@/features/motion/springs';
 import {
   heroGradient,
   radius,
@@ -57,9 +58,9 @@ export function Card({
 
   if (animated) {
     return (
-      <FadeInView delay={delay} style={{ alignSelf: 'stretch' }}>
+      <Animated.View entering={fadeUp(delay)} style={{ alignSelf: 'stretch' }}>
         {content}
-      </FadeInView>
+      </Animated.View>
     );
   }
 
