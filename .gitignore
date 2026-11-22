@@ -20,3 +20,6 @@ apps/mobile/ios/
 *.log
 .DS_Store
 Thumbs.db
+
+# Catalog build downloads (USDA / Open Food Facts), never committed
+.catalog-cache/

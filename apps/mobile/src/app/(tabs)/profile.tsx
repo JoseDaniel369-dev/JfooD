@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { NutritionGoals } from '@jfood/core';
@@ -17,6 +17,8 @@ import { Screen } from '@/components/Screen';
 import { Segmented, type SegmentedOption } from '@/components/Segmented';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
+import { getCatalogProblem } from '@/data/catalog/catalogDatabase';
+import { CATALOG_COUNTS } from '@/data/catalog/catalogVersion';
 import { BackupCard } from '@/features/backup/BackupCard';
 import { toLocalDate } from '@/features/diary/utils/date';
 import { hapticSuccess } from '@/features/haptics/haptics';
@@ -125,6 +127,8 @@ export default function ProfileScreen() {
 
   const showForm = editingProfile || !profile;
   const version = Constants.expoConfig?.version ?? '';
+  const catalogTotal = Object.values(CATALOG_COUNTS as Record<string, number>).reduce((sum, n) => sum + n, 0);
+  const catalogUnavailable = getCatalogProblem() !== null;
 
   return (
     <Screen>
@@ -254,9 +258,46 @@ export default function ProfileScreen() {
             internet (escáner, código de barras) solo envían la imagen o el código que tú eliges.
           </Text>
           <Text style={styles.aboutText}>
-            🥗 El catálogo base usa valores orientativos de USDA FoodData Central (dominio
-            público). Los productos por código de barras vienen de Open Food Facts (licencia ODbL).
+            🥗 El catálogo reúne {catalogTotal.toLocaleString('es-ES')} alimentos con calorías y
+            macros, para que no tengas que escribirlos. Los valores son orientativos: compruébalos
+            con la etiqueta si te importa el dato exacto.
           </Text>
+          {catalogUnavailable ? (
+            <Text style={styles.aboutWarning}>
+              ⚠️ El catálogo ampliado no se ha podido cargar en este móvil. Puedes seguir usando tus
+              alimentos y los 338 básicos.
+            </Text>
+          ) : null}
+          <Text style={styles.aboutText}>
+            Alimentos genéricos: U.S. Department of Agriculture, Agricultural Research Service,
+            Beltsville Human Nutrition Research Center. FoodData Central (dominio público),
+            traducido al español.
+          </Text>
+          <Pressable
+            accessibilityLabel="Abrir FoodData Central"
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL('https://fdc.nal.usda.gov/')}
+          >
+            <Text style={styles.aboutLink}>fdc.nal.usda.gov</Text>
+          </Pressable>
+          <Text style={styles.aboutText}>
+            Productos de supermercado: contiene datos de Open Food Facts, disponibles bajo la Open
+            Database License (ODbL).
+          </Text>
+          <Pressable
+            accessibilityLabel="Abrir Open Food Facts"
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL('https://world.openfoodfacts.org/')}
+          >
+            <Text style={styles.aboutLink}>openfoodfacts.org</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Abrir la licencia ODbL"
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL('https://opendatacommons.org/licenses/odbl/1-0/')}
+          >
+            <Text style={styles.aboutLink}>Licencia ODbL 1.0</Text>
+          </Pressable>
           <Text style={styles.aboutText}>
             🧮 Tus objetivos se calculan con la ecuación de Mifflin-St Jeor a partir de tu peso,
             altura, edad, sexo y nivel de actividad. Son una guía, no un consejo médico.
@@ -501,6 +542,18 @@ function createStyles(colors: ThemeColors) {
       ...typography.caption,
       color: colors.textMuted,
       lineHeight: 19,
+    },
+    aboutWarning: {
+      ...typography.caption,
+      color: colors.warning,
+      lineHeight: 19,
+    },
+    aboutLink: {
+      ...typography.caption,
+      color: colors.primary,
+      minHeight: 32,
+      paddingVertical: spacing.xs,
+      textDecorationLine: 'underline',
     },
     version: {
       ...typography.caption,

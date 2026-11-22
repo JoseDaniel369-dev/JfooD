@@ -49,7 +49,9 @@
     "web": "expo start --web",
     "test": "tsx --test test/**/*.test.ts",
     "lint": "expo lint",
-    "typecheck": "tsc -p tsconfig.test.json"
+    "typecheck": "tsc -p tsconfig.test.json",
+    "catalog:build": "tsx scripts/catalog/fetch-usda.ts && tsx scripts/catalog/build-usda.ts && tsx scripts/catalog/translate-names.ts && tsx scripts/catalog/fetch-off.ts && tsx scripts/catalog/build-off.ts && tsx scripts/catalog/assemble-catalog.ts",
+    "catalog:assemble": "tsx scripts/catalog/assemble-catalog.ts"
   },
   "private": true
 }

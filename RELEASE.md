@@ -85,7 +85,9 @@ npx eas-cli@latest build -p android --profile experimental
 
 Esto es lo único que no se puede verificar sin un dispositivo. Pruébalo con la **estable** (y los puntos 8-9 con la experimental):
 
-1. **Primer arranque:** icono y pantalla de inicio nuevos; onboarding de 4 pasos (nombre, datos, avisos, objetivos con confeti); el catálogo ya trae ~340 alimentos.
+1. **Primer arranque:** icono y pantalla de inicio nuevos; onboarding de 4 pasos (nombre, datos, avisos, objetivos con confeti). La app debe abrir sin tardar más de unos segundos: copia el catálogo grande la primera vez.
+   - **Catálogo grande:** Añadir alimento → busca «yogur natural», «pan de molde», «pechuga de pollo», «hacendado»: salen con marca, calorías y macros sin escribir nada. Elige uno y añádelo al diario; debe aparecer luego en «Recientes». Prueba también la pestaña «Catálogo» (chips de categoría, «Ver más alimentos») y marcar uno como favorito.
+   - Si Perfil → Acerca de muestra «El catálogo ampliado no se ha podido cargar», anótalo con el modelo del móvil (la app sigue funcionando con los 338 básicos).
 2. **Teclado en las hojas:** Añadir alimento → toca uno → toca el campo de gramos. El botón «Añadir» debe verse entero sobre el teclado, también en un móvil pequeño. Repite con «Otra…» del agua y con tu nombre en Perfil.
 3. **Gestos:** en el Diario, desliza una entrada a la izquierda (borra con «Deshacer») y a la derecha (duplica).
 4. **Recordatorios:** Perfil → Recordatorios → activa uno con la hora a +2 minutos. Debe llegar la notificación y, al tocarla, abrirse la pantalla correcta. Registra esa comida antes de la hora y comprueba que **no** llega.
