@@ -22,6 +22,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useToast } from '@/components/Toast';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
+import { generateId } from '@/data/sqlite/utils/id';
 import { isScannerEnabled } from '@/config/api';
 import { createFood } from '@/data/sqlite/repositories/foodRepository';
 import {
@@ -34,7 +35,11 @@ import { hapticSuccess } from '@/features/haptics/haptics';
 import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
-import { recognizeImage, recognizeText } from '@/features/scanner/api/recognize';
+import {
+  recognizeImage,
+  recognizeText,
+  warmUpServer,
+} from '@/features/scanner/api/recognize';
 import { useImagePicker } from '@/features/scanner/hooks/useImagePicker';
 import type {
   RecognitionResult,
@@ -42,6 +47,12 @@ import type {
   RecognizedFoodMatch,
 } from '@/features/scanner/types';
 import { findLocalFoodMatch } from '@/features/scanner/utils/matchFood';
+import {
+  describeGramsError,
+  parseGrams,
+  removeMatch,
+  setMatchGrams,
+} from '@/features/scanner/utils/matches';
 import {
   radius,
   spacing,
@@ -77,6 +88,13 @@ export default function ScannerScreen() {
 
   const { picking, launchCamera, launchLibrary } = useImagePicker();
 
+  // Wake the (free-tier) server while the person frames the photo.
+  useEffect(() => {
+    if (scannerEnabled) {
+      warmUpServer();
+    }
+  }, [scannerEnabled]);
+
   const [step, setStep] = useState<ScannerStep>('camera');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -85,6 +103,8 @@ export default function ScannerScreen() {
   const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Rows whose typed amount is not a valid portion (keyed by match id).
+  const [invalidIds, setInvalidIds] = useState<Record<string, boolean>>({});
   const analyzeRequestRef = useRef(0);
   const [mealText, setMealText] = useState('');
   const [consentPending, setConsentPending] = useState<
@@ -134,6 +154,7 @@ export default function ScannerScreen() {
           result.foods.map(async (food: RecognizedFood) => {
             const matched = await findLocalFoodMatch(database, food);
             return {
+              id: generateId(),
               recognized: food,
               food: matched,
               grams: food.estimatedGrams,
@@ -145,6 +166,7 @@ export default function ScannerScreen() {
         if (requestId !== analyzeRequestRef.current) return;
 
         setMatches(resolved);
+        setInvalidIds({});
         setWarnings(result.warnings);
         setStep('results');
       } catch (error) {
@@ -225,39 +247,20 @@ export default function ScannerScreen() {
     await runSource(source);
   };
 
-  const updateGrams = (index: number, value: string) => {
-    setMatches((prev) => {
-      const current = prev[index];
-      if (!current) return prev;
-
-      const next = [...prev];
-      const normalized = value.replace(',', '.');
-      const parsed = Number(normalized);
-      next[index] = {
-        ...current,
-        grams: Number.isFinite(parsed) && parsed > 0 ? parsed : current.grams,
-      };
-      return next;
-    });
+  const updateGrams = (id: string, text: string) => {
+    const grams = parseGrams(text);
+    setInvalidIds((previous) => ({ ...previous, [id]: grams === null }));
+    if (grams !== null) {
+      setMatches((previous) => setMatchGrams(previous, id, grams));
+    }
   };
 
-  const updateGramsCommit = (index: number, grams: number) => {
-    setMatches((prev) => {
-      const current = prev[index];
-      if (!current) return prev;
-
-      const next = [...prev];
-      next[index] = {
-        ...current,
-        grams: Number.isFinite(grams) && grams > 0 ? grams : 1,
-      };
-      return next;
-    });
-  };
-
-  const canSave = useMemo(() => {
-    return matches.length > 0 && matches.every((m) => m.grams > 0);
-  }, [matches]);
+  const canSave = useMemo(
+    () =>
+      matches.length > 0 &&
+      matches.every((m) => m.grams > 0 && !invalidIds[m.id]),
+    [matches, invalidIds],
+  );
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -305,15 +308,24 @@ export default function ScannerScreen() {
     }
   };
 
-  const handleManualCreate = (recognizedName: string, index?: number) => {
-    if (index !== undefined) {
+  const handleManualCreate = (recognizedName: string, id?: string) => {
+    if (id !== undefined) {
       // The food will be added from the manual flow: drop it here so it
       // cannot be saved twice when the person comes back.
-      setMatches((previous) => previous.filter((_, i) => i !== index));
+      setMatches((previous) => removeMatch(previous, id));
+      setInvalidIds((previous) => {
+        const { [id]: _removed, ...rest } = previous;
+        return rest;
+      });
     }
     router.push({
       pathname: '/diary/add-food',
-      params: { date: localDate, meal: targetMeal, name: recognizedName },
+      params: {
+        date: localDate,
+        meal: targetMeal,
+        create: '1',
+        ...(recognizedName ? { name: recognizedName } : {}),
+      },
     });
   };
 
@@ -322,6 +334,7 @@ export default function ScannerScreen() {
     setImageUri(null);
     setImageBase64(null);
     setMatches([]);
+    setInvalidIds({});
     setWarnings([]);
     setErrorMessage(null);
     setStep('camera');
@@ -367,7 +380,6 @@ export default function ScannerScreen() {
           targetMeal={targetMeal}
           warnings={warnings}
           onChangeGrams={updateGrams}
-          onCommitGrams={updateGramsCommit}
           onChangeMeal={setTargetMeal}
           onManualCreate={handleManualCreate}
           onRetake={reset}
@@ -594,7 +606,6 @@ function ResultsStep({
   targetMeal,
   warnings,
   onChangeGrams,
-  onCommitGrams,
   onChangeMeal,
   onManualCreate,
   onRetake,
@@ -602,10 +613,9 @@ function ResultsStep({
   matches: RecognizedFoodMatch[];
   targetMeal: MealType;
   warnings: string[];
-  onChangeGrams: (index: number, value: string) => void;
-  onCommitGrams: (index: number, grams: number) => void;
+  onChangeGrams: (id: string, text: string) => void;
   onChangeMeal: (meal: MealType) => void;
-  onManualCreate: (name: string, index: number) => void;
+  onManualCreate: (name: string, id: string) => void;
   onRetake: () => void;
 }) {
   const { colors } = useTheme();
@@ -642,17 +652,16 @@ function ResultsStep({
         ) : null}
 
         <View style={styles.matchList}>
-          {matches.map((match, index) => (
+          {matches.map((match) => (
             <ResultRow
-              key={index}
+              key={match.id}
               grams={match.grams}
-              index={index}
+              id={match.id}
               confidence={match.confidence}
               matched={match.food !== null}
               name={match.food?.name ?? match.recognized.name}
               originalName={match.recognized.name}
               onChangeGrams={onChangeGrams}
-              onCommitGrams={onCommitGrams}
               onManualCreate={onManualCreate}
             />
           ))}
@@ -692,40 +701,38 @@ function ResultsStep({
 function ResultRow({
   confidence,
   grams,
-  index,
+  id,
   matched,
   name,
   originalName,
   onChangeGrams,
-  onCommitGrams,
   onManualCreate,
 }: {
   confidence: number | null;
   grams: number;
-  index: number;
+  id: string;
   matched: boolean;
   name: string;
   originalName: string;
-  onChangeGrams: (index: number, value: string) => void;
-  onCommitGrams: (index: number, grams: number) => void;
-  onManualCreate: (name: string, index: number) => void;
+  onChangeGrams: (id: string, text: string) => void;
+  onManualCreate: (name: string, id: string) => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [text, setText] = useState(String(grams));
 
+  const gramsError = describeGramsError(text);
+
   const handleChange = (value: string) => {
     setText(value);
-    onChangeGrams(index, value);
+    onChangeGrams(id, value);
   };
 
+  // An invalid amount goes back to the last valid one (never silently to 1 g).
   const handleEndEditing = () => {
-    const normalized = text.replace(',', '.');
-    const parsed = Number(normalized);
-    const valid = Number.isFinite(parsed) && parsed > 0;
-    onCommitGrams(index, valid ? parsed : 1);
-    if (!valid) {
-      setText('1');
+    if (gramsError !== null) {
+      setText(String(grams));
+      onChangeGrams(id, String(grams));
     }
   };
 
@@ -733,6 +740,9 @@ function ResultRow({
     <View style={styles.resultRow}>
       <View style={styles.resultInfo}>
         <Text style={styles.resultName}>{name}</Text>
+        {gramsError !== null ? (
+          <Text style={styles.resultError}>{gramsError}</Text>
+        ) : null}
         {confidence !== null ? (
           <Text style={styles.resultConfidence}>
             {describeConfidence(confidence)}
@@ -753,7 +763,7 @@ function ResultRow({
           keyboardType="decimal-pad"
           onChangeText={handleChange}
           onEndEditing={handleEndEditing}
-          style={styles.gramsInput}
+          style={[styles.gramsInput, gramsError !== null && styles.gramsInputInvalid]}
           value={text}
         />
         <Text style={styles.gramsLabel}>g</Text>
@@ -762,7 +772,7 @@ function ResultRow({
             accessibilityLabel="Introducir datos manualmente"
             accessibilityRole="button"
             hitSlop={8}
-            onPress={() => onManualCreate(originalName, index)}
+            onPress={() => onManualCreate(originalName, id)}
             style={styles.manualButton}
           >
             <Ionicons color={colors.primary} name="create-outline" size={20} />
@@ -982,6 +992,13 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       textAlign: 'center',
+    },
+    gramsInputInvalid: {
+      borderColor: colors.danger,
+    },
+    resultError: {
+      color: colors.danger,
+      fontSize: 12,
     },
     gramsLabel: {
       color: colors.textMuted,

@@ -1,791 +1,397 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  type KeyboardTypeOptions,
-  Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
-import { foodInputNutrientsSchema, gramsSchema } from '@jfood/core';
-import { useSQLiteContext } from 'expo-sqlite';
-
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { StepIndicator } from '@/components/StepIndicator';
+import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
-import { FadeInView } from '@/features/motion/FadeInView';
+import { isScannerEnabled } from '@/config/api';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
-import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
-import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
-import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import {
-  createFood,
   getFavoriteFoods,
   getFoodById,
+  getFoodsByIds,
   getFrequentFoods,
   getRecentFoods,
   searchFoods,
   toggleFavorite,
 } from '@/data/sqlite/repositories/foodRepository';
-import { entryNutrients } from '@/features/diary/utils/totals';
-import { getServings, type Serving } from '@/data/sqlite/repositories/servingRepository';
-import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
+import { addPlanEntry } from '@/data/sqlite/repositories/planRepository';
 import { MEALS, type MealType } from '@/features/diary/types';
-import { isEditableSource, type Food } from '@/features/foods/types';
-import {
-  radius,
-  spacing,
-  useTheme,
-  type ThemeColors,
-} from '@/theme';
+import { formatLocalDate, isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
+import { CreateFoodForm } from '@/features/foods/components/CreateFoodForm';
+import { FoodRow } from '@/features/foods/components/FoodRow';
+import { QuantitySheet } from '@/features/foods/components/QuantitySheet';
+import type { Food } from '@/features/foods/types';
+import { FOOD_CATEGORIES } from '@/features/foods/utils/categories';
+import { normalizeBarcode } from '@/features/foods/utils/openFoodFacts';
+import { hapticSuccess } from '@/features/haptics/haptics';
+import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
-type Step = 'search' | 'create' | 'quantity';
+type Tab = 'recents' | 'favorites' | 'frequent' | 'catalog';
 
-const QUICK_GRAMS = [50, 100, 150, 200] as const;
+const TAB_OPTIONS = [
+  { value: 'recents', label: 'Recientes' },
+  { value: 'favorites', label: 'Favoritos' },
+  { value: 'frequent', label: 'Habituales' },
+  { value: 'catalog', label: 'Catálogo' },
+] as const;
 
 export default function AddFoodScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
   const database = useSQLiteContext();
-  const { date, meal, target, name, foodId } = useLocalSearchParams<{
+  const { date, meal, target, name, foodId, create, barcode } = useLocalSearchParams<{
     date?: string;
     meal?: string;
     target?: string;
     name?: string;
     foodId?: string;
+    /** '1' opens the "create food" form directly. */
+    create?: string;
+    /** Barcode to store with a food created by hand. */
+    barcode?: string;
   }>();
-  // Route params can come from a deep link: never trust them as a date.
-  const localDate =
-    date && isValidLocalDate(date) ? date : toLocalDate(new Date());
-  const initialMeal = (MEALS.map((m) => m.type).includes(meal as MealType)
-    ? meal
-    : 'breakfast') as MealType;
-  const isPlanTarget = target === 'plan';
-  const prefillName = name?.trim();
 
-  const [step, setStep] = useState<Step>(prefillName ? 'create' : 'search');
+  // Route params can come from a deep link: never trust them as a date or meal.
+  const localDate = date && isValidLocalDate(date) ? date : toLocalDate(new Date());
+  const initialMeal: MealType = MEALS.some((m) => m.type === meal) ? (meal as MealType) : 'breakfast';
+  const isPlanTarget = target === 'plan';
+  const prefillName = name?.trim() ?? '';
+  const pendingBarcode = barcode ? normalizeBarcode(barcode) : null;
+  const mealLabel = MEALS.find((m) => m.type === initialMeal)?.label ?? '';
+
+  const [creating, setCreating] = useState(Boolean(prefillName) || create === '1');
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<Food[]>([]);
-  const [favorites, setFavorites] = useState<Food[]>([]);
+  const [results, setResults] = useState<Food[]>([]);
   const [recents, setRecents] = useState<Food[]>([]);
+  const [favorites, setFavorites] = useState<Food[]>([]);
   const [frequents, setFrequents] = useState<Food[]>([]);
-  const [servings, setServings] = useState<Serving[]>([]);
-  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [grams, setGrams] = useState('100');
-  const [targetMeal, setTargetMeal] = useState<MealType>(initialMeal);
-  const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<Tab | null>(null);
+  const [category, setCategory] = useState(FOOD_CATEGORIES[0]?.name ?? '');
+  const [categoryFoods, setCategoryFoods] = useState<Food[]>([]);
+  const [selected, setSelected] = useState<Food | null>(null);
+  const [addedCount, setAddedCount] = useState(0);
 
-  const [createName, setCreateName] = useState(prefillName ?? '');
-  const [createBrand, setCreateBrand] = useState('');
-  const [createCalories, setCreateCalories] = useState('');
-  const [createProtein, setCreateProtein] = useState('');
-  const [createCarbs, setCreateCarbs] = useState('');
-  const [createFat, setCreateFat] = useState('');
-  const [createError, setCreateError] = useState<string | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestQuery = useRef('');
 
-  // Opened from the barcode scanner with a food already chosen: go straight to
-  // the amount step.
+  // Opened from the barcode scanner (or a suggestion) with a food already chosen.
   useEffect(() => {
     if (!foodId) return;
     let cancelled = false;
-
-    void getFoodById(database, foodId)
+    getFoodById(database, foodId)
       .then((food) => {
-        if (!cancelled && food) {
-          setSelectedFood(food);
-          setGrams('100');
-          setStep('quantity');
-        }
+        if (!cancelled && food) setSelected(food);
       })
       .catch(() => {
-        // Falls back to the search step.
+        // Falls back to the plain search screen.
       });
-
     return () => {
       cancelled = true;
     };
   }, [database, foodId]);
 
-  // Named portions of the chosen food ("1 unidad = 60 g") become quick amounts.
-  const selectedFoodId = selectedFood?.id ?? null;
-  useEffect(() => {
-    if (!selectedFoodId) return;
-    let cancelled = false;
-    void getServings(database, selectedFoodId)
-      .then((rows) => {
-        if (!cancelled) setServings(rows);
-      })
-      .catch(() => {
-        if (!cancelled) setServings([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [database, selectedFoodId]);
-
   const loadLists = useCallback(async () => {
-    const [favoriteRows, recentRows, frequentRows] = await Promise.all([
-      getFavoriteFoods(database, 20),
-      getRecentFoods(database, 10),
-      getFrequentFoods(database, 8),
+    const [recentRows, favoriteRows, frequentRows] = await Promise.all([
+      getRecentFoods(database, 12),
+      getFavoriteFoods(database, 30),
+      getFrequentFoods(database, 12),
     ]);
-    setFavorites(favoriteRows);
     setRecents(recentRows);
+    setFavorites(favoriteRows);
     setFrequents(frequentRows);
   }, [database]);
 
   useFocusEffect(
     useCallback(() => {
-      void loadLists();
+      void loadLists().catch(() => undefined);
     }, [loadLists]),
   );
 
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestQueryRef = useRef('');
-
+  // Foods of the chosen catalog category.
   useEffect(() => {
+    const ids = FOOD_CATEGORIES.find((c) => c.name === category)?.ids ?? [];
+    let cancelled = false;
+    getFoodsByIds(database, ids)
+      .then((foods) => {
+        if (!cancelled) setCategoryFoods(foods);
+      })
+      .catch(() => {
+        if (!cancelled) setCategoryFoods([]);
+      });
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      cancelled = true;
     };
-  }, []);
+  }, [database, category]);
+
+  useEffect(
+    () => () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    },
+    [],
+  );
 
   const handleQueryChange = useCallback(
     (text: string) => {
       setQuery(text);
-
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
       const trimmed = text.trim();
+      latestQuery.current = trimmed;
       if (!trimmed) {
-        setSearchResults([]);
+        setResults([]);
         setSearching(false);
-        latestQueryRef.current = '';
         return;
       }
 
-      latestQueryRef.current = trimmed;
-
-      searchTimeoutRef.current = setTimeout(async () => {
-        setSearching(true);
+      setSearching(true);
+      searchTimeout.current = setTimeout(async () => {
         try {
-          const results = await searchFoods(database, trimmed, 20);
-          if (latestQueryRef.current === trimmed) {
-            setSearchResults(results);
-          }
+          const found = await searchFoods(database, trimmed, 30);
+          if (latestQuery.current === trimmed) setResults(found);
+        } catch {
+          if (latestQuery.current === trimmed) setResults([]);
         } finally {
-          if (latestQueryRef.current === trimmed) {
-            setSearching(false);
-          }
+          if (latestQuery.current === trimmed) setSearching(false);
         }
-      }, 200);
+      }, 180);
     },
     [database],
   );
-
-  const handleSelectFood = (food: Food) => {
-    hapticSelection();
-    setSelectedFood(food);
-    setGrams('100');
-    setStep('quantity');
-  };
 
   const handleToggleFavorite = async (food: Food) => {
     try {
       await toggleFavorite(database, food.id);
       await loadLists();
-      if (query.trim()) {
-        const results = await searchFoods(database, query.trim(), 20);
-        setSearchResults(results);
-      }
+      const flip = (list: Food[]) =>
+        list.map((item) => (item.id === food.id ? { ...item, isFavorite: !item.isFavorite } : item));
+      setResults(flip);
+      setCategoryFoods(flip);
     } catch {
-      // Silently ignore; the user can retry.
+      // The star simply does not change; the person can try again.
     }
   };
 
-  const handleCreateFood = async () => {
-    const name = createName.trim();
-    if (!name) {
-      setCreateError('El nombre es obligatorio.');
-      return;
-    }
-
-    const calories = parseOptionalNumber(createCalories);
-    const protein = parseOptionalNumber(createProtein);
-    const carbs = parseOptionalNumber(createCarbs);
-    const fat = parseOptionalNumber(createFat);
-
-    if (!calories.valid || !protein.valid || !carbs.valid || !fat.valid) {
-      setCreateError(
-        'Revisa los valores nutricionales: deben ser números válidos o estar vacíos.',
-      );
-      return;
-    }
-
-    const macros = {
-      caloriesKcal: calories.value,
-      proteinGrams: protein.value,
-      carbohydrateGrams: carbs.value,
-      fatGrams: fat.value,
-    };
-
-    const parsedMacros = foodInputNutrientsSchema.safeParse(macros);
-    if (!parsedMacros.success) {
-      setCreateError(describeNutrientsError(parsedMacros.error.issues));
-      return;
-    }
-
-    setCreateError(null);
-
-    try {
-      const food = await createFood(database, {
-        name,
-        brand: createBrand.trim() || null,
-        ...parsedMacros.data,
-      });
-      hapticSuccess();
-      showToast('Alimento creado.');
-      setSelectedFood(food);
-      setGrams('100');
-      setStep('quantity');
-    } catch {
-      setCreateError('No se ha podido crear el alimento.');
-    }
-  };
-
-  const handleAddEntry = async () => {
-    if (!selectedFood) return;
-
-    const normalizedGrams = grams.replace(',', '.');
-    const parsedGrams = Number(normalizedGrams);
-
-    if (!gramsSchema.safeParse(parsedGrams).success) {
-      Alert.alert(
-        'Cantidad no válida',
-        'Introduce una cantidad mayor que 0 y de hasta 100.000 gramos.',
-      );
-      return;
-    }
-
-    setSaving(true);
+  const handleSubmit = async (grams: number, mealType: MealType, keepOpen: boolean) => {
+    if (!selected) return;
 
     try {
       if (isPlanTarget) {
-        await addPlanEntry(database, {
-          localDate,
-          mealType: targetMeal,
-          food: selectedFood,
-          grams: parsedGrams,
-        });
+        await addPlanEntry(database, { localDate, mealType, food: selected, grams });
       } else {
-        await addEntry(database, {
-          localDate,
-          mealType: targetMeal,
-          food: selectedFood,
-          grams: parsedGrams,
-        });
+        await addEntry(database, { localDate, mealType, food: selected, grams });
       }
-      hapticSuccess();
+    } catch {
+      showToast('No se ha podido añadir la entrada.', 'error');
+      return;
+    }
+
+    hapticSuccess();
+    if (keepOpen) {
+      setAddedCount((count) => count + 1);
+      setSelected(null);
+      showToast(`${selected.name} añadido.`);
+      void loadLists().catch(() => undefined);
+    } else {
       showToast(isPlanTarget ? 'Añadido al plan.' : 'Añadido al diario.');
       router.back();
-    } catch {
-      setSaving(false);
-      showToast('No se ha podido añadir la entrada.', 'error');
     }
   };
 
-  const canAdd = useMemo(() => {
-    const normalized = grams.replace(',', '.');
-    const parsed = Number(normalized);
-    return gramsSchema.safeParse(parsed).success;
-  }, [grams]);
+  const openInfo = (food: Food) => router.push({ pathname: '/foods/[id]', params: { id: food.id } });
+  const shortcutParams = { date: localDate, meal: initialMeal, target };
 
-  const stepIndex = step === 'search' ? 0 : step === 'create' ? 1 : 2;
-
-  // Live result of the typed amount: "= 195 kcal · P 4 g · C 42 g · G 0 g".
-  const previewText = useMemo(() => {
-    if (!selectedFood || !canAdd) {
-      return 'Introduce una cantidad para ver el resultado.';
-    }
-    const eaten = entryNutrients(
-      {
-        caloriesKcal: selectedFood.caloriesKcal,
-        proteinGrams: selectedFood.proteinGrams,
-        carbohydrateGrams: selectedFood.carbohydrateGrams,
-        fatGrams: selectedFood.fatGrams,
-      },
-      Number(grams.replace(',', '.')),
+  if (creating) {
+    return (
+      <Screen>
+        <Text style={styles.title}>Crear alimento</Text>
+        <CreateFoodForm
+          barcode={pendingBarcode}
+          initialName={prefillName}
+          onCancel={() => setCreating(false)}
+          onCreated={(food) => {
+            hapticSuccess();
+            showToast('Alimento creado.');
+            setCreating(false);
+            setSelected(food);
+          }}
+        />
+      </Screen>
     );
-    const part = (value: number | null, unit: string) =>
-      value === null ? `— ${unit}` : `${Math.round(value * 10) / 10} ${unit}`;
-    return `= ${part(eaten.caloriesKcal, 'kcal')} · P ${part(eaten.proteinGrams, 'g')} · C ${part(eaten.carbohydrateGrams, 'g')} · G ${part(eaten.fatGrams, 'g')}`;
-  }, [selectedFood, canAdd, grams]);
+  }
+
+  const activeTab: Tab = tab ?? (recents.length > 0 ? 'recents' : 'catalog');
+  const searchActive = query.trim() !== '';
+  const listFor: Record<Tab, Food[]> = {
+    recents,
+    favorites,
+    frequent: frequents,
+    catalog: categoryFoods,
+  };
+  const emptyText: Record<Tab, string> = {
+    recents: 'Aún no has añadido alimentos.',
+    favorites: 'Marca con ⭐ los alimentos que uses a menudo.',
+    frequent: 'Aquí aparecerán los alimentos que más registras.',
+    catalog: 'Este catálogo está vacío.',
+  };
+  const visible = searchActive ? results : listFor[activeTab];
 
   return (
     <Screen>
-      <StepIndicator current={stepIndex} steps={3} />
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Añadir alimento</Text>
+          <Text style={styles.subtitle}>
+            {isPlanTarget ? 'Al plan' : mealLabel} · {formatLocalDate(localDate)}
+          </Text>
+        </View>
+        {addedCount > 0 ? (
+          <Chip emoji="✅" label={`Listo (${addedCount})`} onPress={() => router.back()} selected />
+        ) : null}
+      </View>
 
-      {step === 'search' ? (
-        <FadeInView key="search" style={styles.step}>
-          <ScreenHeader
-            subtitle="Busca un alimento, crea uno nuevo o elige de tus favoritos."
-            title="Añadir alimento"
-          />
-          <View style={styles.searchBar}>
-            <Ionicons
-              color={colors.textMuted}
-              name="search-outline"
-              size={20}
-            />
-            <TextInput
-              accessibilityLabel="Buscar alimentos"
-              autoFocus
-              onChangeText={handleQueryChange}
-              placeholder="Buscar alimentos..."
-              placeholderTextColor={colors.textMuted}
-              style={styles.searchInput}
-              value={query}
-            />
-            {query ? (
-              <Pressable
-                hitSlop={8}
-                onPress={() => setQuery('')}
-              >
-                <Ionicons
-                  color={colors.textMuted}
-                  name="close-circle"
-                  size={20}
-                />
-              </Pressable>
-            ) : null}
-          </View>
+      <View style={styles.searchBar}>
+        <Ionicons color={colors.textMuted} name="search-outline" size={20} />
+        <TextInput
+          accessibilityLabel="Buscar alimentos"
+          autoCorrect={false}
+          onChangeText={handleQueryChange}
+          placeholder="Buscar: pollo, arroz, manzana…"
+          placeholderTextColor={colors.textMuted}
+          style={styles.searchInput}
+          value={query}
+        />
+        {query ? (
+          <Pressable
+            accessibilityLabel="Borrar búsqueda"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => handleQueryChange('')}
+          >
+            <Ionicons color={colors.textMuted} name="close-circle" size={20} />
+          </Pressable>
+        ) : null}
+      </View>
 
-          {searching ? (
-            <View style={styles.centered}>
-              <ActivityIndicator color={colors.primary} />
-            </View>
-          ) : query.trim() ? (
-            <FoodSection
-              foods={searchResults}
-              emptyMessage="Ningún alimento coincide con tu búsqueda."
-              title="Resultados"
-              onSelect={handleSelectFood}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ) : (
-            <>
-              <FoodSection
-                foods={favorites}
-                emptyMessage="No tienes favoritos todavía."
-                title="Favoritos"
-                onSelect={handleSelectFood}
-                onToggleFavorite={handleToggleFavorite}
-              />
-              <View style={styles.sectionSpacer} />
-              <FoodSection
-                foods={recents}
-                emptyMessage="No has añadido alimentos recientemente."
-                title="Recientes"
-                onSelect={handleSelectFood}
-                onToggleFavorite={handleToggleFavorite}
-              />
-              {frequents.length > 0 ? (
-                <>
-                  <View style={styles.sectionSpacer} />
-                  <FoodSection
-                    foods={frequents}
-                    emptyMessage=""
-                    title="Más usados"
-                    onSelect={handleSelectFood}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                </>
-              ) : null}
-            </>
-          )}
+      <ScrollView
+        contentContainerStyle={styles.shortcuts}
+        horizontal
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+      >
+        <Chip emoji="✏️" label="Crear" onPress={() => setCreating(true)} />
+        <Chip emoji="🍲" label="Receta" onPress={() => router.push('/recipe')} />
+        {isScannerEnabled() ? (
+          <>
+            <Chip emoji="📷" label="Escanear" onPress={() => router.push({ pathname: '/scanner', params: shortcutParams })} />
+            <Chip emoji="🔖" label="Código" onPress={() => router.push({ pathname: '/barcode', params: shortcutParams })} />
+          </>
+        ) : null}
+      </ScrollView>
 
-          <Button
-            icon="create-outline"
-            title="Crear alimento nuevo"
-            variant="secondary"
-            onPress={() => setStep('create')}
-          />
-          <Button
-            icon="restaurant-outline"
-            title="Crear receta"
-            variant="secondary"
-            onPress={() => router.push('/recipe')}
-          />
-        </FadeInView>
+      {searchActive ? null : (
+        <Segmented onChange={setTab} options={TAB_OPTIONS} value={activeTab} />
+      )}
+
+      {!searchActive && activeTab === 'catalog' ? (
+        <ScrollView
+          contentContainerStyle={styles.categories}
+          horizontal
+          keyboardShouldPersistTaps="handled"
+          showsHorizontalScrollIndicator={false}
+        >
+          {FOOD_CATEGORIES.map((item) => (
+            <Chip
+              key={item.name}
+              emoji={item.emoji}
+              label={item.name}
+              onPress={() => setCategory(item.name)}
+              selected={item.name === category}
+            />
+          ))}
+        </ScrollView>
       ) : null}
 
-      {step === 'create' ? (
-        <FadeInView key="create" style={styles.step}>
-          <ScreenHeader
-            subtitle="Introduce los datos del alimento por cada 100 g."
-            title="Crear alimento"
-          />
-          <View style={styles.form}>
-            <FormField label="Nombre *" value={createName} onChange={setCreateName} />
-            <FormField
-              label="Marca (opcional)"
-              value={createBrand}
-              onChange={setCreateBrand}
+      {searching ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : visible.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>
+            {searchActive ? 'Ningún alimento coincide con tu búsqueda.' : emptyText[activeTab]}
+          </Text>
+          {searchActive ? (
+            <Button
+              icon="create-outline"
+              title={`Crear «${query.trim()}»`}
+              variant="secondary"
+              onPress={() => setCreating(true)}
             />
-            <MacroField
-              label="Calorías (kcal / 100 g)"
-              value={createCalories}
-              onChange={setCreateCalories}
+          ) : null}
+        </View>
+      ) : (
+        <View style={styles.list}>
+          {visible.map((food) => (
+            <FoodRow
+              key={food.id}
+              food={food}
+              onInfo={openInfo}
+              onPress={setSelected}
+              onToggleFavorite={(item) => void handleToggleFavorite(item)}
             />
-            <View style={styles.macroRow}>
-              <MacroField
-                label="Proteínas (g)"
-                value={createProtein}
-                onChange={setCreateProtein}
-              />
-              <MacroField
-                label="Carbohidratos (g)"
-                value={createCarbs}
-                onChange={setCreateCarbs}
-              />
-              <MacroField
-                label="Grasas (g)"
-                value={createFat}
-                onChange={setCreateFat}
-              />
-            </View>
-            {createError ? (
-              <Text style={styles.errorText}>{createError}</Text>
-            ) : null}
-          </View>
+          ))}
+        </View>
+      )}
 
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonFlex}>
-              <Button
-                title="Volver"
-                variant="secondary"
-                onPress={() => setStep('search')}
-              />
-            </View>
-            <View style={styles.buttonFlex}>
-              <Button title="Continuar" onPress={handleCreateFood} />
-            </View>
-          </View>
-        </FadeInView>
-      ) : null}
-
-      {step === 'quantity' && selectedFood ? (
-        <FadeInView key="quantity" style={styles.step}>
-          <ScreenHeader
-            subtitle={`Valores por 100 g de ${selectedFood.name}`}
-            title="Cantidad"
-          />
-          <View style={styles.foodSummary}>
-            <Text style={styles.foodName}>{selectedFood.name}</Text>
-            {selectedFood.brand ? (
-              <Text style={styles.foodBrand}>{selectedFood.brand}</Text>
-            ) : null}
-            <Text style={styles.foodMacros}>
-              {formatMacro(selectedFood.caloriesKcal, 'kcal')} ·{' '}
-              {formatMacro(selectedFood.proteinGrams, 'P')} ·{' '}
-              {formatMacro(selectedFood.carbohydrateGrams, 'C')} ·{' '}
-              {formatMacro(selectedFood.fatGrams, 'G')}
-            </Text>
-          </View>
-
-          <View style={styles.form}>
-            <Text style={styles.preview}>{previewText}</Text>
-            <FormField
-              accessibilityLabel="Cantidad en gramos"
-              keyboardType="decimal-pad"
-              label="Cantidad (g)"
-              value={grams}
-              onChange={setGrams}
-            />
-            {selectedFood && servings.some((s) => s.foodId === selectedFood.id) ? (
-              <View style={styles.mealOptions}>
-                {servings.filter((s) => s.foodId === selectedFood.id).map((serving) => (
-                  <Pressable
-                    key={serving.id}
-                    accessibilityLabel={`${serving.label}, ${serving.grams} gramos`}
-                    accessibilityRole="button"
-                    onPress={() => {
-                      hapticSelection();
-                      setGrams(String(serving.grams));
-                    }}
-                    style={[
-                      styles.mealOption,
-                      grams === String(serving.grams) && styles.mealOptionSelected,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.mealOptionText,
-                        grams === String(serving.grams) && styles.mealOptionTextSelected,
-                      ]}
-                    >
-                      {serving.label} ({serving.grams} g)
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-            <View style={styles.mealOptions}>
-              {QUICK_GRAMS.map((amount) => (
-                <Pressable
-                  key={amount}
-                  accessibilityLabel={`${amount} gramos`}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    hapticSelection();
-                    setGrams(String(amount));
-                  }}
-                  style={[
-                    styles.mealOption,
-                    grams === String(amount) && styles.mealOptionSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.mealOptionText,
-                      grams === String(amount) && styles.mealOptionTextSelected,
-                    ]}
-                  >
-                    {amount} g
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.label}>Comida</Text>
-            <View style={styles.mealOptions}>
-              {MEALS.map(({ type, label }) => (
-                <Pressable
-                  key={type}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: targetMeal === type }}
-                  onPress={() => {
-                    hapticSelection();
-                    setTargetMeal(type);
-                  }}
-                  style={[
-                    styles.mealOption,
-                    targetMeal === type && styles.mealOptionSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.mealOptionText,
-                      targetMeal === type && styles.mealOptionTextSelected,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonFlex}>
-              <Button
-                title="Volver"
-                variant="secondary"
-                onPress={() => setStep('search')}
-              />
-            </View>
-            <View style={styles.buttonFlex}>
-              <Button
-                disabled={!canAdd || saving}
-                loading={saving}
-                title="Añadir"
-                onPress={handleAddEntry}
-              />
-            </View>
-          </View>
-        </FadeInView>
-      ) : null}
+      <QuantitySheet
+        addedCount={addedCount}
+        food={selected}
+        forPlan={isPlanTarget}
+        initialMeal={initialMeal}
+        onClose={() => setSelected(null)}
+        onSubmit={handleSubmit}
+      />
     </Screen>
   );
 }
 
-function FoodSection({
-  foods,
-  title,
-  emptyMessage,
-  onSelect,
-  onToggleFavorite,
-}: {
-  foods: Food[];
-  title: string;
-  emptyMessage: string;
-  onSelect: (food: Food) => void;
-  onToggleFavorite: (food: Food) => void;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {foods.length === 0 ? (
-        <Text style={styles.emptyText}>{emptyMessage}</Text>
-      ) : (
-        foods.map((food) => (
-          <View key={food.id} style={styles.foodRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onSelect(food)}
-              style={({ pressed }) => [
-                styles.foodInfo,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.foodName}>{food.name}</Text>
-              <Text style={styles.foodMacros}>
-                {formatMacro(food.caloriesKcal, 'kcal')} ·{' '}
-                {formatMacro(food.proteinGrams, 'P')} ·{' '}
-                {formatMacro(food.carbohydrateGrams, 'C')} ·{' '}
-                {formatMacro(food.fatGrams, 'G')}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={
-                food.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'
-              }
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => onToggleFavorite(food)}
-              style={({ pressed }) => [
-                styles.favoriteButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons
-                color={food.isFavorite ? colors.accent : colors.textMuted}
-                name={food.isFavorite ? 'star' : 'star-outline'}
-                size={22}
-              />
-            </Pressable>
-            {isEditableSource(food.source) ? (
-              <Pressable
-                accessibilityLabel={`Editar ${food.name}`}
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={() => router.push({ pathname: '/foods/[id]', params: { id: food.id } })}
-                style={({ pressed }) => [
-                  styles.editButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Ionicons color={colors.primary} name="create-outline" size={20} />
-              </Pressable>
-            ) : null}
-          </View>
-        ))
-      )}
-    </View>
-  );
-}
-
-function FormField({
-  accessibilityLabel,
-  keyboardType,
-  label,
-  value,
-  onChange,
-}: {
-  accessibilityLabel?: string;
-  keyboardType?: KeyboardTypeOptions;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <View>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        accessibilityLabel={accessibilityLabel ?? label}
-        keyboardType={keyboardType}
-        onChangeText={onChange}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-        value={value}
-      />
-    </View>
-  );
-}
-
-function MacroField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  return (
-    <View style={styles.macroField}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        keyboardType="decimal-pad"
-        onChangeText={onChange}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-        value={value}
-      />
-    </View>
-  );
-}
-
-interface OptionalNumber {
-  value: number | null;
-  valid: boolean;
-}
-
-function parseOptionalNumber(value: string): OptionalNumber {
-  const normalized = value.replace(',', '.').trim();
-  if (normalized === '') {
-    return { value: null, valid: true };
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed)
-    ? { value: parsed, valid: true }
-    : { value: null, valid: false };
-}
-
-function formatMacro(value: number | null, unit: string): string {
-  return value === null ? `— ${unit}` : `${value} ${unit}`;
-}
-
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    header: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.md,
+      justifyContent: 'space-between',
+    },
+    headerText: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      ...typography.headline,
+      color: colors.text,
+      fontSize: 26,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
     searchBar: {
       alignItems: 'center',
       backgroundColor: colors.surface,
@@ -794,160 +400,37 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       flexDirection: 'row',
       gap: spacing.md,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
     },
     searchInput: {
       color: colors.text,
       flex: 1,
       fontSize: 16,
-      padding: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    shortcuts: {
+      gap: spacing.sm,
+    },
+    categories: {
+      gap: spacing.sm,
+    },
+    list: {
+      gap: spacing.sm,
     },
     centered: {
       alignItems: 'center',
-      flex: 1,
-      justifyContent: 'center',
       minHeight: 120,
+      justifyContent: 'center',
     },
-    section: {
-      gap: spacing.sm,
-    },
-    step: {
-      flex: 1,
-      gap: spacing.lg,
-    },
-    sectionSpacer: {
-      height: spacing.xl,
-    },
-    sectionTitle: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '700',
-      marginBottom: spacing.xs,
+    empty: {
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.xl,
     },
     emptyText: {
+      ...typography.body,
       color: colors.textMuted,
-      fontSize: 14,
-      fontStyle: 'italic',
-    },
-    foodRow: {
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      flexDirection: 'row',
-      gap: spacing.sm,
-      padding: spacing.md,
-    },
-    foodInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    foodName: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '600',
-    },
-    foodBrand: {
-      color: colors.textMuted,
-      fontSize: 13,
-    },
-    foodMacros: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    preview: {
-      color: colors.primary,
-      fontSize: 15,
-      fontWeight: '700',
-    },
-    favoriteButton: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 48,
-      minWidth: 48,
-      padding: spacing.xs,
-    },
-    editButton: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 48,
-      minWidth: 48,
-      padding: spacing.xs,
-    },
-    form: {
-      gap: spacing.md,
-    },
-    label: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
-      marginBottom: spacing.xs,
-    },
-    input: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: 16,
-      padding: spacing.md,
-    },
-    macroRow: {
-      flexDirection: 'row',
-      gap: spacing.md,
-    },
-    macroField: {
-      flex: 1,
-    },
-    errorText: {
-      color: colors.danger,
-      fontSize: 13,
-    },
-    buttonRow: {
-      flexDirection: 'row',
-      gap: spacing.md,
-      marginTop: 'auto',
-    },
-    buttonFlex: {
-      flex: 1,
-    },
-    foodSummary: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      gap: spacing.xs,
-      padding: spacing.xl,
-    },
-    mealOptions: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.sm,
-    },
-    mealOption: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-    },
-    mealOptionSelected: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    mealOptionText: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    mealOptionTextSelected: {
-      color: colors.textOnPrimary,
-    },
-    pressed: {
-      opacity: 0.75,
+      textAlign: 'center',
     },
   });
 }

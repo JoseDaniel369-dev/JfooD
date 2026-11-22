@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { addDays, assertLocalDate, startOfWeek, toLocalDate } from '@/features/diary/utils/date';
+import type { WeekStripDayData } from '@/features/diary/utils/weekStrip';
 import type { DayCalories } from '@/features/stats/utils/streak';
 
 export interface DiaryStats {
@@ -60,4 +61,39 @@ export async function getDiaryStats(
     loggedDates: dateRows.map((row) => row.local_date),
     week,
   };
+}
+
+/**
+ * What was logged on each day of the week (Monday to Sunday) that contains
+ * `anyDateInWeek`, keyed by date. Days without entries are absent.
+ */
+export async function getWeekOverview(
+  database: SQLiteDatabase,
+  anyDateInWeek: string,
+): Promise<Record<string, WeekStripDayData>> {
+  assertLocalDate(anyDateInWeek);
+  const monday = startOfWeek(anyDateInWeek);
+  const sunday = addDays(monday, 6);
+
+  const rows = await database.getAllAsync<{
+    local_date: string;
+    kcal: number | null;
+    entries: number;
+  }>(
+    `SELECT meal.local_date,
+            SUM(entry.calories_kcal * entry.grams / 100.0) AS kcal,
+            COUNT(*) AS entries
+     FROM diary_entries AS entry
+     INNER JOIN diary_meals AS meal ON meal.id = entry.meal_id
+     WHERE meal.local_date >= ? AND meal.local_date <= ?
+     GROUP BY meal.local_date`,
+    [monday, sunday],
+  );
+
+  return Object.fromEntries(
+    rows.map((row) => [
+      row.local_date,
+      { caloriesKcal: row.kcal, entries: row.entries },
+    ]),
+  );
 }

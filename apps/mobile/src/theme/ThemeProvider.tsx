@@ -28,6 +28,8 @@ interface ThemeContextValue {
   scheme: ColorScheme;
   preference: ThemePreference;
   setPreference: (preference: ThemePreference) => Promise<void>;
+  /** Re-reads the saved preference (after a backup restore replaced it). */
+  reloadPreference: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -86,6 +88,16 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     [database],
   );
 
+  const reloadPreference = useCallback(async () => {
+    try {
+      setPreferenceState(
+        resolvePreference(await getSetting(database, THEME_SETTING_KEY)),
+      );
+    } catch {
+      // Keep the current preference if the setting cannot be read.
+    }
+  }, [database]);
+
   const scheme = resolveScheme(preference, systemScheme);
 
   const value = useMemo<ThemeContextValue>(
@@ -94,8 +106,9 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       scheme,
       preference,
       setPreference,
+      reloadPreference,
     }),
-    [scheme, preference, setPreference],
+    [scheme, preference, setPreference, reloadPreference],
   );
 
   if (!isReady) {

@@ -1,9 +1,14 @@
 import type { PropsWithChildren } from 'react';
-import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { useEffect, useId } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-import { durations, easings } from '@/features/motion/motion';
 import { useTheme } from '@/theme';
 
 interface ProgressRingProps extends PropsWithChildren {
@@ -12,14 +17,24 @@ interface ProgressRingProps extends PropsWithChildren {
   maximum: number;
   size?: number;
   strokeWidth?: number;
-  /** Colour of the progress arc. Defaults to the accent colour. */
+  /** Solid colour of the progress arc. Defaults to the accent colour. */
   color?: string;
+  /** Two colours for a gradient arc (wins over `color`). */
+  gradient?: readonly [string, string];
   /** Colour of the empty ring. Defaults to a translucent white (for hero cards). */
   trackColor?: string;
   accessibilityLabel: string;
 }
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/** Fraction of the ring that is filled, between 0 and 1. */
+export function ringProgress(value: number, maximum: number): number {
+  if (!(maximum > 0) || !Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.min(Math.max(value / maximum, 0), 1);
+}
 
 /** Circular progress indicator with room for content in the centre. */
 export function ProgressRing({
@@ -28,6 +43,7 @@ export function ProgressRing({
   size = 84,
   strokeWidth = 8,
   color,
+  gradient,
   trackColor = 'rgba(255,255,255,0.18)',
   accessibilityLabel,
   children,
@@ -35,20 +51,24 @@ export function ProgressRing({
   const { colors } = useTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = maximum <= 0 ? 0 : Math.min(Math.max(value / maximum, 0), 1);
+  const progress = ringProgress(value, maximum);
+  // useId returns ids with colons, which are not valid inside url(#…).
+  const gradientId = `ring${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
-  const [offset] = useState(() => new Animated.Value(circumference));
+  const filled = useSharedValue(0);
 
   useEffect(() => {
-    const animation = Animated.timing(offset, {
-      toValue: circumference * (1 - progress),
-      duration: durations.slower,
-      useNativeDriver: false,
-      easing: (x) => easings.easeOutCubic(x),
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [offset, progress, circumference]);
+    filled.set(
+      withTiming(progress, {
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [filled, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - filled.value),
+  }));
 
   return (
     <View
@@ -57,6 +77,14 @@ export function ProgressRing({
       style={{ height: size, width: size }}
     >
       <Svg height={size} width={size}>
+        {gradient ? (
+          <Defs>
+            <LinearGradient id={gradientId} x1="0" x2="1" y1="0" y2="1">
+              <Stop offset="0" stopColor={gradient[0]} />
+              <Stop offset="1" stopColor={gradient[1]} />
+            </LinearGradient>
+          </Defs>
+        ) : null}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -66,15 +94,15 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
         />
         <AnimatedCircle
+          animatedProps={animatedProps}
           cx={size / 2}
           cy={size / 2}
           fill="none"
           origin={`${size / 2}, ${size / 2}`}
           r={radius}
           rotation={-90}
-          stroke={color ?? colors.accent}
+          stroke={gradient ? `url(#${gradientId})` : (color ?? colors.accent)}
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
           strokeLinecap="round"
           strokeWidth={strokeWidth}
         />

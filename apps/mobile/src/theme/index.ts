@@ -1,6 +1,8 @@
 export {
   darkColors,
   fonts,
+  glow,
+  gradients,
   heroGradient,
   lightColors,
   radius,

@@ -1,34 +1,37 @@
-import { gramsSchema, nutrientsPer100gSchema } from '@jfood/core';
+import { gramsSchema, nutrientsPer100gSchema, type Nutrients } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import {
+  NUTRIENT_PLACEHOLDERS,
+  nutrientColumnsSql,
+  nutrientParams,
+  nutrientsFromRow,
+  type NutrientRow,
+} from '@/data/sqlite/nutrientColumns';
 import { ensureMeal } from '@/data/sqlite/repositories/diaryRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { addDays, assertLocalDate } from '@/features/diary/utils/date';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 import { buildMeals, summarizeEntries } from '@/features/diary/utils/summarize';
 import type { PlanDay } from '@/features/plan/types';
-import type { Food } from '@/features/foods/types';
+import { foodNutrients, type Food } from '@/features/foods/types';
 
-interface EntryRow {
+interface EntryRow extends NutrientRow {
   id: string;
   meal_type: MealType;
   food_id: string | null;
   food_name: string;
   grams: number;
-  calories_kcal: number | null;
-  protein_grams: number | null;
-  carbohydrate_grams: number | null;
-  fat_grams: number | null;
 }
 
 export async function getPlanDay(
   database: SQLiteDatabase,
   localDate: string,
 ): Promise<PlanDay> {
+  assertLocalDate(localDate);
   const rows = await database.getAllAsync<EntryRow>(
     `SELECT id, meal_type, food_name, grams,
-            calories_kcal, protein_grams,
-            carbohydrate_grams, fat_grams
+            ${nutrientColumnsSql()}
      FROM plan_entries
      WHERE local_date = ?
      ORDER BY created_at, id`,
@@ -53,12 +56,7 @@ function mapEntry(row: EntryRow): DiaryEntry {
     mealType: row.meal_type,
     foodName: row.food_name,
     grams: row.grams,
-    per100g: {
-      caloriesKcal: row.calories_kcal,
-      proteinGrams: row.protein_grams,
-      carbohydrateGrams: row.carbohydrate_grams,
-      fatGrams: row.fat_grams,
-    },
+    per100g: nutrientsFromRow(row),
   };
 }
 
@@ -75,12 +73,7 @@ export async function addPlanEntry(
 ): Promise<void> {
   assertLocalDate(input.localDate);
   const validGrams = gramsSchema.parse(input.grams);
-  const per100g = nutrientsPer100gSchema.parse({
-    caloriesKcal: input.food.caloriesKcal,
-    proteinGrams: input.food.proteinGrams,
-    carbohydrateGrams: input.food.carbohydrateGrams,
-    fatGrams: input.food.fatGrams,
-  });
+  const per100g = nutrientsPer100gSchema.parse(foodNutrients(input.food));
 
   const now = new Date().toISOString();
   const id = generateId();
@@ -88,9 +81,9 @@ export async function addPlanEntry(
   await database.runAsync(
     `INSERT INTO plan_entries (
       id, local_date, meal_type, food_id, food_name, grams,
-      calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+      ${nutrientColumnsSql()},
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ${NUTRIENT_PLACEHOLDERS}, ?, ?)`,
     [
       id,
       input.localDate,
@@ -98,10 +91,7 @@ export async function addPlanEntry(
       input.food.id,
       input.food.name,
       validGrams,
-      per100g.caloriesKcal,
-      per100g.proteinGrams,
-      per100g.carbohydrateGrams,
-      per100g.fatGrams,
+      ...nutrientParams(per100g),
       now,
       now,
     ],
@@ -213,7 +203,7 @@ export async function copyPlanDay(
 
   const rows = await database.getAllAsync<EntryRow>(
     `SELECT meal_type, food_id, food_name, grams,
-            calories_kcal, protein_grams, carbohydrate_grams, fat_grams
+            ${nutrientColumnsSql()}
      FROM plan_entries
      WHERE local_date = ?
      ORDER BY created_at, id`,
@@ -230,9 +220,9 @@ export async function copyPlanDay(
       await database.runAsync(
         `INSERT INTO plan_entries (
           id, local_date, meal_type, food_id, food_name, grams,
-          calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+          ${nutrientColumnsSql()},
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ${NUTRIENT_PLACEHOLDERS}, ?, ?)`,
         [
           generateId(),
           toLocalDate,
@@ -240,10 +230,7 @@ export async function copyPlanDay(
           row.food_id,
           row.food_name,
           row.grams,
-          row.calories_kcal,
-          row.protein_grams,
-          row.carbohydrate_grams,
-          row.fat_grams,
+          ...nutrientParams(nutrientsFromRow(row)),
           now,
           now,
         ],
@@ -258,10 +245,10 @@ export async function copyPlanToDiary(
   database: SQLiteDatabase,
   localDate: string,
 ): Promise<void> {
+  assertLocalDate(localDate);
   const rows = await database.getAllAsync<EntryRow>(
     `SELECT meal_type, food_id, food_name, grams,
-            calories_kcal, protein_grams,
-            carbohydrate_grams, fat_grams
+            ${nutrientColumnsSql()}
      FROM plan_entries
      WHERE local_date = ?
      ORDER BY created_at, id`,
@@ -281,23 +268,136 @@ export async function copyPlanToDiary(
       await database.runAsync(
         `INSERT INTO diary_entries (
           id, meal_id, food_id, food_name, grams,
-          calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+          ${nutrientColumnsSql()},
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ${NUTRIENT_PLACEHOLDERS}, ?, ?)`,
         [
           id,
           mealId,
           row.food_id,
           row.food_name,
           row.grams,
-          row.calories_kcal,
-          row.protein_grams,
-          row.carbohydrate_grams,
-          row.fat_grams,
+          ...nutrientParams(nutrientsFromRow(row)),
           now,
           now,
         ],
       );
     }
   });
+}
+
+/** Everything needed to put a deleted plan entry back exactly as it was. */
+export interface PlanEntrySnapshot {
+  id: string;
+  localDate: string;
+  mealType: MealType;
+  foodId: string | null;
+  foodName: string;
+  grams: number;
+  per100g: Nutrients;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PlanSnapshotRow extends NutrientRow {
+  id: string;
+  local_date: string;
+  meal_type: MealType;
+  food_id: string | null;
+  food_name: string;
+  grams: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Deletes a plan entry and returns what was deleted, so the screen can offer "Deshacer". */
+export async function removePlanEntry(
+  database: SQLiteDatabase,
+  entryId: string,
+): Promise<PlanEntrySnapshot | null> {
+  const row = await database.getFirstAsync<PlanSnapshotRow>(
+    `SELECT id, local_date, meal_type, food_id, food_name, grams, created_at, updated_at,
+            ${nutrientColumnsSql()}
+     FROM plan_entries WHERE id = ?`,
+    [entryId],
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  await database.runAsync('DELETE FROM plan_entries WHERE id = ?', [entryId]);
+
+  return {
+    id: row.id,
+    localDate: row.local_date,
+    mealType: row.meal_type,
+    foodId: row.food_id,
+    foodName: row.food_name,
+    grams: row.grams,
+    per100g: nutrientsFromRow(row),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** Puts back an entry deleted with `removePlanEntry`. */
+export async function restorePlanEntry(
+  database: SQLiteDatabase,
+  snapshot: PlanEntrySnapshot,
+): Promise<void> {
+  assertLocalDate(snapshot.localDate);
+  const food = snapshot.foodId
+    ? await database.getFirstAsync<{ id: string }>('SELECT id FROM foods WHERE id = ?', [
+        snapshot.foodId,
+      ])
+    : null;
+
+  await database.runAsync(
+    `INSERT OR REPLACE INTO plan_entries (
+      id, local_date, meal_type, food_id, food_name, grams,
+      ${nutrientColumnsSql()},
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ${NUTRIENT_PLACEHOLDERS}, ?, ?)`,
+    [
+      snapshot.id,
+      snapshot.localDate,
+      snapshot.mealType,
+      food?.id ?? null,
+      snapshot.foodName,
+      snapshot.grams,
+      ...nutrientParams(snapshot.per100g),
+      snapshot.createdAt,
+      snapshot.updatedAt,
+    ],
+  );
+}
+
+/** Adds a copy of a plan entry (same day, meal, amount and snapshot). */
+export async function duplicatePlanEntry(
+  database: SQLiteDatabase,
+  entryId: string,
+): Promise<boolean> {
+  const exists = await database.getFirstAsync<{ id: string }>(
+    'SELECT id FROM plan_entries WHERE id = ?',
+    [entryId],
+  );
+  if (!exists) {
+    return false;
+  }
+
+  const now = new Date().toISOString();
+  await database.runAsync(
+    `INSERT INTO plan_entries (
+       id, local_date, meal_type, food_id, food_name, grams,
+       ${nutrientColumnsSql()},
+       created_at, updated_at
+     )
+     SELECT ?, local_date, meal_type, food_id, food_name, grams,
+            ${nutrientColumnsSql()},
+            ?, ?
+     FROM plan_entries WHERE id = ?`,
+    [generateId(), now, now, entryId],
+  );
+  return true;
 }

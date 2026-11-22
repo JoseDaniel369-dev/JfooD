@@ -16,16 +16,19 @@ export const BACKUP_TABLES = {
   foods: [
     'id', 'name', 'normalized_name', 'brand', 'barcode', 'source', 'external_id',
     'calories_kcal', 'protein_grams', 'carbohydrate_grams', 'fat_grams',
+    'fiber_grams', 'sugars_grams', 'salt_grams',
     'is_favorite', 'cached_at', 'created_at', 'updated_at',
   ],
   diary_meals: ['id', 'local_date', 'meal_type', 'created_at'],
   diary_entries: [
     'id', 'meal_id', 'food_id', 'food_name', 'grams', 'calories_kcal',
-    'protein_grams', 'carbohydrate_grams', 'fat_grams', 'created_at', 'updated_at',
+    'protein_grams', 'carbohydrate_grams', 'fat_grams',
+    'fiber_grams', 'sugars_grams', 'salt_grams', 'created_at', 'updated_at',
   ],
   plan_entries: [
     'id', 'local_date', 'meal_type', 'food_id', 'food_name', 'grams',
     'calories_kcal', 'protein_grams', 'carbohydrate_grams', 'fat_grams',
+    'fiber_grams', 'sugars_grams', 'salt_grams',
     'created_at', 'updated_at',
   ],
   user_profile: [
@@ -178,6 +181,12 @@ const DELETE_ORDER: BackupTable[] = [
 /**
  * Replaces ALL user data with the backup, atomically: if anything fails (bad
  * value, broken reference) the transaction rolls back and nothing changes.
+ *
+ * It runs as an EXCLUSIVE transaction: a plain one shares the connection with
+ * the rest of the app, so a write made meanwhile (for example saving the
+ * theme) would be swept into this transaction and lost on rollback. The
+ * exclusive one runs on its own connection, where foreign keys are not
+ * enforced, so references are verified explicitly before committing.
  */
 export async function restoreBackup(
   database: SQLiteDatabase,
@@ -186,9 +195,14 @@ export async function restoreBackup(
   const counts = Object.fromEntries(TABLE_NAMES.map((t) => [t, 0])) as BackupCounts;
 
   try {
-    await database.withTransactionAsync(async () => {
+    await database.withExclusiveTransactionAsync(async (transaction) => {
       for (const table of DELETE_ORDER) {
-        await database.runAsync(`DELETE FROM ${table}`);
+        // Settings belong to this device (onboarding done, privacy notice
+        // accepted, theme). A backup that does not include them must not wipe them.
+        if (table === 'app_settings' && backup.tables.app_settings === undefined) {
+          continue;
+        }
+        await transaction.runAsync(`DELETE FROM ${table}`);
       }
 
       for (const table of TABLE_NAMES) {
@@ -200,12 +214,19 @@ export async function restoreBackup(
           );
           const placeholders = columns.map(() => '?').join(', ');
 
-          await database.runAsync(
+          await transaction.runAsync(
             `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`,
             columns.map((column) => row[column] ?? null),
           );
           counts[table] += 1;
         }
+      }
+
+      const broken = await transaction.getAllAsync<{ table: string }>(
+        'PRAGMA foreign_key_check',
+      );
+      if (broken.length > 0) {
+        throw new Error(`Referencias rotas en ${broken[0]?.table ?? 'la copia'}.`);
       }
     });
   } catch (error) {

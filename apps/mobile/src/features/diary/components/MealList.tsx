@@ -1,9 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
+import { SwipeableRow } from '@/components/SwipeableRow';
 import { entryNutrients, formatPartialAmount } from '@/features/diary/utils/totals';
+import { foodEmoji } from '@/features/foods/utils/foodEmoji';
 import { hapticSelection } from '@/features/haptics/haptics';
+import { rowLayout } from '@/features/motion/springs';
 import {
   radius,
   shadows,
@@ -24,14 +28,18 @@ interface MealListProps {
   variant?: 'summary' | 'detailed';
   onAddFood?: (mealType: MealType) => void;
   onEntryPress?: (entry: DiaryEntry) => void;
+  /** Swipe an entry to the left to delete it (offer "Deshacer"). */
+  onEntryDelete?: (entry: DiaryEntry) => void;
+  /** Swipe an entry to the right to duplicate it. */
+  onEntryDuplicate?: (entry: DiaryEntry) => void;
   onMealPress?: (mealType: MealType) => void;
 }
 
-const MEAL_ICONS: Record<MealType, keyof typeof Ionicons.glyphMap> = {
-  breakfast: 'sunny-outline',
-  lunch: 'restaurant-outline',
-  snack: 'cafe-outline',
-  dinner: 'moon-outline',
+const MEAL_EMOJIS: Record<MealType, string> = {
+  breakfast: '🍳',
+  lunch: '🥗',
+  snack: '🍎',
+  dinner: '🍝',
 };
 
 export function MealList({
@@ -39,6 +47,8 @@ export function MealList({
   variant = 'summary',
   onAddFood,
   onEntryPress,
+  onEntryDelete,
+  onEntryDuplicate,
   onMealPress,
 }: MealListProps) {
   const { colors } = useTheme();
@@ -54,11 +64,7 @@ export function MealList({
         const headerContent = (
           <>
             <View style={styles.iconContainer}>
-              <Ionicons
-                color={colors.primary}
-                name={MEAL_ICONS[type]}
-                size={21}
-              />
+              <Text style={styles.mealEmoji}>{MEAL_EMOJIS[type]}</Text>
             </View>
             <View style={styles.mealCopy}>
               <Text style={styles.mealName}>{label}</Text>
@@ -151,8 +157,17 @@ export function MealList({
                     const eaten = entryNutrients(entry.per100g, entry.grams);
 
                     return (
-                    <Pressable
+                    <Animated.View
                       key={entry.id}
+                      entering={FadeIn}
+                      exiting={FadeOut}
+                      layout={rowLayout}
+                    >
+                    <SwipeableRow
+                      onDelete={onEntryDelete ? () => onEntryDelete(entry) : undefined}
+                      onDuplicate={onEntryDuplicate ? () => onEntryDuplicate(entry) : undefined}
+                    >
+                    <Pressable
                       accessibilityLabel={`${entry.foodName}, ${entry.grams} gramos`}
                       accessibilityRole="button"
                       onPress={() => onEntryPress?.(entry)}
@@ -161,6 +176,9 @@ export function MealList({
                         pressed && styles.pressed,
                       ]}
                     >
+                      <View style={styles.entryEmoji}>
+                        <Text style={styles.entryEmojiText}>{foodEmoji(entry.foodName)}</Text>
+                      </View>
                       <View style={styles.entryMain}>
                         <Text style={styles.entryName}>{entry.foodName}</Text>
                         <Text style={styles.entryGrams}>{entry.grams} g</Text>
@@ -189,6 +207,8 @@ export function MealList({
                         <Text style={styles.unit}> kcal</Text>
                       </Text>
                     </Pressable>
+                    </SwipeableRow>
+                    </Animated.View>
                     );
                   })
                 )}
@@ -247,6 +267,20 @@ function createStyles(colors: ThemeColors) {
       height: 42,
       justifyContent: 'center',
       width: 42,
+    },
+    mealEmoji: {
+      fontSize: 22,
+    },
+    entryEmoji: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      height: 38,
+      justifyContent: 'center',
+      width: 38,
+    },
+    entryEmojiText: {
+      fontSize: 20,
     },
     mealCopy: {
       flex: 1,

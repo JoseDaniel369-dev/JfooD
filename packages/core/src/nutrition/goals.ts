@@ -207,6 +207,40 @@ const KCAL_PER_CARB_GRAM = 4;
 const KCAL_PER_FAT_GRAM = 9;
 
 /**
+ * Daily references for the secondary nutrients. They are DERIVED from the
+ * calorie goal (never stored), so changing the goal updates them for free.
+ */
+export interface SecondaryTargets {
+  /** Minimum to reach. */
+  fiberGrams: number;
+  /** Maximum of free sugars. */
+  sugarsGrams: number;
+  /** Maximum of salt. */
+  saltGrams: number;
+}
+
+const FIBER_GRAMS_PER_1000_KCAL = 14;
+const MIN_FIBER_GRAMS = 25;
+const MAX_SUGARS_SHARE_OF_KCAL = 0.1;
+const MAX_SALT_GRAMS = 5;
+
+/**
+ * WHO/EFSA references: fibre 14 g per 1000 kcal (at least 25 g), free sugars
+ * under 10 % of the energy and salt under 5 g.
+ */
+export function calculateSecondaryTargets(caloriesKcal: number): SecondaryTargets {
+  const kcal = Math.max(0, caloriesKcal);
+  return {
+    fiberGrams: Math.max(
+      MIN_FIBER_GRAMS,
+      Math.round((kcal * FIBER_GRAMS_PER_1000_KCAL) / 1000),
+    ),
+    sugarsGrams: Math.round((kcal * MAX_SUGARS_SHARE_OF_KCAL) / KCAL_PER_CARB_GRAM),
+    saltGrams: MAX_SALT_GRAMS,
+  };
+}
+
+/**
  * Splits TDEE into macros:
  * - Protein: 1.6 g per kg of body weight.
  * - Fat: 25 % of total calories.

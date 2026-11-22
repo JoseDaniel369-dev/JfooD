@@ -37,6 +37,7 @@ interface WeightRow {
 export async function getProfileFormData(
   database: SQLiteDatabase,
 ): Promise<ProfileFormData | null> {
+  const today = toLocalDate(new Date());
   const [profileRow, weightRow] = await Promise.all([
     database.getFirstAsync<ProfileRow>(
       `SELECT height_cm, birth_date, mifflin_variant, activity_level,
@@ -47,8 +48,10 @@ export async function getProfileFormData(
     database.getFirstAsync<WeightRow>(
       `SELECT weight_kg
        FROM weight_logs
+       WHERE local_date <= ?
        ORDER BY local_date DESC, created_at DESC
        LIMIT 1`,
+      [today],
     ),
   ]);
 

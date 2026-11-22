@@ -15,7 +15,7 @@ import { useToast } from '@/components/Toast';
 import { createFood, searchFoods } from '@/data/sqlite/repositories/foodRepository';
 import { saveServing } from '@/data/sqlite/repositories/servingRepository';
 import { hapticSuccess } from '@/features/haptics/haptics';
-import type { Food } from '@/features/foods/types';
+import { foodNutrients, type Food } from '@/features/foods/types';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface Ingredient {
@@ -73,12 +73,7 @@ export default function RecipeScreen() {
         error: null,
         result: computeRecipe(
           ingredients.map((item) => ({
-            per100g: {
-              caloriesKcal: item.food.caloriesKcal,
-              proteinGrams: item.food.proteinGrams,
-              carbohydrateGrams: item.food.carbohydrateGrams,
-              fatGrams: item.food.fatGrams,
-            },
+            per100g: foodNutrients(item.food),
             grams: toNumber(item.grams),
           })),
           weight,

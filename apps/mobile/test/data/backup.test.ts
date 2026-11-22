@@ -155,3 +155,31 @@ test('a backup made before the weight goal existed restores with the default goa
   );
   assert.deepEqual(row, { goal_type: 'maintain', weekly_rate_kg: 0 });
 });
+
+test('a backup without app settings keeps this device’s settings', async () => {
+  const source = await populated();
+  const json = JSON.parse(JSON.stringify(await exportBackup(source.sqlite)));
+  delete json.tables.app_settings;
+
+  const target = await createMigratedDatabase();
+  await setSetting(target.asSqlite(), 'onboarding_done', '1');
+  await restoreBackup(target.asSqlite(), parseBackup(json, LATEST_SCHEMA_VERSION));
+
+  const row = await target.getFirstAsync<{ value: string }>(
+    "SELECT value FROM app_settings WHERE key = 'onboarding_done'",
+  );
+  assert.equal(row?.value, '1');
+  assert.equal((await getDiaryDay(target.asSqlite(), DATE)).entries.length, 2);
+});
+
+test('a backup that includes app settings replaces them', async () => {
+  const source = await populated();
+  const json = JSON.parse(JSON.stringify(await exportBackup(source.sqlite)));
+
+  const target = await createMigratedDatabase();
+  await setSetting(target.asSqlite(), 'onboarding_done', '1');
+  await restoreBackup(target.asSqlite(), parseBackup(json, LATEST_SCHEMA_VERSION));
+
+  const rows = await target.getAllAsync<{ key: string }>('SELECT key FROM app_settings');
+  assert.deepEqual(rows.map((r) => r.key), ['theme']);
+});

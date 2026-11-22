@@ -1,3 +1,5 @@
+import { makeNutrients, type Nutrients } from '@jfood/core';
+
 export type FoodSource = 'bedca' | 'open_food_facts' | 'user' | 'seed';
 
 export interface Food {
@@ -12,6 +14,9 @@ export interface Food {
   proteinGrams: number | null;
   carbohydrateGrams: number | null;
   fatGrams: number | null;
+  fiberGrams: number | null;
+  sugarsGrams: number | null;
+  saltGrams: number | null;
   isFavorite: boolean;
   cachedAt: string | null;
   createdAt: string;
@@ -34,4 +39,20 @@ export interface CreateFoodInput {
   proteinGrams?: number | null;
   carbohydrateGrams?: number | null;
   fatGrams?: number | null;
+  fiberGrams?: number | null;
+  sugarsGrams?: number | null;
+  saltGrams?: number | null;
+}
+
+/** The nutrients per 100 g of a food, as the engine expects them. */
+export function foodNutrients(food: Pick<Food, 'caloriesKcal' | 'proteinGrams' | 'carbohydrateGrams' | 'fatGrams' | 'fiberGrams' | 'sugarsGrams' | 'saltGrams'>): Nutrients {
+  return makeNutrients({
+    caloriesKcal: food.caloriesKcal,
+    proteinGrams: food.proteinGrams,
+    carbohydrateGrams: food.carbohydrateGrams,
+    fatGrams: food.fatGrams,
+    fiberGrams: food.fiberGrams,
+    sugarsGrams: food.sugarsGrams,
+    saltGrams: food.saltGrams,
+  });
 }

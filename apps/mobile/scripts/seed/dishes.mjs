@@ -1,0 +1,38 @@
+// fdcId = null → valores de referencia propios por 100 g (sal en gramos). Son
+// platos caseros típicos: las cantidades varían mucho entre recetas, así que son orientativos.
+export const category = 'Platos preparados';
+
+export const foods = [
+  ['Tortilla de patatas', null, [['1 porción', 130], ['1 pincho', 60]], { kcal: 195, protein: 6.3, carbs: 13.5, fat: 12.8, fiber: 1.2, sugars: 1.2, salt: 0.6 }],
+  ['Tortilla francesa', null, [['1 tortilla (2 huevos)', 110]], { kcal: 185, protein: 11, carbs: 0.5, fat: 15, fiber: 0, sugars: 0.4, salt: 0.7 }],
+  ['Paella mixta', null, [['1 plato', 300]], { kcal: 150, protein: 7.5, carbs: 18, fat: 5, fiber: 0.8, sugars: 0.8, salt: 0.8 }],
+  ['Gazpacho', null, [['1 vaso', 250], ['1 bol', 300]], { kcal: 45, protein: 0.8, carbs: 4.5, fat: 2.5, fiber: 0.8, sugars: 3.5, salt: 0.6 }],
+  ['Salmorejo', null, [['1 bol', 300]], { kcal: 120, protein: 2.5, carbs: 8, fat: 8.5, fiber: 1, sugars: 3.5, salt: 0.9 }],
+  ['Croquetas de jamón', null, [['1 unidad', 30], ['1 ración (6)', 180]], { kcal: 230, protein: 7, carbs: 20, fat: 13, fiber: 1, sugars: 1.5, salt: 1.1 }],
+  ['Lentejas estofadas', null, [['1 plato', 300]], { kcal: 110, protein: 6.5, carbs: 13, fat: 3.5, fiber: 4, sugars: 1, salt: 0.8 }],
+  ['Macarrones con tomate', null, [['1 plato', 300]], { kcal: 135, protein: 4.5, carbs: 22, fat: 3, fiber: 1.8, sugars: 3, salt: 0.5 }],
+  ['Espaguetis a la boloñesa', null, [['1 plato', 300]], { kcal: 140, protein: 7, carbs: 17, fat: 5, fiber: 1.5, sugars: 3, salt: 0.6 }],
+  ['Ensaladilla rusa', null, [['1 ración', 150]], { kcal: 190, protein: 3, carbs: 10, fat: 15, fiber: 1.5, sugars: 2, salt: 0.8 }],
+  ['Arroz con pollo', null, [['1 plato', 300]], { kcal: 150, protein: 9.5, carbs: 18, fat: 4.5, fiber: 0.8, sugars: 0.8, salt: 0.8 }],
+  ['Pollo al ajillo', null, [['1 ración', 200]], { kcal: 190, protein: 22, carbs: 1.5, fat: 10, fiber: 0.2, sugars: 0.2, salt: 0.7 }],
+  ['Pisto', null, [['1 ración', 200]], { kcal: 70, protein: 1.2, carbs: 6, fat: 4.5, fiber: 2, sugars: 4.5, salt: 0.5 }],
+  ['Patatas bravas', null, [['1 ración', 200]], { kcal: 170, protein: 2.2, carbs: 22, fat: 8, fiber: 2, sugars: 2, salt: 0.7 }],
+  ['Patatas fritas (freidora)', 170698, [['1 ración', 150]]],
+  ['Pan con tomate', null, [['1 rebanada', 60]], { kcal: 230, protein: 6, carbs: 38, fat: 6, fiber: 2.5, sugars: 3, salt: 1.2 }],
+  ['Bocadillo de jamón serrano', null, [['1 unidad', 180]], { kcal: 270, protein: 13, carbs: 38, fat: 7, fiber: 2, sugars: 2, salt: 2.2 }],
+  ['Empanada de atún', null, [['1 porción', 120]], { kcal: 250, protein: 8, carbs: 28, fat: 12, fiber: 1.5, sugars: 2, salt: 1.2 }],
+  ['Crema de verduras', null, [['1 bol', 300]], { kcal: 45, protein: 1.2, carbs: 6, fat: 1.8, fiber: 1.2, sugars: 2.5, salt: 0.5 }],
+  ['Caldo de pollo', null, [['1 taza', 250]], { kcal: 8, protein: 0.8, carbs: 0.4, fat: 0.3, fiber: 0, sugars: 0.2, salt: 0.8 }],
+  ['Sopa de fideos', null, [['1 plato', 300]], { kcal: 35, protein: 2.5, carbs: 4, fat: 1, fiber: 0.2, sugars: 0.3, salt: 0.7 }],
+  ['Albóndigas en salsa', null, [['1 unidad', 30], ['1 ración (5)', 150]], { kcal: 150, protein: 10, carbs: 7, fat: 9, fiber: 0.8, sugars: 2, salt: 0.9 }],
+  ['Calamares a la romana', null, [['1 ración', 150]], { kcal: 235, protein: 11, carbs: 20, fat: 12, fiber: 0.8, sugars: 0.5, salt: 0.9 }],
+  ['Pizza de queso', 170317, [['1 porción', 110]]],
+  ['Hamburguesa con pan y condimentos', 170710, [['1 unidad', 220]]],
+  ['Nuggets de pollo', 173297, [['1 unidad', 18], ['1 ración (6)', 108]]],
+  ['Lasaña', 169851, [['1 ración', 300]]],
+  ['Ravioli de queso', 169037, [['1 plato', 250]]],
+  ['Burrito de alubias', 170734, [['1 unidad', 190]]],
+  ['Empanada de carne', 167660, [['1 unidad', 100]]],
+  ['Falafel', 172455, [['1 unidad', 17]]],
+  ['Ensalada de atún', 175160, [['1 ración', 150]]],
+];

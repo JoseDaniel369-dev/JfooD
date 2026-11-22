@@ -71,3 +71,23 @@ test('muted text stays readable on the cream canvas', () => {
   assert.ok(contrast(lightColors.textMuted, lightColors.background) >= 4.5);
   assert.ok(contrast(darkColors.textMuted, darkColors.background) >= 4.5);
 });
+
+test('text stays readable over the tinted macro backgrounds in both themes', () => {
+  for (const palette of [lightColors, darkColors]) {
+    for (const tint of [
+      palette.proteinLight,
+      palette.carbohydratesLight,
+      palette.fatLight,
+      palette.waterLight,
+    ]) {
+      assert.ok(contrast(palette.text, tint) >= 4.5, `${palette.text} on ${tint}`);
+    }
+  }
+});
+
+test('hero gradient keeps three stops, all readable with white text', () => {
+  assert.equal(heroGradient.length, 3);
+  for (const stop of heroGradient) {
+    assert.ok(contrast('#FFFFFF', stop) >= 4.5, stop);
+  }
+});

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { makeNutrients } from '@jfood/core';
+
 import { addEntry, getDiaryDay } from '../../src/data/sqlite/repositories/diaryRepository';
 import { updateEntryNutrients } from '../../src/data/sqlite/repositories/entryNutrientsRepository';
 import { createFood, getFoodById } from '../../src/data/sqlite/repositories/foodRepository';
@@ -8,7 +10,7 @@ import { addPlanEntry, getPlanDay } from '../../src/data/sqlite/repositories/pla
 import { createMigratedDatabase } from '../helpers/sqliteAdapter';
 
 const DATE = '2026-11-01';
-const completed = { caloriesKcal: 200, proteinGrams: 10, carbohydrateGrams: 20, fatGrams: 8 };
+const completed = makeNutrients({ caloriesKcal: 200, proteinGrams: 10, carbohydrateGrams: 20, fatGrams: 8 });
 
 async function setup() {
   const db = await createMigratedDatabase();

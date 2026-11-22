@@ -1,3 +1,4 @@
+import { PROFILE_LIMITS } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { generateId } from '@/data/sqlite/utils/id';
@@ -47,12 +48,16 @@ export async function upsertWeightLog(
     throw new Error('No se puede registrar el peso de una fecha futura.');
   }
 
-  if (!Number.isFinite(input.weightKg) || input.weightKg <= 0) {
-    throw new Error('El peso debe ser un número mayor que 0.');
-  }
-
-  if (input.weightKg > 300) {
-    throw new Error('El peso no puede superar los 300 kg.');
+  // Same range the profile accepts: a weight outside it would make the
+  // profile impossible to save (it is read back as the form's weight).
+  if (
+    !Number.isFinite(input.weightKg) ||
+    input.weightKg < PROFILE_LIMITS.minWeightKg ||
+    input.weightKg > PROFILE_LIMITS.maxWeightKg
+  ) {
+    throw new Error(
+      `El peso debe estar entre ${PROFILE_LIMITS.minWeightKg} y ${PROFILE_LIMITS.maxWeightKg} kg.`,
+    );
   }
 
   const now = new Date().toISOString();

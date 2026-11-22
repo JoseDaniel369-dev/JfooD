@@ -22,11 +22,16 @@ export async function shareBackup(database: SQLiteDatabase): Promise<void> {
   const uri = `${FileSystem.cacheDirectory}jfood-copia-${toLocalDate(new Date())}.json`;
   await FileSystem.writeAsStringAsync(uri, JSON.stringify(backup));
 
-  await Sharing.shareAsync(uri, {
-    mimeType: 'application/json',
-    dialogTitle: 'Guardar copia de seguridad de JfooD',
-    UTI: 'public.json',
-  });
+  try {
+    await Sharing.shareAsync(uri, {
+      mimeType: 'application/json',
+      dialogTitle: 'Guardar copia de seguridad de JfooD',
+      UTI: 'public.json',
+    });
+  } finally {
+    // The file holds the person's health data: do not leave it in the cache.
+    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => undefined);
+  }
 }
 
 /** Lets the person choose a backup file. Returns null when they cancel. */
@@ -47,6 +52,9 @@ export async function pickBackup(): Promise<BackupFile | null> {
     parsed = JSON.parse(await FileSystem.readAsStringAsync(asset.uri));
   } catch {
     throw new BackupError('No se ha podido leer el archivo: no es un JSON válido.');
+  } finally {
+    // The picker copied the file into the cache; it is no longer needed.
+    await FileSystem.deleteAsync(asset.uri, { idempotent: true }).catch(() => undefined);
   }
 
   return parseBackup(parsed, LATEST_SCHEMA_VERSION);

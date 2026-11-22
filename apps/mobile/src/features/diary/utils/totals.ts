@@ -2,14 +2,12 @@ import {
   calculateNutrients,
   type Nutrients,
   type PartialNutrient,
+  type PartialNutrients,
+  type SecondaryTargets,
+  unknownNutrients,
 } from '@jfood/core';
 
-export const UNKNOWN_NUTRIENTS: Nutrients = {
-  caloriesKcal: null,
-  proteinGrams: null,
-  carbohydrateGrams: null,
-  fatGrams: null,
-};
+export const UNKNOWN_NUTRIENTS: Nutrients = unknownNutrients();
 
 /**
  * Nutrients eaten for one entry. A row that cannot be validated (corrupt or
@@ -90,4 +88,57 @@ export function formatRemaining(remaining: RemainingCalories): string {
     return `${remaining.amount} kcal`;
   }
   return `${remaining.over ? '≥' : '≤'} ${remaining.amount} kcal`;
+}
+
+/** Grams for display with a Spanish decimal comma: "28", "3,1", "0,4". */
+export function formatGrams(value: number): string {
+  const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return String(rounded).replace('.', ',');
+}
+
+export interface ExtraTotal {
+  key: 'fiberGrams' | 'sugarsGrams' | 'saltGrams';
+  label: string;
+  /** "28" or "≥ 28": the amount eaten, a lower bound when data is missing. */
+  amount: string;
+  /** "25 g mín." / "50 g máx.": the daily reference. */
+  target: string;
+  /** True when a maximum (sugars, salt) is already exceeded. */
+  exceeded: boolean;
+}
+
+/**
+ * Fibre, sugars and salt of a day against their references. A nutrient with no
+ * known value at all is left out instead of showing a misleading 0.
+ */
+export function describeExtras(
+  partial: Pick<PartialNutrients, 'fiberGrams' | 'sugarsGrams' | 'saltGrams'>,
+  targets: SecondaryTargets,
+  hasEntries: boolean,
+): ExtraTotal[] {
+  if (!hasEntries) {
+    return [];
+  }
+
+  const rows: ExtraTotal[] = [];
+  const definitions = [
+    { key: 'fiberGrams', label: 'Fibra', target: `${targets.fiberGrams} g mín.`, max: null },
+    { key: 'sugarsGrams', label: 'Azúcares', target: `${targets.sugarsGrams} g máx.`, max: targets.sugarsGrams },
+    { key: 'saltGrams', label: 'Sal', target: `${targets.saltGrams} g máx.`, max: targets.saltGrams },
+  ] as const;
+
+  for (const { key, label, target, max } of definitions) {
+    const value = partial[key];
+    if (value.knownTotal === 0 && !value.complete) {
+      continue;
+    }
+    rows.push({
+      key,
+      label,
+      amount: `${value.complete ? '' : '≥ '}${formatGrams(value.knownTotal)}`,
+      target,
+      exceeded: max !== null && value.knownTotal > max,
+    });
+  }
+  return rows;
 }

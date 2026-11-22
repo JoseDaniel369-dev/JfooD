@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -8,7 +8,7 @@ import { ActionSheet } from '@/components/ActionSheet';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { DayNavigator } from '@/components/DayNavigator';
+import { WeekStrip } from '@/components/WeekStrip';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Fab } from '@/components/Fab';
@@ -16,26 +16,28 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
-import { PlanWeekStrip } from '@/features/plan/components/PlanWeekStrip';
+import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
 import {
   copyPlanDay,
   copyPlanToDiary,
-  deletePlanEntry,
+  duplicatePlanEntry,
   movePlanEntry,
+  removePlanEntry,
+  restorePlanEntry,
   updatePlanEntryGrams,
+  type PlanEntrySnapshot,
 } from '@/data/sqlite/repositories/planRepository';
 import { countDiaryEntries } from '@/data/sqlite/repositories/diaryRepository';
 import { updateEntryNutrients } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
 import { NutrientsEditorModal } from '@/features/diary/components/NutrientsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
-import { addDays, toLocalDate } from '@/features/diary/utils/date';
+import { addDays, formatLocalDate } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import { describeUnknown, formatPartialAmount } from '@/features/diary/utils/totals';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
-import { animateNextLayout } from '@/features/motion/motion';
-import { useSwipeDays } from '@/features/motion/useSwipeDays';
 import { usePlanDay } from '@/features/plan/hooks/usePlanDay';
+import { usePlanWeekOverview } from '@/features/plan/hooks/usePlanWeekOverview';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 import type { PartialNutrient } from '@jfood/core';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
@@ -56,27 +58,28 @@ export default function PlannerScreen() {
     usePlanDay();
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [activeEntry, setActiveEntry] = useState<DiaryEntry | null>(null);
-  const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
   const [completingEntry, setCompletingEntry] = useState<DiaryEntry | null>(null);
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
   const [existingDiaryEntries, setExistingDiaryEntries] = useState(0);
 
-  const handlePreviousDay = useCallback(() => {
-    setLocalDate((current) => addDays(current, -1));
-  }, [setLocalDate]);
+  const weekData = usePlanWeekOverview(
+    localDate,
+    day ? `${day.entries.length}|${day.consumedPartial.caloriesKcal.knownTotal}` : '',
+  );
 
-  const handleNextDay = useCallback(() => {
-    setLocalDate((current) => addDays(current, 1));
-  }, [setLocalDate]);
-
-  const handleToday = useCallback(() => {
-    setLocalDate(toLocalDate(new Date()));
-  }, [setLocalDate]);
-
-  const swipe = useSwipeDays({
-    onPrev: handlePreviousDay,
-    onNext: handleNextDay,
-  });
+  // The calorie goal gives each day of the strip its progress ring.
+  const [goalKcal, setGoalKcal] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    getLatestGoals(database, localDate)
+      .then(({ goals }) => {
+        if (!cancelled) setGoalKcal(goals.caloriesKcal);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [database, localDate]);
 
   const handleAddFood = (mealType: MealType) => {
     router.push({
@@ -93,7 +96,6 @@ export default function PlannerScreen() {
     setActiveEntry(null);
     void (async () => {
       try {
-        animateNextLayout();
         await movePlanEntry(database, entry.id, localDate, targetMealType);
         await refresh();
       } catch {
@@ -102,25 +104,48 @@ export default function PlannerScreen() {
     })();
   };
 
-  const handleDelete = (entry: DiaryEntry) => {
-    setActiveEntry(null);
-    setEntryToDelete(entry);
+  const undoDelete = async (snapshot: PlanEntrySnapshot) => {
+    try {
+      await restorePlanEntry(database, snapshot);
+      await refresh();
+      hapticSuccess();
+    } catch {
+      showToast('No se ha podido deshacer.', 'error');
+    }
   };
 
-  const confirmDelete = () => {
-    const entry = entryToDelete;
-    setEntryToDelete(null);
-    if (!entry) return;
+  // Deleting never asks "are you sure?": it offers to undo instead.
+  const handleDelete = (entry: DiaryEntry) => {
+    setActiveEntry(null);
 
     void (async () => {
       try {
-        animateNextLayout();
-        await deletePlanEntry(database, entry.id);
+        const snapshot = await removePlanEntry(database, entry.id);
         await refresh();
         hapticWarning();
-        showToast('Entrada eliminada del plan.');
+        if (snapshot) {
+          showToast('Entrada eliminada del plan.', 'success', {
+            label: 'Deshacer',
+            onPress: () => void undoDelete(snapshot),
+          });
+        }
       } catch {
         showToast('No se ha podido eliminar la entrada.', 'error');
+      }
+    })();
+  };
+
+  const handleDuplicate = (entry: DiaryEntry) => {
+    setActiveEntry(null);
+
+    void (async () => {
+      try {
+        await duplicatePlanEntry(database, entry.id);
+        await refresh();
+        hapticSuccess();
+        showToast('Entrada duplicada.');
+      } catch {
+        showToast('No se ha podido duplicar la entrada.', 'error');
       }
     })();
   };
@@ -151,7 +176,6 @@ export default function PlannerScreen() {
     if (!editingEntry) return;
 
     try {
-      animateNextLayout();
       await updatePlanEntryGrams(database, editingEntry.id, grams);
       setEditingEntry(null);
       await refresh();
@@ -171,7 +195,12 @@ export default function PlannerScreen() {
     setShowCopyConfirm(true);
   };
 
+  // A second tap while copying would duplicate every entry.
+  const copyingRef = useRef(false);
+
   const handleDuplicateToNextDay = async () => {
+    if (copyingRef.current) return;
+    copyingRef.current = true;
     try {
       const target = addDays(localDate, 1);
       const count = await copyPlanDay(database, localDate, target);
@@ -180,12 +209,16 @@ export default function PlannerScreen() {
       setLocalDate(target);
     } catch {
       showToast('No se ha podido duplicar el día.', 'error');
+    } finally {
+      copyingRef.current = false;
     }
   };
 
   const handleCopyToDiary = async () => {
     setShowCopyConfirm(false);
     if (!day || day.entries.length === 0) return;
+    if (copyingRef.current) return;
+    copyingRef.current = true;
 
     try {
       await copyPlanToDiary(database, localDate);
@@ -193,6 +226,8 @@ export default function PlannerScreen() {
       showToast('El día se ha copiado al diario.');
     } catch {
       showToast('No se ha podido copiar el plan al diario.', 'error');
+    } finally {
+      copyingRef.current = false;
     }
   };
 
@@ -225,6 +260,11 @@ export default function PlannerScreen() {
             setActiveEntry(null);
             setCompletingEntry(activeEntry);
           },
+        },
+        {
+          label: 'Duplicar',
+          icon: 'copy-outline' as const,
+          onPress: () => handleDuplicate(activeEntry),
         },
         ...moveOptions,
         {
@@ -259,31 +299,16 @@ export default function PlannerScreen() {
     <Screen fab>
       <ScreenHeader
         title="Planificador"
-        subtitle="Organiza tus comidas por días"
+        subtitle={formatLocalDate(localDate)}
       />
 
-      <Animated.View
-        accessibilityHint="Desliza hacia los lados para cambiar de día"
-        style={[
-          styles.swipeContainer,
-          { opacity: swipe.opacity, transform: [{ translateX: swipe.translateX }] },
-        ]}
-        {...swipe.panHandlers}
-      >
+      <View style={styles.swipeContainer}>
         <Card animated>
-          <DayNavigator
-            date={localDate}
-            onNext={handleNextDay}
-            onPrevious={handlePreviousDay}
-            onToday={handleToday}
-          />
-        </Card>
-
-        <Card animated delay={25}>
-          <PlanWeekStrip
-            selectedDate={localDate}
-            version={`${day.entries.length}|${day.consumedPartial.caloriesKcal.knownTotal}`}
+          <WeekStrip
+            data={weekData}
+            goalKcal={goalKcal}
             onSelect={setLocalDate}
+            selectedDate={localDate}
           />
         </Card>
 
@@ -342,6 +367,8 @@ export default function PlannerScreen() {
               meals={day.meals}
               variant="detailed"
               onAddFood={handleAddFood}
+              onEntryDelete={handleDelete}
+              onEntryDuplicate={handleDuplicate}
               onEntryPress={handleEntryPress}
             />
           )}
@@ -364,7 +391,7 @@ export default function PlannerScreen() {
             onPress={() => void openCopyConfirm()}
           />
         ) : null}
-      </Animated.View>
+      </View>
 
       <Fab accessibilityLabel="Añadir alimento" onPress={() => handleAddFood(currentDefaultMeal())} />
 
@@ -386,16 +413,6 @@ export default function PlannerScreen() {
         visible={showCopyConfirm}
         onClose={() => setShowCopyConfirm(false)}
         onConfirm={handleCopyToDiary}
-      />
-
-      <ConfirmDialog
-        confirmLabel="Eliminar"
-        destructive
-        message={`¿Seguro que quieres eliminar "${entryToDelete?.foodName}"?`}
-        title="Eliminar entrada"
-        visible={entryToDelete !== null}
-        onClose={() => setEntryToDelete(null)}
-        onConfirm={confirmDelete}
       />
 
       {completingEntry ? (

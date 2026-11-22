@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
-import { recognizeImage } from '../../src/features/scanner/api/recognize';
+import { buildHeaders, recognizeImage } from '../../src/features/scanner/api/recognize';
 
 test('recognizeImage returns parsed foods and warnings', async () => {
   const originalFetch = globalThis.fetch;
@@ -133,4 +133,13 @@ test('recognizeText posts the description to /parse-meal and validates the contr
   globalThis.fetch = async () =>
     new Response(JSON.stringify({ foods: [{ name: 'X', estimatedGrams: 1, confidence: 1, fatGrams: 3 }], warnings: [] }), { status: 200 });
   await assert.rejects(() => recognizeText('x'), /Respuesta inesperada/);
+});
+
+test('buildHeaders adds the app token only when one is configured', () => {
+  assert.deepEqual(buildHeaders(undefined), { 'Content-Type': 'application/json' });
+  assert.deepEqual(buildHeaders(''), { 'Content-Type': 'application/json' });
+  assert.deepEqual(buildHeaders('abc'), {
+    'Content-Type': 'application/json',
+    'x-app-token': 'abc',
+  });
 });

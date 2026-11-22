@@ -24,6 +24,15 @@ export interface ThemeColors {
   carbohydrates: string;
   fat: string;
   water: string;
+  /** Vivid brand green for decorative surfaces and strokes (never for small text). */
+  primaryBright: string;
+  /** Soft tinted backgrounds that carry each macro's colour. */
+  proteinLight: string;
+  carbohydratesLight: string;
+  fatLight: string;
+  waterLight: string;
+  /** Gold used for celebrations (goal reached, achievements). */
+  celebrate: string;
 }
 
 export const lightColors: ThemeColors = {
@@ -51,6 +60,12 @@ export const lightColors: ThemeColors = {
   carbohydrates: '#F59E0B',
   fat: '#EC4899',
   water: '#0284C7',
+  primaryBright: '#10B981',
+  proteinLight: '#DBEAFE',
+  carbohydratesLight: '#FEF3C7',
+  fatLight: '#FCE7F3',
+  waterLight: '#E0F2FE',
+  celebrate: '#FACC15',
 };
 
 export const darkColors: ThemeColors = {
@@ -78,10 +93,27 @@ export const darkColors: ThemeColors = {
   carbohydrates: '#FBBF24',
   fat: '#F472B6',
   water: '#38BDF8',
+  primaryBright: '#34D399',
+  proteinLight: '#16294A',
+  carbohydratesLight: '#3A2F10',
+  fatLight: '#3B1A2C',
+  waterLight: '#0C2F44',
+  celebrate: '#FDE047',
 };
 
-/** Green gradient used by the hero/calorie cards. AA-safe for white text. */
-export const heroGradient = ['#047857', '#065F46'] as const;
+/**
+ * Green → teal sweep of the hero/calorie cards. Every stop keeps AA contrast
+ * for white text (see tokens.test.ts).
+ */
+export const heroGradient = ['#047857', '#0E7C66', '#115E59'] as const;
+
+/** Decorative gradients (no text is drawn directly over them). */
+export const gradients = {
+  accent: ['#FFA24D', '#FF7A1A'],
+  water: ['#38BDF8', '#0284C7'],
+  celebrate: ['#FDE047', '#FB923C'],
+  brand: ['#34D399', '#059669'],
+} as const;
 
 export const spacing = {
   xs: 4,
@@ -97,6 +129,7 @@ export const radius = {
   sm: 10,
   md: 16,
   lg: 24,
+  xl: 32,
   pill: 999,
 } as const;
 
@@ -115,7 +148,25 @@ export const shadows = {
     shadowOpacity: 0.08,
     shadowRadius: 6,
   },
+  lg: {
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+  },
 } as const;
+
+/** Soft shadow tinted with a colour, for hero cards and the central "+" button. */
+export function glow(color: string, strength = 0.35) {
+  return {
+    elevation: 8,
+    shadowColor: color,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: strength,
+    shadowRadius: 20,
+  } as const;
+}
 
 /** Nunito families. Android needs one family per weight (it ignores fontWeight for custom fonts). */
 export const fonts = {
@@ -126,6 +177,17 @@ export const fonts = {
 } as const;
 
 export const typography = {
+  /** Big hero numbers (calories left, weight). Use with tabularNumbers. */
+  displayLarge: {
+    fontFamily: fonts.brand,
+    fontSize: 48,
+    letterSpacing: -1.5,
+  },
+  headline: {
+    fontFamily: fonts.brand,
+    fontSize: 24,
+    letterSpacing: -0.4,
+  },
   display: {
     fontFamily: fonts.brand,
     fontSize: 32,

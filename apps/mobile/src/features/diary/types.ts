@@ -1,10 +1,14 @@
-import type { Nutrients, PartialNutrients } from '@jfood/core';
+import type {
+  NutritionGoals as CoreNutritionGoals,
+  Nutrients,
+  PartialNutrients,
+  SecondaryTargets,
+} from '@jfood/core';
 
 export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 
-export type NutritionGoals = {
-  [Key in keyof Nutrients]: number;
-};
+/** Daily goals for calories and the three macros. */
+export type NutritionGoals = CoreNutritionGoals;
 
 export interface DiaryEntry {
   id: string;
@@ -26,6 +30,8 @@ export interface DiaryDay {
   localDate: string;
   goals: NutritionGoals;
   goalsAreDefault: boolean;
+  /** Fibre minimum, sugar and salt maximum, derived from the calorie goal. */
+  targets: SecondaryTargets;
   entries: DiaryEntry[];
   consumed: Nutrients;
   consumedPartial: PartialNutrients;

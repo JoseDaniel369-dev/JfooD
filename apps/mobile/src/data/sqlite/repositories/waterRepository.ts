@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { generateId } from '@/data/sqlite/utils/id';
+import { assertLocalDate } from '@/features/diary/utils/date';
+
+/** Largest amount of a single water log (a big bottle is about 1.5 l). */
+export const MAX_WATER_LOG_ML = 5000;
 
 export interface WaterLog {
   id: string;
@@ -25,8 +29,12 @@ export async function addWater(
   localDate: string,
   amountMl: number,
 ): Promise<void> {
+  assertLocalDate(localDate);
   if (!Number.isFinite(amountMl) || amountMl <= 0) {
     throw new Error('La cantidad de agua debe ser mayor que 0.');
+  }
+  if (amountMl > MAX_WATER_LOG_ML) {
+    throw new Error(`Cada registro de agua puede ser de hasta ${MAX_WATER_LOG_ML} ml.`);
   }
 
   const now = new Date().toISOString();

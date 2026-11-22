@@ -1,6 +1,8 @@
 import { foodInputNutrientsSchema, type Nutrients } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { NUTRIENT_ASSIGNMENTS, nutrientParams } from '@/data/sqlite/nutrientColumns';
+
 export type EntryTable = 'diary_entries' | 'plan_entries';
 
 export interface CompleteEntryOptions {
@@ -51,33 +53,17 @@ export async function updateEntryNutrients(
 
     await database.runAsync(
       `UPDATE ${table}
-       SET calories_kcal = ?, protein_grams = ?, carbohydrate_grams = ?,
-           fat_grams = ?, updated_at = ?
+       SET ${NUTRIENT_ASSIGNMENTS}, updated_at = ?
        WHERE id = ?`,
-      [
-        values.caloriesKcal,
-        values.proteinGrams,
-        values.carbohydrateGrams,
-        values.fatGrams,
-        now,
-        entryId,
-      ],
+      [...nutrientParams(values), now, entryId],
     );
 
     if (options.alsoUpdateFood && entry.food_id) {
       await database.runAsync(
         `UPDATE foods
-         SET calories_kcal = ?, protein_grams = ?, carbohydrate_grams = ?,
-             fat_grams = ?, updated_at = ?
+         SET ${NUTRIENT_ASSIGNMENTS}, updated_at = ?
          WHERE id = ? AND source IN ('user', 'open_food_facts')`,
-        [
-          values.caloriesKcal,
-          values.proteinGrams,
-          values.carbohydrateGrams,
-          values.fatGrams,
-          now,
-          entry.food_id,
-        ],
+        [...nutrientParams(values), now, entry.food_id],
       );
     }
   });

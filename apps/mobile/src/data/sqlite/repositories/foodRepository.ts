@@ -1,12 +1,20 @@
-import { foodInputNutrientsSchema } from '@jfood/core';
+import { foodInputNutrientsSchema, makeNutrients, type Nutrients } from '@jfood/core';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import {
+  NUTRIENT_ASSIGNMENTS,
+  NUTRIENT_PLACEHOLDERS,
+  nutrientColumnsSql,
+  nutrientParams,
+  nutrientsFromRow,
+  type NutrientRow,
+} from '@/data/sqlite/nutrientColumns';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { CreateFoodInput, Food, FoodSource } from '@/features/foods/types';
 
-interface FoodRow {
+interface FoodRow extends NutrientRow {
   id: string;
   name: string;
   normalized_name: string;
@@ -14,10 +22,6 @@ interface FoodRow {
   barcode: string | null;
   source: string;
   external_id: string | null;
-  calories_kcal: number | null;
-  protein_grams: number | null;
-  carbohydrate_grams: number | null;
-  fat_grams: number | null;
   is_favorite: number;
   cached_at: string | null;
   created_at: string;
@@ -26,26 +30,32 @@ interface FoodRow {
 
 const SELECT_FOOD_COLUMNS = `
   id, name, normalized_name, brand, barcode, source, external_id,
-  calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+  ${nutrientColumnsSql()},
   is_favorite, cached_at, created_at, updated_at
 `;
 
-function assertFoodNutrients(input: {
-  caloriesKcal?: number | null;
-  proteinGrams?: number | null;
-  carbohydrateGrams?: number | null;
-  fatGrams?: number | null;
-}): void {
-  const result = foodInputNutrientsSchema.safeParse({
-    caloriesKcal: input.caloriesKcal ?? null,
-    proteinGrams: input.proteinGrams ?? null,
-    carbohydrateGrams: input.carbohydrateGrams ?? null,
-    fatGrams: input.fatGrams ?? null,
-  });
+type NutrientInput = {
+  [Key in keyof Nutrients]?: number | null;
+};
+
+/** Validates the values typed by a person and returns them complete (unknown = null). */
+function checkedNutrients(input: NutrientInput): Nutrients {
+  const result = foodInputNutrientsSchema.safeParse(
+    makeNutrients({
+      caloriesKcal: input.caloriesKcal ?? null,
+      proteinGrams: input.proteinGrams ?? null,
+      carbohydrateGrams: input.carbohydrateGrams ?? null,
+      fatGrams: input.fatGrams ?? null,
+      fiberGrams: input.fiberGrams ?? null,
+      sugarsGrams: input.sugarsGrams ?? null,
+      saltGrams: input.saltGrams ?? null,
+    }),
+  );
 
   if (!result.success) {
     throw new Error(describeNutrientsError(result.error.issues));
   }
+  return result.data;
 }
 
 export async function createFood(
@@ -56,7 +66,7 @@ export async function createFood(
   if (!name) {
     throw new Error('El nombre del alimento es obligatorio.');
   }
-  assertFoodNutrients(input);
+  const nutrients = checkedNutrients(input);
 
   const now = new Date().toISOString();
   const food: Food = {
@@ -67,10 +77,7 @@ export async function createFood(
     barcode: input.barcode ?? null,
     source: input.source ?? 'user',
     externalId: input.externalId ?? null,
-    caloriesKcal: input.caloriesKcal ?? null,
-    proteinGrams: input.proteinGrams ?? null,
-    carbohydrateGrams: input.carbohydrateGrams ?? null,
-    fatGrams: input.fatGrams ?? null,
+    ...nutrients,
     isFavorite: false,
     cachedAt: null,
     createdAt: now,
@@ -80,9 +87,9 @@ export async function createFood(
   await database.runAsync(
     `INSERT INTO foods (
       id, name, normalized_name, brand, barcode, source, external_id,
-      calories_kcal, protein_grams, carbohydrate_grams, fat_grams,
+      ${nutrientColumnsSql()},
       is_favorite, cached_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ${NUTRIENT_PLACEHOLDERS}, ?, ?, ?, ?)`,
     [
       food.id,
       food.name,
@@ -91,10 +98,7 @@ export async function createFood(
       food.barcode,
       food.source,
       food.externalId,
-      food.caloriesKcal,
-      food.proteinGrams,
-      food.carbohydrateGrams,
-      food.fatGrams,
+      ...nutrientParams(nutrients),
       food.isFavorite ? 1 : 0,
       food.cachedAt,
       food.createdAt,
@@ -253,13 +257,9 @@ export async function getFoodById(
   return row ? mapFood(row) : null;
 }
 
-export interface UpdateFoodInput {
+export interface UpdateFoodInput extends NutrientInput {
   name: string;
   brand?: string | null;
-  caloriesKcal?: number | null;
-  proteinGrams?: number | null;
-  carbohydrateGrams?: number | null;
-  fatGrams?: number | null;
 }
 
 export async function updateFood(
@@ -271,7 +271,7 @@ export async function updateFood(
   if (!name) {
     throw new Error('El nombre del alimento es obligatorio.');
   }
-  assertFoodNutrients(input);
+  const nutrients = checkedNutrients(input);
 
   const now = new Date().toISOString();
 
@@ -280,20 +280,14 @@ export async function updateFood(
      SET name = ?,
          normalized_name = ?,
          brand = ?,
-         calories_kcal = ?,
-         protein_grams = ?,
-         carbohydrate_grams = ?,
-         fat_grams = ?,
+         ${NUTRIENT_ASSIGNMENTS},
          updated_at = ?
      WHERE id = ?`,
     [
       name,
       normalizeName(name),
       input.brand?.trim() || null,
-      input.caloriesKcal ?? null,
-      input.proteinGrams ?? null,
-      input.carbohydrateGrams ?? null,
-      input.fatGrams ?? null,
+      ...nutrientParams(nutrients),
       now,
       foodId,
     ],
@@ -332,13 +326,42 @@ function mapFood(row: FoodRow): Food {
     barcode: row.barcode,
     source: row.source as FoodSource,
     externalId: row.external_id,
-    caloriesKcal: row.calories_kcal,
-    proteinGrams: row.protein_grams,
-    carbohydrateGrams: row.carbohydrate_grams,
-    fatGrams: row.fat_grams,
+    ...nutrientsFromRow(row),
     isFavorite: row.is_favorite === 1,
     cachedAt: row.cached_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Foods by id, in the order of `ids` (unknown ids are skipped). */
+export async function getFoodsByIds(
+  database: SQLiteDatabase,
+  ids: readonly string[],
+): Promise<Food[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  // SQLite limits the number of variables, so long lists go in chunks.
+  const CHUNK = 200;
+  const found = new Map<string, Food>();
+
+  for (let start = 0; start < ids.length; start += CHUNK) {
+    const chunk = ids.slice(start, start + CHUNK);
+    const rows = await database.getAllAsync<FoodRow>(
+      `SELECT ${SELECT_FOOD_COLUMNS}
+       FROM foods
+       WHERE id IN (${chunk.map(() => '?').join(', ')})`,
+      chunk,
+    );
+    for (const row of rows) {
+      found.set(row.id, mapFood(row));
+    }
+  }
+
+  return ids.flatMap((id) => {
+    const food = found.get(id);
+    return food ? [food] : [];
+  });
 }

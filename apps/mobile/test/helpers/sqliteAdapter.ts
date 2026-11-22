@@ -72,6 +72,23 @@ export class TestDatabase {
     }
   }
 
+  /**
+   * expo-sqlite runs an exclusive transaction on a NEW connection, where
+   * `PRAGMA foreign_keys` is off (and cannot be switched on inside a
+   * transaction). The adapter reproduces that so the tests catch code that
+   * silently relies on foreign keys being enforced there.
+   */
+  async withExclusiveTransactionAsync(
+    task: (transaction: TestDatabase) => Promise<void>,
+  ): Promise<void> {
+    this.raw.exec('PRAGMA foreign_keys = OFF');
+    try {
+      await this.withTransactionAsync(() => task(this));
+    } finally {
+      this.raw.exec('PRAGMA foreign_keys = ON');
+    }
+  }
+
   close(): void {
     this.raw.close();
   }

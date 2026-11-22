@@ -136,3 +136,13 @@ test('a database created before the goal existed migrates with "maintain"', asyn
   );
   assert.deepEqual(row, { goal_type: 'maintain', weekly_rate_kg: 0 });
 });
+
+test('weight logs outside the range the profile accepts are rejected', async () => {
+  const db = await createMigratedDatabase();
+  const sqlite = db.asSqlite();
+
+  await assert.rejects(upsertWeightLog(sqlite, { localDate: today, weightKg: 5 }), /entre 25 y 300/);
+  await assert.rejects(upsertWeightLog(sqlite, { localDate: today, weightKg: 301 }), /entre 25 y 300/);
+  await upsertWeightLog(sqlite, { localDate: today, weightKg: 25 });
+  assert.equal((await todaysWeight(db))?.weight_kg, 25);
+});

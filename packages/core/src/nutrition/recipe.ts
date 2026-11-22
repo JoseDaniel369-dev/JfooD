@@ -1,4 +1,10 @@
-import { gramsSchema, nutrientsPer100gSchema, type Nutrients } from './nutrients.js';
+import {
+  NUTRIENT_KEYS,
+  gramsSchema,
+  nutrientsPer100gSchema,
+  unknownNutrients,
+  type Nutrients,
+} from './nutrients.js';
 
 export interface RecipeIngredient {
   /** Nutrients per 100 g of the ingredient (null = unknown). */
@@ -11,13 +17,6 @@ export interface RecipeResult {
   totalGrams: number;
   per100g: Nutrients;
 }
-
-const NUTRIENT_KEYS = [
-  'caloriesKcal',
-  'proteinGrams',
-  'carbohydrateGrams',
-  'fatGrams',
-] as const;
 
 /**
  * Nutrients per 100 g of a recipe made from ingredients.
@@ -45,7 +44,7 @@ export function computeRecipe(
       ? ingredientsGrams
       : gramsSchema.parse(finalWeightGrams);
 
-  const per100g = {} as Nutrients;
+  const per100g = unknownNutrients();
   for (const key of NUTRIENT_KEYS) {
     const values = validated.map((item) => item.per100g[key]);
     per100g[key] = values.includes(null)

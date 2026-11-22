@@ -32,7 +32,7 @@ test('migrations create every table from an empty database', async () => {
   const version = await db.getFirstAsync<{ user_version: number }>(
     'PRAGMA user_version',
   );
-  assert.equal(version?.user_version, 6);
+  assert.equal(version?.user_version, 7);
 });
 
 test('running migrations twice is idempotent and keeps user data', async () => {

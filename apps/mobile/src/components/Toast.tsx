@@ -9,26 +9,35 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { Animated, StyleSheet, Text } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 export type ToastVariant = 'success' | 'error';
 
+/** A button inside the toast, e.g. "Deshacer" after deleting something. */
+export interface ToastAction {
+  label: string;
+  onPress: () => void;
+}
+
 interface ToastMessage {
   id: number;
   message: string;
   variant: ToastVariant;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  showToast: (message: string, variant?: ToastVariant) => void;
+  showToast: (message: string, variant?: ToastVariant, action?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const TOAST_DURATION_MS = 3200;
+/** A toast with a button stays longer, so there is time to press it. */
+const TOAST_WITH_ACTION_DURATION_MS = 5500;
 
 export function ToastProvider({ children }: PropsWithChildren) {
   const { colors } = useTheme();
@@ -60,7 +69,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   }, [opacity, translateY]);
 
   const showToast = useCallback(
-    (message: string, variant: ToastVariant = 'success') => {
+    (message: string, variant: ToastVariant = 'success', action?: ToastAction) => {
       if (hideTimer.current) {
         clearTimeout(hideTimer.current);
       }
@@ -68,7 +77,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
       nextId.current += 1;
       const id = nextId.current;
       currentId.current = id;
-      setToast({ id, message, variant });
+      setToast({ id, message, variant, action });
       opacity.setValue(0);
       translateY.setValue(-12);
 
@@ -85,7 +94,10 @@ export function ToastProvider({ children }: PropsWithChildren) {
         }),
       ]).start();
 
-      hideTimer.current = setTimeout(() => dismiss(id), TOAST_DURATION_MS);
+      hideTimer.current = setTimeout(
+        () => dismiss(id),
+        action ? TOAST_WITH_ACTION_DURATION_MS : TOAST_DURATION_MS,
+      );
     },
     [dismiss, opacity, translateY],
   );
@@ -108,7 +120,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
       {toast ? (
         <Animated.View
           accessibilityLiveRegion="polite"
-          pointerEvents="none"
+          pointerEvents={toast.action ? 'box-none' : 'none'}
           style={[
             styles.toast,
             { top: insets.top + 12, opacity, transform: [{ translateY }] },
@@ -130,6 +142,23 @@ export function ToastProvider({ children }: PropsWithChildren) {
           >
             {toast.message}
           </Text>
+          {toast.action ? (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={10}
+              onPress={() => {
+                const { action, id } = toast;
+                if (hideTimer.current) {
+                  clearTimeout(hideTimer.current);
+                }
+                dismiss(id);
+                action?.onPress();
+              }}
+              style={styles.toastAction}
+            >
+              <Text style={styles.toastActionText}>{toast.action.label}</Text>
+            </Pressable>
+          ) : null}
         </Animated.View>
       ) : null}
     </ToastContext.Provider>
@@ -174,6 +203,18 @@ function createStyles(colors: ThemeColors) {
       color: '#FFFFFF',
       flexShrink: 1,
       fontWeight: '700',
+    },
+    toastAction: {
+      borderColor: 'rgba(255,255,255,0.7)',
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    toastActionText: {
+      ...typography.caption,
+      color: '#FFFFFF',
+      fontWeight: '800',
     },
     toastTextError: {
       color: colors.onDanger,

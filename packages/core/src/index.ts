@@ -5,12 +5,16 @@ export {
 } from './nutrition/recipe.js';
 export {
   FOOD_INPUT_LIMITS,
+  NUTRIENT_KEYS,
   calculateNutrients,
   foodInputNutrientsSchema,
   gramsSchema,
   nutrientsPer100gSchema,
   sumNutrients,
   sumNutrientsKnown,
+  makeNutrients,
+  unknownNutrients,
+  type NutrientKey,
   type Nutrients,
   type PartialNutrient,
   type PartialNutrients,
@@ -29,6 +33,7 @@ export {
   calculateAge,
   calculateBmr,
   calculateNutritionGoals,
+  calculateSecondaryTargets,
   calculateTdee,
   MIN_DAILY_CALORIES_KCAL,
   PROFILE_LIMITS,
@@ -37,6 +42,7 @@ export {
   type ActivityLevel,
   type MifflinVariant,
   type NutritionGoals,
+  type SecondaryTargets,
   type UserProfile,
 } from './nutrition/goals.js';
 export {

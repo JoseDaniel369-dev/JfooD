@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { makeNutrients } from '@jfood/core';
+
 import {
   addEntry,
   deleteEntry,
@@ -38,12 +40,10 @@ test('diary totals scale per-100 g values by the grams eaten', async () => {
   await addEntry(sqlite, { localDate: DATE, mealType: 'lunch', food: chicken, grams: 200 });
 
   const day = await getDiaryDay(sqlite, DATE);
-  assert.deepEqual(day.consumed, {
-    caloriesKcal: 300,
-    proteinGrams: 50,
-    carbohydrateGrams: 0,
-    fatGrams: 10,
-  });
+  assert.deepEqual(
+    day.consumed,
+    makeNutrients({ caloriesKcal: 300, proteinGrams: 50, carbohydrateGrams: 0, fatGrams: 10 }),
+  );
   assert.equal(day.goalsAreDefault, true);
 });
 

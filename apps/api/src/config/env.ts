@@ -14,6 +14,14 @@ const environmentSchema = z.object({
   GEMINI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
   /** Max /recognize calls forwarded to Gemini per UTC day, for all users. */
   RECOGNIZE_DAILY_LIMIT: z.coerce.number().int().min(1).max(100_000).default(300),
+  /** Max Gemini calls per client IP and UTC day, so one client cannot drain the global budget. */
+  RECOGNIZE_DAILY_LIMIT_PER_IP: z.coerce.number().int().min(1).max(100_000).default(40),
+  /**
+   * Shared secret the app sends in `x-app-token`. Optional: when unset the
+   * recognition routes stay open. It ships inside the APK, so it only keeps
+   * casual traffic out; the real caps are the rate limit and the daily budgets.
+   */
+  APP_TOKEN: optionalGeminiKey,
   /**
    * Reverse proxies between the client and this server. Rate limiting needs the
    * real client IP, not the proxy's. Defaults to 1 on Render (which sets RENDER).

@@ -13,9 +13,16 @@ export class GeminiError extends Error {
   constructor(
     message: string,
     public readonly cause?: unknown,
+    /** HTTP status returned by Gemini, when there was a response. */
+    public readonly status?: number,
   ) {
     super(message);
     this.name = 'GeminiError';
+  }
+
+  /** Gemini refused the call because its own quota or capacity is exhausted. */
+  get isOverloaded(): boolean {
+    return this.status === 429 || this.status === 503;
   }
 }
 
@@ -92,10 +99,19 @@ async function requestRecognition(
     const body = await response.text().catch(() => 'unknown');
     throw new GeminiError(
       `Gemini responded with ${response.status}: ${body.slice(0, 200)}`,
+      undefined,
+      response.status,
     );
   }
 
-  const json: unknown = await response.json();
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch (error) {
+    // A 200 with a body that is not JSON is still a Gemini failure (502), not
+    // an unexpected server error (500).
+    throw new GeminiError('Gemini response body is not JSON', error);
+  }
   const text = extractText(json);
 
   let parsed: unknown;
@@ -146,9 +162,17 @@ function buildTextPrompt(text: string): string {
     '',
     'Texto del usuario (entre las marcas):',
     '<<<',
-    text.replace(/<<<|>>>/g, ''),
+    sanitizeUserText(text),
     '>>>',
   ].join('\n');
+}
+
+/**
+ * Removes every run of three or more angle brackets, so the text can never
+ * contain (or rebuild after a removal) the markers that delimit it.
+ */
+export function sanitizeUserText(text: string): string {
+  return text.replace(/[<>]{3,}/g, '');
 }
 
 function stripDataUri(base64: string): string {
@@ -156,9 +180,11 @@ function stripDataUri(base64: string): string {
   return match?.[1] ?? base64;
 }
 
-function detectMimeType(base64: string): string {
+export function detectMimeType(base64: string): string {
   const match = base64.match(/^data:([^;]+);base64,/);
-  return match?.[1] ?? 'image/jpeg';
+  const mimeType = match?.[1]?.toLowerCase() ?? 'image/jpeg';
+  // "image/jpg" is not a registered type and Gemini rejects it.
+  return mimeType === 'image/jpg' ? 'image/jpeg' : mimeType;
 }
 
 function extractText(json: unknown): string {

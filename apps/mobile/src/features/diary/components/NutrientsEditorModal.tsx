@@ -37,6 +37,9 @@ const FIELDS = [
   { key: 'proteinGrams', label: 'Proteínas (g)' },
   { key: 'carbohydrateGrams', label: 'Carbohidratos (g)' },
   { key: 'fatGrams', label: 'Grasas (g)' },
+  { key: 'fiberGrams', label: 'Fibra (g)' },
+  { key: 'sugarsGrams', label: 'Azúcares (g)' },
+  { key: 'saltGrams', label: 'Sal (g)' },
 ] as const;
 
 /** Edits the nutrients per 100 g stored in ONE diary/plan entry. */
@@ -55,6 +58,9 @@ export function NutrientsEditorModal({
     proteinGrams: formatInitial(initial.proteinGrams),
     carbohydrateGrams: formatInitial(initial.carbohydrateGrams),
     fatGrams: formatInitial(initial.fatGrams),
+    fiberGrams: formatInitial(initial.fiberGrams),
+    sugarsGrams: formatInitial(initial.sugarsGrams),
+    saltGrams: formatInitial(initial.saltGrams),
   }));
   const [alsoUpdateFood, setAlsoUpdateFood] = useState(canUpdateFood);
   const [error, setError] = useState<string | null>(null);

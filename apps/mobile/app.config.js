@@ -81,6 +81,28 @@ module.exports = ({ config }) => {
       '@react-native-community/datetimepicker',
       'expo-status-bar',
       'expo-font',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+          backgroundColor: '#F7F8F2',
+          dark: {
+            image: './assets/splash-icon-dark.png',
+            backgroundColor: '#0A1411',
+          },
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          // 96x96 all-white icon: Android draws it in the status bar.
+          icon: './assets/notification-icon.png',
+          color: '#059669',
+          defaultChannel: 'recordatorios',
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

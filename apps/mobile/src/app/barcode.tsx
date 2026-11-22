@@ -146,7 +146,13 @@ export default function BarcodeScreen() {
               onPress={() =>
                 router.replace({
                   pathname: '/diary/add-food',
-                  params: { date, meal, target: params.target, name: ' ' },
+                  params: {
+                    date,
+                    meal,
+                    target: params.target,
+                    create: '1',
+                    barcode: status.barcode,
+                  },
                 })
               }
             />

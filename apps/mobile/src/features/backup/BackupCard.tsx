@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { seedCatalog } from '@/data/seed/seedCatalog';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -23,7 +24,7 @@ function describe(counts: BackupCounts): string {
 
 /** Export and restore of all personal data: the only way out of the sandbox. */
 export function BackupCard({ onRestored }: { onRestored?: () => void }) {
-  const { colors } = useTheme();
+  const { colors, reloadPreference } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const database = useSQLiteContext();
   const { showToast } = useToast();
@@ -66,6 +67,11 @@ export function BackupCard({ onRestored }: { onRestored?: () => void }) {
     setBusy('restore');
     try {
       const counts = await restoreBackup(database, backup);
+      // A copy made before the base catalog existed replaces the foods table
+      // with one that lacks it: load it again right away.
+      await seedCatalog(database).catch(() => false);
+      // The copy may carry another theme: apply it without restarting the app.
+      await reloadPreference();
       hapticSuccess();
       showToast(`Copia restaurada: ${describe(counts)}.`);
       onRestored?.();

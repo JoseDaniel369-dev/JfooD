@@ -1,0 +1,6861 @@
+[
+ {
+  "id": "seed-manzana",
+  "name": "Manzana",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 171688,
+  "caloriesKcal": 52,
+  "proteinGrams": 0.26,
+  "carbohydrateGrams": 13.81,
+  "fatGrams": 0.17,
+  "fiberGrams": 2.4,
+  "sugarsGrams": 10.39,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-platano",
+  "name": "Plátano",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 173944,
+  "caloriesKcal": 89,
+  "proteinGrams": 1.09,
+  "carbohydrateGrams": 22.84,
+  "fatGrams": 0.33,
+  "fiberGrams": 2.6,
+  "sugarsGrams": 12.23,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad mediana (sin piel)",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-naranja",
+  "name": "Naranja",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169918,
+  "caloriesKcal": 46,
+  "proteinGrams": 0.7,
+  "carbohydrateGrams": 11.54,
+  "fatGrams": 0.21,
+  "fiberGrams": 2.4,
+  "sugarsGrams": 9.14,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-mandarina",
+  "name": "Mandarina",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169105,
+  "caloriesKcal": 53,
+  "proteinGrams": 0.81,
+  "carbohydrateGrams": 13.34,
+  "fatGrams": 0.31,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 10.58,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 75
+   }
+  ]
+ },
+ {
+  "id": "seed-pera",
+  "name": "Pera",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169118,
+  "caloriesKcal": 57,
+  "proteinGrams": 0.36,
+  "carbohydrateGrams": 15.23,
+  "fatGrams": 0.14,
+  "fiberGrams": 3.1,
+  "sugarsGrams": 9.75,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 170
+   }
+  ]
+ },
+ {
+  "id": "seed-uvas",
+  "name": "Uvas",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 174683,
+  "caloriesKcal": 69,
+  "proteinGrams": 0.72,
+  "carbohydrateGrams": 18.1,
+  "fatGrams": 0.16,
+  "fiberGrams": 0.9,
+  "sugarsGrams": 15.48,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-fresas",
+  "name": "Fresas",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 167762,
+  "caloriesKcal": 32,
+  "proteinGrams": 0.67,
+  "carbohydrateGrams": 7.68,
+  "fatGrams": 0.3,
+  "fiberGrams": 2,
+  "sugarsGrams": 4.89,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-melocoton",
+  "name": "Melocotón",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169928,
+  "caloriesKcal": 39,
+  "proteinGrams": 0.91,
+  "carbohydrateGrams": 9.54,
+  "fatGrams": 0.25,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 8.39,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-sandia",
+  "name": "Sandía",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 167765,
+  "caloriesKcal": 30,
+  "proteinGrams": 0.61,
+  "carbohydrateGrams": 7.55,
+  "fatGrams": 0.15,
+  "fiberGrams": 0.4,
+  "sugarsGrams": 6.2,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 280
+   }
+  ]
+ },
+ {
+  "id": "seed-melon",
+  "name": "Melón",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169092,
+  "caloriesKcal": 34,
+  "proteinGrams": 0.84,
+  "carbohydrateGrams": 8.16,
+  "fatGrams": 0.19,
+  "fiberGrams": 0.9,
+  "sugarsGrams": 7.86,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-pina",
+  "name": "Piña",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169124,
+  "caloriesKcal": 50,
+  "proteinGrams": 0.54,
+  "carbohydrateGrams": 13.12,
+  "fatGrams": 0.12,
+  "fiberGrams": 1.4,
+  "sugarsGrams": 9.85,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-kiwi",
+  "name": "Kiwi",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 168153,
+  "caloriesKcal": 61,
+  "proteinGrams": 1.14,
+  "carbohydrateGrams": 14.66,
+  "fatGrams": 0.52,
+  "fiberGrams": 3,
+  "sugarsGrams": 8.99,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 75
+   }
+  ]
+ },
+ {
+  "id": "seed-mango",
+  "name": "Mango",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169910,
+  "caloriesKcal": 60,
+  "proteinGrams": 0.82,
+  "carbohydrateGrams": 14.98,
+  "fatGrams": 0.38,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 13.66,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 165
+   }
+  ]
+ },
+ {
+  "id": "seed-cerezas",
+  "name": "Cerezas",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 171719,
+  "caloriesKcal": 63,
+  "proteinGrams": 1.06,
+  "carbohydrateGrams": 16.01,
+  "fatGrams": 0.2,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 12.82,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "10 unidades",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-ciruela",
+  "name": "Ciruela",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169949,
+  "caloriesKcal": 46,
+  "proteinGrams": 0.7,
+  "carbohydrateGrams": 11.42,
+  "fatGrams": 0.28,
+  "fiberGrams": 1.4,
+  "sugarsGrams": 9.92,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 65
+   }
+  ]
+ },
+ {
+  "id": "seed-albaricoque",
+  "name": "Albaricoque",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 171697,
+  "caloriesKcal": 48,
+  "proteinGrams": 1.4,
+  "carbohydrateGrams": 11.12,
+  "fatGrams": 0.39,
+  "fiberGrams": 2,
+  "sugarsGrams": 9.24,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 35
+   }
+  ]
+ },
+ {
+  "id": "seed-limon",
+  "name": "Limón",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 167746,
+  "caloriesKcal": 29,
+  "proteinGrams": 1.1,
+  "carbohydrateGrams": 9.32,
+  "fatGrams": 0.3,
+  "fiberGrams": 2.8,
+  "sugarsGrams": 2.5,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-pomelo",
+  "name": "Pomelo",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 174675,
+  "caloriesKcal": 30,
+  "proteinGrams": 0.55,
+  "carbohydrateGrams": 7.5,
+  "fatGrams": 0.1,
+  "fiberGrams": 1.1,
+  "sugarsGrams": null,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-aguacate",
+  "name": "Aguacate",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 171705,
+  "caloriesKcal": 160,
+  "proteinGrams": 2,
+  "carbohydrateGrams": 8.53,
+  "fatGrams": 14.66,
+  "fiberGrams": 6.7,
+  "sugarsGrams": 0.66,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-higos",
+  "name": "Higos",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 173021,
+  "caloriesKcal": 74,
+  "proteinGrams": 0.75,
+  "carbohydrateGrams": 19.18,
+  "fatGrams": 0.3,
+  "fiberGrams": 2.9,
+  "sugarsGrams": 16.26,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-granada",
+  "name": "Granada",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169134,
+  "caloriesKcal": 83,
+  "proteinGrams": 1.67,
+  "carbohydrateGrams": 18.7,
+  "fatGrams": 1.17,
+  "fiberGrams": 4,
+  "sugarsGrams": 13.67,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 140
+   }
+  ]
+ },
+ {
+  "id": "seed-arandanos",
+  "name": "Arándanos",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 171711,
+  "caloriesKcal": 57,
+  "proteinGrams": 0.74,
+  "carbohydrateGrams": 14.49,
+  "fatGrams": 0.33,
+  "fiberGrams": 2.4,
+  "sugarsGrams": 9.96,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-frambuesas",
+  "name": "Frambuesas",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 167755,
+  "caloriesKcal": 52,
+  "proteinGrams": 1.2,
+  "carbohydrateGrams": 11.94,
+  "fatGrams": 0.65,
+  "fiberGrams": 6.5,
+  "sugarsGrams": 4.42,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-moras",
+  "name": "Moras",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 173946,
+  "caloriesKcal": 43,
+  "proteinGrams": 1.39,
+  "carbohydrateGrams": 9.61,
+  "fatGrams": 0.49,
+  "fiberGrams": 5.3,
+  "sugarsGrams": 4.88,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-papaya",
+  "name": "Papaya",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169926,
+  "caloriesKcal": 43,
+  "proteinGrams": 0.47,
+  "carbohydrateGrams": 10.82,
+  "fatGrams": 0.26,
+  "fiberGrams": 1.7,
+  "sugarsGrams": 7.82,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 140
+   }
+  ]
+ },
+ {
+  "id": "seed-coco-fresco",
+  "name": "Coco fresco",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 170169,
+  "caloriesKcal": 354,
+  "proteinGrams": 3.33,
+  "carbohydrateGrams": 15.23,
+  "fatGrams": 33.49,
+  "fiberGrams": 9,
+  "sugarsGrams": 6.23,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 trozo",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-datiles",
+  "name": "Dátiles",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 168191,
+  "caloriesKcal": 277,
+  "proteinGrams": 1.81,
+  "carbohydrateGrams": 74.97,
+  "fatGrams": 0.15,
+  "fiberGrams": 6.7,
+  "sugarsGrams": 66.47,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 24
+   }
+  ]
+ },
+ {
+  "id": "seed-pasas",
+  "name": "Pasas",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 168165,
+  "caloriesKcal": 299,
+  "proteinGrams": 3.3,
+  "carbohydrateGrams": 79.32,
+  "fatGrams": 0.25,
+  "fiberGrams": 4.5,
+  "sugarsGrams": 65.18,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-nectarina",
+  "name": "Nectarina",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169914,
+  "caloriesKcal": 44,
+  "proteinGrams": 1.06,
+  "carbohydrateGrams": 10.55,
+  "fatGrams": 0.32,
+  "fiberGrams": 1.7,
+  "sugarsGrams": 7.89,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 140
+   }
+  ]
+ },
+ {
+  "id": "seed-caqui",
+  "name": "Caqui",
+  "category": "Frutas",
+  "source": "usda",
+  "fdcId": 169941,
+  "caloriesKcal": 70,
+  "proteinGrams": 0.58,
+  "carbohydrateGrams": 18.59,
+  "fatGrams": 0.19,
+  "fiberGrams": 3.6,
+  "sugarsGrams": 12.53,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 170
+   }
+  ]
+ },
+ {
+  "id": "seed-tomate",
+  "name": "Tomate",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170457,
+  "caloriesKcal": 18,
+  "proteinGrams": 0.88,
+  "carbohydrateGrams": 3.89,
+  "fatGrams": 0.2,
+  "fiberGrams": 1.2,
+  "sugarsGrams": 2.63,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-lechuga-romana",
+  "name": "Lechuga romana",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169247,
+  "caloriesKcal": 17,
+  "proteinGrams": 1.23,
+  "carbohydrateGrams": 3.29,
+  "fatGrams": 0.3,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 1.19,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 plato de ensalada",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-lechuga-iceberg",
+  "name": "Lechuga iceberg",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169248,
+  "caloriesKcal": 14,
+  "proteinGrams": 0.9,
+  "carbohydrateGrams": 2.97,
+  "fatGrams": 0.14,
+  "fiberGrams": 1.2,
+  "sugarsGrams": 1.97,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 plato de ensalada",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-lechuga-hoja-verde",
+  "name": "Lechuga hoja verde",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169249,
+  "caloriesKcal": 15,
+  "proteinGrams": 1.36,
+  "carbohydrateGrams": 2.87,
+  "fatGrams": 0.15,
+  "fiberGrams": 1.3,
+  "sugarsGrams": 0.78,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 plato de ensalada",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-zanahoria",
+  "name": "Zanahoria",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170393,
+  "caloriesKcal": 41,
+  "proteinGrams": 0.93,
+  "carbohydrateGrams": 9.58,
+  "fatGrams": 0.24,
+  "fiberGrams": 2.8,
+  "sugarsGrams": 4.74,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-cebolla",
+  "name": "Cebolla",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170000,
+  "caloriesKcal": 40,
+  "proteinGrams": 1.1,
+  "carbohydrateGrams": 9.34,
+  "fatGrams": 0.1,
+  "fiberGrams": 1.7,
+  "sugarsGrams": 4.24,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 110
+   }
+  ]
+ },
+ {
+  "id": "seed-ajo",
+  "name": "Ajo",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169230,
+  "caloriesKcal": 149,
+  "proteinGrams": 6.36,
+  "carbohydrateGrams": 33.06,
+  "fatGrams": 0.5,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 1,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 diente",
+    "grams": 3
+   }
+  ]
+ },
+ {
+  "id": "seed-pimiento-rojo",
+  "name": "Pimiento rojo",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170108,
+  "caloriesKcal": 26,
+  "proteinGrams": 0.99,
+  "carbohydrateGrams": 6.03,
+  "fatGrams": 0.3,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 4.2,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pimiento-verde",
+  "name": "Pimiento verde",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170427,
+  "caloriesKcal": 20,
+  "proteinGrams": 0.86,
+  "carbohydrateGrams": 4.64,
+  "fatGrams": 0.17,
+  "fiberGrams": 1.7,
+  "sugarsGrams": 2.4,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-pepino",
+  "name": "Pepino",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168409,
+  "caloriesKcal": 15,
+  "proteinGrams": 0.65,
+  "carbohydrateGrams": 3.63,
+  "fatGrams": 0.11,
+  "fiberGrams": 0.5,
+  "sugarsGrams": 1.67,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-calabacin",
+  "name": "Calabacín",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169291,
+  "caloriesKcal": 17,
+  "proteinGrams": 1.21,
+  "carbohydrateGrams": 3.11,
+  "fatGrams": 0.32,
+  "fiberGrams": 1,
+  "sugarsGrams": 2.5,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-berenjena",
+  "name": "Berenjena",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169228,
+  "caloriesKcal": 25,
+  "proteinGrams": 0.98,
+  "carbohydrateGrams": 5.88,
+  "fatGrams": 0.18,
+  "fiberGrams": 3,
+  "sugarsGrams": 3.53,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 160
+   }
+  ]
+ },
+ {
+  "id": "seed-brocoli",
+  "name": "Brócoli",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170379,
+  "caloriesKcal": 34,
+  "proteinGrams": 2.82,
+  "carbohydrateGrams": 6.64,
+  "fatGrams": 0.37,
+  "fiberGrams": 2.6,
+  "sugarsGrams": 1.7,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-coliflor",
+  "name": "Coliflor",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169986,
+  "caloriesKcal": 25,
+  "proteinGrams": 1.92,
+  "carbohydrateGrams": 4.97,
+  "fatGrams": 0.28,
+  "fiberGrams": 2,
+  "sugarsGrams": 1.91,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-espinacas-crudas",
+  "name": "Espinacas crudas",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168462,
+  "caloriesKcal": 23,
+  "proteinGrams": 2.86,
+  "carbohydrateGrams": 3.63,
+  "fatGrams": 0.39,
+  "fiberGrams": 2.2,
+  "sugarsGrams": 0.42,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-acelgas",
+  "name": "Acelgas",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169991,
+  "caloriesKcal": 19,
+  "proteinGrams": 1.8,
+  "carbohydrateGrams": 3.74,
+  "fatGrams": 0.2,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 1.1,
+  "saltGrams": 0.53,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-judias-verdes",
+  "name": "Judías verdes",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169961,
+  "caloriesKcal": 31,
+  "proteinGrams": 1.83,
+  "carbohydrateGrams": 6.97,
+  "fatGrams": 0.22,
+  "fiberGrams": 2.7,
+  "sugarsGrams": 3.26,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-guisantes-frescos",
+  "name": "Guisantes frescos",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170419,
+  "caloriesKcal": 81,
+  "proteinGrams": 5.42,
+  "carbohydrateGrams": 14.45,
+  "fatGrams": 0.4,
+  "fiberGrams": 5.7,
+  "sugarsGrams": 5.67,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-maiz-dulce",
+  "name": "Maíz dulce",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169998,
+  "caloriesKcal": 86,
+  "proteinGrams": 3.27,
+  "carbohydrateGrams": 18.7,
+  "fatGrams": 1.35,
+  "fiberGrams": 2,
+  "sugarsGrams": 6.26,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 mazorca",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-champinones",
+  "name": "Champiñones",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169251,
+  "caloriesKcal": 22,
+  "proteinGrams": 3.09,
+  "carbohydrateGrams": 3.26,
+  "fatGrams": 0.34,
+  "fiberGrams": 1,
+  "sugarsGrams": 1.98,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-portobello",
+  "name": "Portobello",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169255,
+  "caloriesKcal": 22,
+  "proteinGrams": 2.11,
+  "carbohydrateGrams": 3.87,
+  "fatGrams": 0.35,
+  "fiberGrams": 1.3,
+  "sugarsGrams": 2.5,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 85
+   }
+  ]
+ },
+ {
+  "id": "seed-patata-cruda",
+  "name": "Patata cruda",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170026,
+  "caloriesKcal": 77,
+  "proteinGrams": 2.05,
+  "carbohydrateGrams": 17.49,
+  "fatGrams": 0.09,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 0.82,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 170
+   }
+  ]
+ },
+ {
+  "id": "seed-patata-cocida",
+  "name": "Patata cocida",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170438,
+  "caloriesKcal": 87,
+  "proteinGrams": 1.87,
+  "carbohydrateGrams": 20.13,
+  "fatGrams": 0.1,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 0.91,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 170
+   }
+  ]
+ },
+ {
+  "id": "seed-boniato",
+  "name": "Boniato",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168482,
+  "caloriesKcal": 86,
+  "proteinGrams": 1.57,
+  "carbohydrateGrams": 20.12,
+  "fatGrams": 0.05,
+  "fiberGrams": 3,
+  "sugarsGrams": 4.18,
+  "saltGrams": 0.14,
+  "servings": [
+   {
+    "label": "1 unidad mediana",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-calabaza-cacahuete",
+  "name": "Calabaza (cacahuete)",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169295,
+  "caloriesKcal": 45,
+  "proteinGrams": 1,
+  "carbohydrateGrams": 11.69,
+  "fatGrams": 0.1,
+  "fiberGrams": 2,
+  "sugarsGrams": 2.2,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-calabaza",
+  "name": "Calabaza",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168448,
+  "caloriesKcal": 26,
+  "proteinGrams": 1,
+  "carbohydrateGrams": 6.5,
+  "fatGrams": 0.1,
+  "fiberGrams": 0.5,
+  "sugarsGrams": 2.76,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-puerro",
+  "name": "Puerro",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169246,
+  "caloriesKcal": 61,
+  "proteinGrams": 1.5,
+  "carbohydrateGrams": 14.15,
+  "fatGrams": 0.3,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 3.9,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 90
+   }
+  ]
+ },
+ {
+  "id": "seed-apio",
+  "name": "Apio",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169988,
+  "caloriesKcal": 14,
+  "proteinGrams": 0.69,
+  "carbohydrateGrams": 2.97,
+  "fatGrams": 0.17,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 1.34,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 rama",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-esparragos",
+  "name": "Espárragos",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168389,
+  "caloriesKcal": 20,
+  "proteinGrams": 2.2,
+  "carbohydrateGrams": 3.88,
+  "fatGrams": 0.12,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 1.88,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "5 unidades",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-alcachofa",
+  "name": "Alcachofa",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169205,
+  "caloriesKcal": 47,
+  "proteinGrams": 3.27,
+  "carbohydrateGrams": 10.51,
+  "fatGrams": 0.15,
+  "fiberGrams": 5.4,
+  "sugarsGrams": 0.99,
+  "saltGrams": 0.24,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-remolacha",
+  "name": "Remolacha",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169145,
+  "caloriesKcal": 43,
+  "proteinGrams": 1.61,
+  "carbohydrateGrams": 9.56,
+  "fatGrams": 0.17,
+  "fiberGrams": 2.8,
+  "sugarsGrams": 6.76,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-repollo",
+  "name": "Repollo",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169975,
+  "caloriesKcal": 25,
+  "proteinGrams": 1.28,
+  "carbohydrateGrams": 5.8,
+  "fatGrams": 0.1,
+  "fiberGrams": 2.5,
+  "sugarsGrams": 3.2,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-lombarda",
+  "name": "Lombarda",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169977,
+  "caloriesKcal": 31,
+  "proteinGrams": 1.43,
+  "carbohydrateGrams": 7.37,
+  "fatGrams": 0.16,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 3.83,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-rucula",
+  "name": "Rúcula",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169387,
+  "caloriesKcal": 25,
+  "proteinGrams": 2.58,
+  "carbohydrateGrams": 3.65,
+  "fatGrams": 0.66,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 2.05,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-rabanos",
+  "name": "Rábanos",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 169276,
+  "caloriesKcal": 16,
+  "proteinGrams": 0.68,
+  "carbohydrateGrams": 3.4,
+  "fatGrams": 0.1,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 1.86,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "5 unidades",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-nabo",
+  "name": "Nabo",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170465,
+  "caloriesKcal": 28,
+  "proteinGrams": 0.9,
+  "carbohydrateGrams": 6.43,
+  "fatGrams": 0.1,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 3.8,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-coles-de-bruselas",
+  "name": "Coles de Bruselas",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170383,
+  "caloriesKcal": 43,
+  "proteinGrams": 3.38,
+  "carbohydrateGrams": 8.95,
+  "fatGrams": 0.3,
+  "fiberGrams": 3.8,
+  "sugarsGrams": 2.2,
+  "saltGrams": 0.06,
+  "servings": [
+   {
+    "label": "5 unidades",
+    "grams": 90
+   }
+  ]
+ },
+ {
+  "id": "seed-endibia",
+  "name": "Endibia",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168412,
+  "caloriesKcal": 17,
+  "proteinGrams": 1.25,
+  "carbohydrateGrams": 3.35,
+  "fatGrams": 0.2,
+  "fiberGrams": 3.1,
+  "sugarsGrams": 0.25,
+  "saltGrams": 0.06,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-col-rizada-kale",
+  "name": "Col rizada (kale)",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168421,
+  "caloriesKcal": 35,
+  "proteinGrams": 2.92,
+  "carbohydrateGrams": 4.42,
+  "fatGrams": 1.49,
+  "fiberGrams": 4.1,
+  "sugarsGrams": 0.99,
+  "saltGrams": 0.13,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-cebolleta",
+  "name": "Cebolleta",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170005,
+  "caloriesKcal": 32,
+  "proteinGrams": 1.83,
+  "carbohydrateGrams": 7.34,
+  "fatGrams": 0.19,
+  "fiberGrams": 2.6,
+  "sugarsGrams": 2.33,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-guindilla-verde",
+  "name": "Guindilla verde",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170497,
+  "caloriesKcal": 40,
+  "proteinGrams": 2,
+  "carbohydrateGrams": 9.46,
+  "fatGrams": 0.2,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 5.1,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-tomate-seco",
+  "name": "Tomate seco",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 168567,
+  "caloriesKcal": 258,
+  "proteinGrams": 14.11,
+  "carbohydrateGrams": 55.76,
+  "fatGrams": 2.97,
+  "fiberGrams": 12.3,
+  "sugarsGrams": 37.59,
+  "saltGrams": 0.27,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 3
+   }
+  ]
+ },
+ {
+  "id": "seed-tomate-triturado-en-conserva",
+  "name": "Tomate triturado en conserva",
+  "category": "Verduras y hortalizas",
+  "source": "usda",
+  "fdcId": 170460,
+  "caloriesKcal": 38,
+  "proteinGrams": 1.65,
+  "carbohydrateGrams": 8.98,
+  "fatGrams": 0.21,
+  "fiberGrams": 1.9,
+  "sugarsGrams": 4.83,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-lentejas-cocidas",
+  "name": "Lentejas cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 172421,
+  "caloriesKcal": 116,
+  "proteinGrams": 9.02,
+  "carbohydrateGrams": 20.13,
+  "fatGrams": 0.38,
+  "fiberGrams": 7.9,
+  "sugarsGrams": 1.8,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-lentejas-secas",
+  "name": "Lentejas secas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 172420,
+  "caloriesKcal": 352,
+  "proteinGrams": 24.63,
+  "carbohydrateGrams": 63.35,
+  "fatGrams": 1.06,
+  "fiberGrams": 10.7,
+  "sugarsGrams": 2.03,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 ración (en crudo)",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-garbanzos-cocidos",
+  "name": "Garbanzos cocidos",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 173757,
+  "caloriesKcal": 164,
+  "proteinGrams": 8.86,
+  "carbohydrateGrams": 27.42,
+  "fatGrams": 2.59,
+  "fiberGrams": 7.6,
+  "sugarsGrams": 4.8,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   },
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-garbanzos-secos",
+  "name": "Garbanzos secos",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 173756,
+  "caloriesKcal": 378,
+  "proteinGrams": 20.47,
+  "carbohydrateGrams": 62.95,
+  "fatGrams": 6.04,
+  "fiberGrams": 12.2,
+  "sugarsGrams": 10.7,
+  "saltGrams": 0.06,
+  "servings": [
+   {
+    "label": "1 ración (en crudo)",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-alubias-blancas-cocidas",
+  "name": "Alubias blancas cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 175203,
+  "caloriesKcal": 139,
+  "proteinGrams": 9.73,
+  "carbohydrateGrams": 25.09,
+  "fatGrams": 0.35,
+  "fiberGrams": 6.3,
+  "sugarsGrams": 0.34,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-alubias-pintas-cocidas",
+  "name": "Alubias pintas cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 175200,
+  "caloriesKcal": 143,
+  "proteinGrams": 9.01,
+  "carbohydrateGrams": 26.22,
+  "fatGrams": 0.65,
+  "fiberGrams": 9,
+  "sugarsGrams": 0.34,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-alubias-rojas-cocidas",
+  "name": "Alubias rojas cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 175194,
+  "caloriesKcal": 127,
+  "proteinGrams": 8.67,
+  "carbohydrateGrams": 22.8,
+  "fatGrams": 0.5,
+  "fiberGrams": 7.4,
+  "sugarsGrams": 0.32,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-alubias-negras-cocidas",
+  "name": "Alubias negras cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 173735,
+  "caloriesKcal": 132,
+  "proteinGrams": 8.86,
+  "carbohydrateGrams": 23.71,
+  "fatGrams": 0.54,
+  "fiberGrams": 8.7,
+  "sugarsGrams": 0.32,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-habas-cocidas",
+  "name": "Habas cocidas",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 173753,
+  "caloriesKcal": 110,
+  "proteinGrams": 7.6,
+  "carbohydrateGrams": 19.65,
+  "fatGrams": 0.4,
+  "fiberGrams": 5.4,
+  "sugarsGrams": 1.82,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-edamame",
+  "name": "Edamame",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 168411,
+  "caloriesKcal": 121,
+  "proteinGrams": 11.91,
+  "carbohydrateGrams": 8.91,
+  "fatGrams": 5.2,
+  "fiberGrams": 5.2,
+  "sugarsGrams": 2.18,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-soja-cocida",
+  "name": "Soja cocida",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 174271,
+  "caloriesKcal": 172,
+  "proteinGrams": 18.21,
+  "carbohydrateGrams": 8.36,
+  "fatGrams": 8.97,
+  "fiberGrams": 6,
+  "sugarsGrams": 3,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-hummus",
+  "name": "Hummus",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 174289,
+  "caloriesKcal": 237,
+  "proteinGrams": 7.78,
+  "carbohydrateGrams": 15,
+  "fatGrams": 17.82,
+  "fiberGrams": 5.5,
+  "sugarsGrams": 0.62,
+  "saltGrams": 1.07,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-tofu-firme",
+  "name": "Tofu firme",
+  "category": "Legumbres",
+  "source": "usda",
+  "fdcId": 172475,
+  "caloriesKcal": 144,
+  "proteinGrams": 17.27,
+  "carbohydrateGrams": 2.78,
+  "fatGrams": 8.72,
+  "fiberGrams": 2.3,
+  "sugarsGrams": null,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-arroz-blanco-cocido",
+  "name": "Arroz blanco cocido",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168878,
+  "caloriesKcal": 130,
+  "proteinGrams": 2.69,
+  "carbohydrateGrams": 28.17,
+  "fatGrams": 0.28,
+  "fiberGrams": 0.4,
+  "sugarsGrams": 0.05,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   },
+   {
+    "label": "1 taza",
+    "grams": 160
+   }
+  ]
+ },
+ {
+  "id": "seed-arroz-blanco-crudo",
+  "name": "Arroz blanco crudo",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168877,
+  "caloriesKcal": 365,
+  "proteinGrams": 7.13,
+  "carbohydrateGrams": 79.95,
+  "fatGrams": 0.66,
+  "fiberGrams": 1.3,
+  "sugarsGrams": 0.12,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 ración (en crudo)",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-arroz-integral-cocido",
+  "name": "Arroz integral cocido",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169704,
+  "caloriesKcal": 123,
+  "proteinGrams": 2.74,
+  "carbohydrateGrams": 25.58,
+  "fatGrams": 0.97,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 0.24,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-pasta-cocida",
+  "name": "Pasta cocida",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169737,
+  "caloriesKcal": 158,
+  "proteinGrams": 5.8,
+  "carbohydrateGrams": 30.86,
+  "fatGrams": 0.93,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 0.56,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 220
+   }
+  ]
+ },
+ {
+  "id": "seed-pasta-cruda",
+  "name": "Pasta cruda",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169736,
+  "caloriesKcal": 371,
+  "proteinGrams": 13.04,
+  "carbohydrateGrams": 74.67,
+  "fatGrams": 1.51,
+  "fiberGrams": 3.2,
+  "sugarsGrams": 2.67,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 ración (en crudo)",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-fideos-de-huevo-cocidos",
+  "name": "Fideos de huevo cocidos",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169732,
+  "caloriesKcal": 138,
+  "proteinGrams": 4.54,
+  "carbohydrateGrams": 25.16,
+  "fatGrams": 2.07,
+  "fiberGrams": 1.2,
+  "sugarsGrams": 0.4,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-blanco",
+  "name": "Pan blanco",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174924,
+  "caloriesKcal": 266,
+  "proteinGrams": 8.85,
+  "carbohydrateGrams": 49.42,
+  "fatGrams": 3.33,
+  "fiberGrams": 2.7,
+  "sugarsGrams": 5.67,
+  "saltGrams": 1.23,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 30
+   },
+   {
+    "label": "1 barra pequeña",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-integral",
+  "name": "Pan integral",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172688,
+  "caloriesKcal": 252,
+  "proteinGrams": 12.45,
+  "carbohydrateGrams": 42.71,
+  "fatGrams": 3.5,
+  "fiberGrams": 6,
+  "sugarsGrams": 4.34,
+  "saltGrams": 1.14,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-multicereales",
+  "name": "Pan multicereales",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168013,
+  "caloriesKcal": 265,
+  "proteinGrams": 13.36,
+  "carbohydrateGrams": 43.34,
+  "fatGrams": 4.23,
+  "fiberGrams": 7.4,
+  "sugarsGrams": 6.39,
+  "saltGrams": 0.95,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-de-centeno",
+  "name": "Pan de centeno",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172684,
+  "caloriesKcal": 259,
+  "proteinGrams": 8.5,
+  "carbohydrateGrams": 48.3,
+  "fatGrams": 3.3,
+  "fiberGrams": 5.8,
+  "sugarsGrams": 3.85,
+  "saltGrams": 1.51,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-baguette",
+  "name": "Baguette",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172675,
+  "caloriesKcal": 272,
+  "proteinGrams": 10.75,
+  "carbohydrateGrams": 51.88,
+  "fatGrams": 2.42,
+  "fiberGrams": 2.2,
+  "sugarsGrams": 4.62,
+  "saltGrams": 1.51,
+  "servings": [
+   {
+    "label": "1 trozo",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-de-pita",
+  "name": "Pan de pita",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174915,
+  "caloriesKcal": 275,
+  "proteinGrams": 9.1,
+  "carbohydrateGrams": 55.7,
+  "fatGrams": 1.2,
+  "fiberGrams": 2.2,
+  "sugarsGrams": 1.3,
+  "saltGrams": 1.34,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-italiano",
+  "name": "Pan italiano",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174913,
+  "caloriesKcal": 259,
+  "proteinGrams": 9.49,
+  "carbohydrateGrams": 48.11,
+  "fatGrams": 2.73,
+  "fiberGrams": 2.1,
+  "sugarsGrams": 4.69,
+  "saltGrams": 1.55,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-tostada-de-pan-blanco",
+  "name": "Tostada de pan blanco",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174925,
+  "caloriesKcal": 290,
+  "proteinGrams": 9,
+  "carbohydrateGrams": 54.5,
+  "fatGrams": 4,
+  "fiberGrams": 2.9,
+  "sugarsGrams": 6.2,
+  "saltGrams": 1.34,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-bagel",
+  "name": "Bagel",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174899,
+  "caloriesKcal": 264,
+  "proteinGrams": 10.56,
+  "carbohydrateGrams": 52.38,
+  "fatGrams": 1.32,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 8.43,
+  "saltGrams": 1.06,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 95
+   }
+  ]
+ },
+ {
+  "id": "seed-tortilla-de-trigo-wrap",
+  "name": "Tortilla de trigo (wrap)",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 175037,
+  "caloriesKcal": 306,
+  "proteinGrams": 8.2,
+  "carbohydrateGrams": 49.38,
+  "fatGrams": 7.99,
+  "fiberGrams": 3.5,
+  "sugarsGrams": 3.71,
+  "saltGrams": 1.84,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 45
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-rallado",
+  "name": "Pan rallado",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174928,
+  "caloriesKcal": 395,
+  "proteinGrams": 13.35,
+  "carbohydrateGrams": 71.98,
+  "fatGrams": 5.3,
+  "fiberGrams": 4.5,
+  "sugarsGrams": 6.2,
+  "saltGrams": 1.83,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-copos-de-avena",
+  "name": "Copos de avena",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 173904,
+  "caloriesKcal": 379,
+  "proteinGrams": 13.15,
+  "carbohydrateGrams": 67.7,
+  "fatGrams": 6.52,
+  "fiberGrams": 10.1,
+  "sugarsGrams": 0.99,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 40
+   },
+   {
+    "label": "1 cucharada",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-cereales-de-maiz-corn-flakes",
+  "name": "Cereales de maíz (corn flakes)",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174648,
+  "caloriesKcal": 384,
+  "proteinGrams": 5.9,
+  "carbohydrateGrams": 88.01,
+  "fatGrams": 0.91,
+  "fiberGrams": 2.7,
+  "sugarsGrams": 7.84,
+  "saltGrams": 1.43,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-cereales-de-arroz-inflado",
+  "name": "Cereales de arroz inflado",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172983,
+  "caloriesKcal": 346,
+  "proteinGrams": 6.07,
+  "carbohydrateGrams": 86.4,
+  "fatGrams": 1.12,
+  "fiberGrams": 0.4,
+  "sugarsGrams": 7.82,
+  "saltGrams": 2.31,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-cereales-de-salvado-de-avena",
+  "name": "Cereales de salvado de avena",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172986,
+  "caloriesKcal": 372,
+  "proteinGrams": 11.45,
+  "carbohydrateGrams": 75.41,
+  "fatGrams": 5.04,
+  "fiberGrams": 8.6,
+  "sugarsGrams": 15.57,
+  "saltGrams": 1.63,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-quinoa-cocida",
+  "name": "Quinoa cocida",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168917,
+  "caloriesKcal": 120,
+  "proteinGrams": 4.4,
+  "carbohydrateGrams": 21.3,
+  "fatGrams": 1.92,
+  "fiberGrams": 2.8,
+  "sugarsGrams": 0.87,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-cuscus-cocido",
+  "name": "Cuscús cocido",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169700,
+  "caloriesKcal": 112,
+  "proteinGrams": 3.79,
+  "carbohydrateGrams": 23.22,
+  "fatGrams": 0.16,
+  "fiberGrams": 1.4,
+  "sugarsGrams": 0.1,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-bulgur-cocido",
+  "name": "Bulgur cocido",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 170287,
+  "caloriesKcal": 83,
+  "proteinGrams": 3.08,
+  "carbohydrateGrams": 18.58,
+  "fatGrams": 0.24,
+  "fiberGrams": 4.5,
+  "sugarsGrams": 0.1,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-cebada-perlada-cocida",
+  "name": "Cebada perlada cocida",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 170285,
+  "caloriesKcal": 123,
+  "proteinGrams": 2.26,
+  "carbohydrateGrams": 28.22,
+  "fatGrams": 0.44,
+  "fiberGrams": 3.8,
+  "sugarsGrams": 0.28,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-harina-de-trigo",
+  "name": "Harina de trigo",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168894,
+  "caloriesKcal": 364,
+  "proteinGrams": 10.33,
+  "carbohydrateGrams": 76.31,
+  "fatGrams": 0.98,
+  "fiberGrams": 2.7,
+  "sugarsGrams": 0.27,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 8
+   }
+  ]
+ },
+ {
+  "id": "seed-harina-integral",
+  "name": "Harina integral",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 168944,
+  "caloriesKcal": 332,
+  "proteinGrams": 9.61,
+  "carbohydrateGrams": 74.48,
+  "fatGrams": 1.95,
+  "fiberGrams": 13.1,
+  "sugarsGrams": 1.02,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 8
+   }
+  ]
+ },
+ {
+  "id": "seed-harina-de-maiz",
+  "name": "Harina de maíz",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 169697,
+  "caloriesKcal": 362,
+  "proteinGrams": 8.12,
+  "carbohydrateGrams": 76.89,
+  "fatGrams": 3.59,
+  "fiberGrams": 7.3,
+  "sugarsGrams": 0.64,
+  "saltGrams": 0.09,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 8
+   }
+  ]
+ },
+ {
+  "id": "seed-tortitas-de-arroz",
+  "name": "Tortitas de arroz",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 170250,
+  "caloriesKcal": 387,
+  "proteinGrams": 8.2,
+  "carbohydrateGrams": 81.5,
+  "fatGrams": 2.8,
+  "fiberGrams": 4.2,
+  "sugarsGrams": 0.88,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 9
+   }
+  ]
+ },
+ {
+  "id": "seed-palomitas-sin-grasa",
+  "name": "Palomitas (sin grasa)",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 167959,
+  "caloriesKcal": 387,
+  "proteinGrams": 12.94,
+  "carbohydrateGrams": 77.78,
+  "fatGrams": 4.54,
+  "fiberGrams": 14.5,
+  "sugarsGrams": 0.87,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-galletas-de-mantequilla",
+  "name": "Galletas de mantequilla",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174950,
+  "caloriesKcal": 467,
+  "proteinGrams": 6.1,
+  "carbohydrateGrams": 68.9,
+  "fatGrams": 18.8,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 20.24,
+  "saltGrams": 0.71,
+  "servings": [
+   {
+    "label": "1 galleta",
+    "grams": 7
+   }
+  ]
+ },
+ {
+  "id": "seed-galletas-con-pepitas-de-chocolate",
+  "name": "Galletas con pepitas de chocolate",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172717,
+  "caloriesKcal": 444,
+  "proteinGrams": 3.63,
+  "carbohydrateGrams": 65.75,
+  "fatGrams": 19.77,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 37.1,
+  "saltGrams": 0.69,
+  "servings": [
+   {
+    "label": "1 galleta",
+    "grams": 16
+   }
+  ]
+ },
+ {
+  "id": "seed-galletas-de-avena",
+  "name": "Galletas de avena",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172725,
+  "caloriesKcal": 450,
+  "proteinGrams": 6.2,
+  "carbohydrateGrams": 68.7,
+  "fatGrams": 18.1,
+  "fiberGrams": 2.8,
+  "sugarsGrams": 24.66,
+  "saltGrams": 1.3,
+  "servings": [
+   {
+    "label": "1 galleta",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-galletas-saladas-crackers",
+  "name": "Galletas saladas (crackers)",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174982,
+  "caloriesKcal": 510,
+  "proteinGrams": 6.64,
+  "carbohydrateGrams": 61.3,
+  "fatGrams": 26.43,
+  "fiberGrams": 2.3,
+  "sugarsGrams": 8.18,
+  "saltGrams": 1.82,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-croissant",
+  "name": "Croissant",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174987,
+  "caloriesKcal": 406,
+  "proteinGrams": 8.2,
+  "carbohydrateGrams": 45.8,
+  "fatGrams": 21,
+  "fiberGrams": 2.6,
+  "sugarsGrams": 11.26,
+  "saltGrams": 0.96,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-donut",
+  "name": "Donut",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 174990,
+  "caloriesKcal": 434,
+  "proteinGrams": 5.31,
+  "carbohydrateGrams": 47.06,
+  "fatGrams": 24.93,
+  "fiberGrams": 1.7,
+  "sugarsGrams": 18.15,
+  "saltGrams": 1.19,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-magdalena",
+  "name": "Magdalena",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 172764,
+  "caloriesKcal": 296,
+  "proteinGrams": 6.9,
+  "carbohydrateGrams": 41.4,
+  "fatGrams": 11.4,
+  "fiberGrams": 2.7,
+  "sugarsGrams": null,
+  "saltGrams": 1.17,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 55
+   }
+  ]
+ },
+ {
+  "id": "seed-tortitas-pancakes",
+  "name": "Tortitas (pancakes)",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 175009,
+  "caloriesKcal": 227,
+  "proteinGrams": 6.4,
+  "carbohydrateGrams": 28.3,
+  "fatGrams": 9.7,
+  "fiberGrams": null,
+  "sugarsGrams": null,
+  "saltGrams": 1.1,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-gofres",
+  "name": "Gofres",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 175038,
+  "caloriesKcal": 285,
+  "proteinGrams": 6.47,
+  "carbohydrateGrams": 42.98,
+  "fatGrams": 9.7,
+  "fiberGrams": 2.2,
+  "sugarsGrams": 4.91,
+  "saltGrams": 1.6,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 35
+   }
+  ]
+ },
+ {
+  "id": "seed-barrita-de-cereales",
+  "name": "Barrita de cereales",
+  "category": "Cereales, pan y pasta",
+  "source": "usda",
+  "fdcId": 167542,
+  "caloriesKcal": 471,
+  "proteinGrams": 10.1,
+  "carbohydrateGrams": 64.4,
+  "fatGrams": 19.8,
+  "fiberGrams": 5.3,
+  "sugarsGrams": 28.57,
+  "saltGrams": 0.74,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 25
+   }
+  ]
+ },
+ {
+  "id": "seed-pechuga-de-pollo-cocinada",
+  "name": "Pechuga de pollo cocinada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 171477,
+  "caloriesKcal": 165,
+  "proteinGrams": 31.02,
+  "carbohydrateGrams": 0,
+  "fatGrams": 3.57,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.19,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-pechuga-de-pollo-cruda",
+  "name": "Pechuga de pollo cruda",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 171077,
+  "caloriesKcal": 120,
+  "proteinGrams": 22.5,
+  "carbohydrateGrams": 0,
+  "fatGrams": 2.62,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-muslo-de-pollo-cocinado",
+  "name": "Muslo de pollo cocinado",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172388,
+  "caloriesKcal": 179,
+  "proteinGrams": 24.76,
+  "carbohydrateGrams": 0,
+  "fatGrams": 8.15,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.27,
+  "servings": [
+   {
+    "label": "1 muslo (sin hueso)",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-contramuslo-de-pollo-asado-con-piel",
+  "name": "Contramuslo de pollo asado (con piel)",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 173617,
+  "caloriesKcal": 184,
+  "proteinGrams": 24.03,
+  "carbohydrateGrams": 0,
+  "fatGrams": 8.99,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.25,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-pollo-asado-con-piel",
+  "name": "Pollo asado (con piel)",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 171450,
+  "caloriesKcal": 239,
+  "proteinGrams": 27.3,
+  "carbohydrateGrams": 0,
+  "fatGrams": 13.6,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.21,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pechuga-de-pavo-cocinada",
+  "name": "Pechuga de pavo cocinada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 171496,
+  "caloriesKcal": 147,
+  "proteinGrams": 30.13,
+  "carbohydrateGrams": 0,
+  "fatGrams": 2.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.25,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-pavo-picado-crudo",
+  "name": "Pavo picado crudo",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 171505,
+  "caloriesKcal": 148,
+  "proteinGrams": 19.66,
+  "carbohydrateGrams": 0,
+  "fatGrams": 7.66,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.14,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-pavo-en-lonchas",
+  "name": "Pavo en lonchas",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172941,
+  "caloriesKcal": 106,
+  "proteinGrams": 14.81,
+  "carbohydrateGrams": 2.2,
+  "fatGrams": 3.77,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.91,
+  "saltGrams": 2.25,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-ternera-magra-guisada",
+  "name": "Ternera magra guisada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 170235,
+  "caloriesKcal": 207,
+  "proteinGrams": 36.12,
+  "carbohydrateGrams": 0,
+  "fatGrams": 5.8,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-solomillo-de-ternera-a-la-plancha",
+  "name": "Solomillo de ternera a la plancha",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 170642,
+  "caloriesKcal": 211,
+  "proteinGrams": 30.45,
+  "carbohydrateGrams": 0,
+  "fatGrams": 9.03,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.18,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-carne-picada-de-ternera-10-grasa",
+  "name": "Carne picada de ternera (10 % grasa)",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 174030,
+  "caloriesKcal": 176,
+  "proteinGrams": 20,
+  "carbohydrateGrams": 0,
+  "fatGrams": 10,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-hamburguesa-de-ternera-cocinada",
+  "name": "Hamburguesa de ternera cocinada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 174031,
+  "caloriesKcal": 217,
+  "proteinGrams": 26.11,
+  "carbohydrateGrams": 0,
+  "fatGrams": 11.75,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-ternera-redondo-asada",
+  "name": "Ternera (redondo) asada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 173822,
+  "caloriesKcal": 150,
+  "proteinGrams": 28.07,
+  "carbohydrateGrams": 0,
+  "fatGrams": 3.39,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-solomillo-de-cerdo-asado",
+  "name": "Solomillo de cerdo asado",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168250,
+  "caloriesKcal": 143,
+  "proteinGrams": 26.17,
+  "carbohydrateGrams": 0,
+  "fatGrams": 3.51,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.14,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-chuleta-de-cerdo-a-la-plancha",
+  "name": "Chuleta de cerdo a la plancha",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168240,
+  "caloriesKcal": 180,
+  "proteinGrams": 26.76,
+  "carbohydrateGrams": 0,
+  "fatGrams": 7.29,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.14,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-costillas-de-cerdo-guisadas",
+  "name": "Costillas de cerdo guisadas",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 167854,
+  "caloriesKcal": 397,
+  "proteinGrams": 29.06,
+  "carbohydrateGrams": 0,
+  "fatGrams": 30.3,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.23,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pierna-de-cerdo-asada",
+  "name": "Pierna de cerdo asada",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168225,
+  "caloriesKcal": 211,
+  "proteinGrams": 29.41,
+  "carbohydrateGrams": 0,
+  "fatGrams": 9.44,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.16,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-cordero-asado-pierna",
+  "name": "Cordero asado (pierna)",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172487,
+  "caloriesKcal": 180,
+  "proteinGrams": 28.17,
+  "carbohydrateGrams": 0,
+  "fatGrams": 6.67,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.17,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-cordero-picado-a-la-plancha",
+  "name": "Cordero picado a la plancha",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172544,
+  "caloriesKcal": 283,
+  "proteinGrams": 24.75,
+  "carbohydrateGrams": 0,
+  "fatGrams": 19.65,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-conejo-asado",
+  "name": "Conejo asado",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172522,
+  "caloriesKcal": 197,
+  "proteinGrams": 29.06,
+  "carbohydrateGrams": 0,
+  "fatGrams": 8.05,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.12,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pato-asado",
+  "name": "Pato asado",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 172411,
+  "caloriesKcal": 201,
+  "proteinGrams": 23.48,
+  "carbohydrateGrams": 0,
+  "fatGrams": 11.2,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.16,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-higado-de-ternera-guisado",
+  "name": "Hígado de ternera guisado",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168626,
+  "caloriesKcal": 191,
+  "proteinGrams": 29.08,
+  "carbohydrateGrams": 5.13,
+  "fatGrams": 5.26,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-beicon-frito",
+  "name": "Beicon frito",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168322,
+  "caloriesKcal": 468,
+  "proteinGrams": 33.92,
+  "carbohydrateGrams": 1.7,
+  "fatGrams": 35.09,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 4.21,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 8
+   }
+  ]
+ },
+ {
+  "id": "seed-bacon-crudo",
+  "name": "Bacon crudo",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 168277,
+  "caloriesKcal": 393,
+  "proteinGrams": 13.66,
+  "carbohydrateGrams": 0,
+  "fatGrams": 37.13,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.88,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-salchicha-de-ternera-frankfurt",
+  "name": "Salchicha de ternera (frankfurt)",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 174614,
+  "caloriesKcal": 322,
+  "proteinGrams": 11.69,
+  "carbohydrateGrams": 2.66,
+  "fatGrams": 29.36,
+  "fiberGrams": 0,
+  "sugarsGrams": 1.27,
+  "saltGrams": 2.13,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 45
+   }
+  ]
+ },
+ {
+  "id": "seed-salami",
+  "name": "Salami",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 174603,
+  "caloriesKcal": 425,
+  "proteinGrams": 21.7,
+  "carbohydrateGrams": 1.2,
+  "fatGrams": 37,
+  "fiberGrams": 0,
+  "sugarsGrams": 1.2,
+  "saltGrams": 4.72,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 8
+   }
+  ]
+ },
+ {
+  "id": "seed-cecina",
+  "name": "Cecina",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 170604,
+  "caloriesKcal": 153,
+  "proteinGrams": 31.1,
+  "carbohydrateGrams": 2.76,
+  "fatGrams": 1.94,
+  "fiberGrams": 0,
+  "sugarsGrams": 2.7,
+  "saltGrams": 6.98,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-chorizo-fresco",
+  "name": "Chorizo fresco",
+  "category": "Carnes y embutidos",
+  "source": "usda",
+  "fdcId": 173859,
+  "caloriesKcal": 296,
+  "proteinGrams": 13.63,
+  "carbohydrateGrams": 3.78,
+  "fatGrams": 25.1,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.97,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-jamon-serrano",
+  "name": "Jamón serrano",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 241,
+  "proteinGrams": 30.5,
+  "carbohydrateGrams": 0,
+  "fatGrams": 13,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 4.4,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 12
+   },
+   {
+    "label": "1 ración",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-jamon-cocido",
+  "name": "Jamón cocido",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 105,
+  "proteinGrams": 18.5,
+  "carbohydrateGrams": 1,
+  "fatGrams": 3,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.8,
+  "saltGrams": 1.9,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-chorizo-curado",
+  "name": "Chorizo curado",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 455,
+  "proteinGrams": 24,
+  "carbohydrateGrams": 2,
+  "fatGrams": 38,
+  "fiberGrams": 0,
+  "sugarsGrams": 1,
+  "saltGrams": 4.3,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 6
+   },
+   {
+    "label": "1 ración",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-salchichon",
+  "name": "Salchichón",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 440,
+  "proteinGrams": 25,
+  "carbohydrateGrams": 1,
+  "fatGrams": 37,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.5,
+  "saltGrams": 4.4,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 5
+   },
+   {
+    "label": "1 ración",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-lomo-embuchado",
+  "name": "Lomo embuchado",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 250,
+  "proteinGrams": 41,
+  "carbohydrateGrams": 1,
+  "fatGrams": 9,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.5,
+  "saltGrams": 5,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-fuet",
+  "name": "Fuet",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 470,
+  "proteinGrams": 27,
+  "carbohydrateGrams": 1.5,
+  "fatGrams": 40,
+  "fiberGrams": 0,
+  "sugarsGrams": 1,
+  "saltGrams": 4.5,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 150
+   },
+   {
+    "label": "1 rodaja",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-morcilla-de-arroz",
+  "name": "Morcilla de arroz",
+  "category": "Carnes y embutidos",
+  "source": "reference",
+  "caloriesKcal": 330,
+  "proteinGrams": 12,
+  "carbohydrateGrams": 14,
+  "fatGrams": 25,
+  "fiberGrams": 0.5,
+  "sugarsGrams": 1,
+  "saltGrams": 2.2,
+  "servings": [
+   {
+    "label": "1 rodaja",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-salmon-cocinado",
+  "name": "Salmón cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175168,
+  "caloriesKcal": 206,
+  "proteinGrams": 22.1,
+  "carbohydrateGrams": 0,
+  "fatGrams": 12.35,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.15,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-salmon-ahumado",
+  "name": "Salmón ahumado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173687,
+  "caloriesKcal": 117,
+  "proteinGrams": 18.28,
+  "carbohydrateGrams": 0,
+  "fatGrams": 4.32,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.68,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 25
+   }
+  ]
+ },
+ {
+  "id": "seed-atun-al-natural-lata",
+  "name": "Atún al natural (lata)",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173709,
+  "caloriesKcal": 86,
+  "proteinGrams": 19.44,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.96,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.62,
+  "servings": [
+   {
+    "label": "1 lata (escurrida)",
+    "grams": 52
+   }
+  ]
+ },
+ {
+  "id": "seed-atun-en-aceite-lata",
+  "name": "Atún en aceite (lata)",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173708,
+  "caloriesKcal": 198,
+  "proteinGrams": 29.13,
+  "carbohydrateGrams": 0,
+  "fatGrams": 8.21,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.04,
+  "servings": [
+   {
+    "label": "1 lata (escurrida)",
+    "grams": 52
+   }
+  ]
+ },
+ {
+  "id": "seed-atun-fresco-cocinado",
+  "name": "Atún fresco cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173707,
+  "caloriesKcal": 184,
+  "proteinGrams": 29.91,
+  "carbohydrateGrams": 0,
+  "fatGrams": 6.28,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.13,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-bacalao-cocinado",
+  "name": "Bacalao cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 171956,
+  "caloriesKcal": 105,
+  "proteinGrams": 22.83,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.86,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-sardinas-en-aceite-lata",
+  "name": "Sardinas en aceite (lata)",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175139,
+  "caloriesKcal": 208,
+  "proteinGrams": 24.62,
+  "carbohydrateGrams": 0,
+  "fatGrams": 11.45,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.77,
+  "servings": [
+   {
+    "label": "1 lata (escurrida)",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-caballa-cocinada",
+  "name": "Caballa cocinada",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175120,
+  "caloriesKcal": 262,
+  "proteinGrams": 23.85,
+  "carbohydrateGrams": 0,
+  "fatGrams": 17.81,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.21,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-trucha-cocinada",
+  "name": "Trucha cocinada",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173718,
+  "caloriesKcal": 168,
+  "proteinGrams": 23.8,
+  "carbohydrateGrams": 0,
+  "fatGrams": 7.38,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.15,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-lubina-cocinada",
+  "name": "Lubina cocinada",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174228,
+  "caloriesKcal": 124,
+  "proteinGrams": 22.73,
+  "carbohydrateGrams": 0,
+  "fatGrams": 2.99,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.22,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-pez-espada-cocinado",
+  "name": "Pez espada cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173704,
+  "caloriesKcal": 172,
+  "proteinGrams": 23.45,
+  "carbohydrateGrams": 0,
+  "fatGrams": 7.93,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.24,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-rape-cocinado",
+  "name": "Rape cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 171996,
+  "caloriesKcal": 97,
+  "proteinGrams": 18.56,
+  "carbohydrateGrams": 0,
+  "fatGrams": 1.95,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.06,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-tilapia-cocinada",
+  "name": "Tilapia cocinada",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175177,
+  "caloriesKcal": 128,
+  "proteinGrams": 26.15,
+  "carbohydrateGrams": 0,
+  "fatGrams": 2.65,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.14,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-fletan-cocinado",
+  "name": "Fletán cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174201,
+  "caloriesKcal": 111,
+  "proteinGrams": 22.54,
+  "carbohydrateGrams": 0,
+  "fatGrams": 1.61,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.21,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-lenguado-cocinado",
+  "name": "Lenguado cocinado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174197,
+  "caloriesKcal": 86,
+  "proteinGrams": 15.24,
+  "carbohydrateGrams": 0,
+  "fatGrams": 2.37,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.91,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-abadejo-crudo",
+  "name": "Abadejo crudo",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175129,
+  "caloriesKcal": 92,
+  "proteinGrams": 19.44,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.98,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.22,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-anchoas-en-aceite",
+  "name": "Anchoas en aceite",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174183,
+  "caloriesKcal": 210,
+  "proteinGrams": 28.89,
+  "carbohydrateGrams": 0,
+  "fatGrams": 9.71,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 9.17,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 4
+   }
+  ]
+ },
+ {
+  "id": "seed-arenque-en-vinagre",
+  "name": "Arenque en vinagre",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 175118,
+  "caloriesKcal": 262,
+  "proteinGrams": 14.19,
+  "carbohydrateGrams": 9.64,
+  "fatGrams": 18,
+  "fiberGrams": 0,
+  "sugarsGrams": 7.71,
+  "saltGrams": 2.17,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-huevas-de-pescado",
+  "name": "Huevas de pescado",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174239,
+  "caloriesKcal": 204,
+  "proteinGrams": 28.62,
+  "carbohydrateGrams": 1.92,
+  "fatGrams": 8.23,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.29,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-surimi",
+  "name": "Surimi",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 173702,
+  "caloriesKcal": 99,
+  "proteinGrams": 15.18,
+  "carbohydrateGrams": 6.85,
+  "fatGrams": 0.9,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.36,
+  "servings": [
+   {
+    "label": "1 barrita",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-gambas-cocidas",
+  "name": "Gambas cocidas",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 171971,
+  "caloriesKcal": 119,
+  "proteinGrams": 22.78,
+  "carbohydrateGrams": 1.52,
+  "fatGrams": 1.7,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 2.37,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   },
+   {
+    "label": "1 unidad",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-mejillones-cocidos",
+  "name": "Mejillones cocidos",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174217,
+  "caloriesKcal": 172,
+  "proteinGrams": 23.8,
+  "carbohydrateGrams": 7.39,
+  "fatGrams": 4.48,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.92,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-calamares-fritos",
+  "name": "Calamares fritos",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 171982,
+  "caloriesKcal": 175,
+  "proteinGrams": 17.94,
+  "carbohydrateGrams": 7.79,
+  "fatGrams": 7.48,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 0.77,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-pulpo-cocido",
+  "name": "Pulpo cocido",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174249,
+  "caloriesKcal": 164,
+  "proteinGrams": 29.82,
+  "carbohydrateGrams": 4.4,
+  "fatGrams": 2.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.15,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-sepia-cocida",
+  "name": "Sepia cocida",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 172010,
+  "caloriesKcal": 158,
+  "proteinGrams": 32.48,
+  "carbohydrateGrams": 1.64,
+  "fatGrams": 1.4,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 1.86,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-almejas-cocidas",
+  "name": "Almejas cocidas",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 171975,
+  "caloriesKcal": 148,
+  "proteinGrams": 25.55,
+  "carbohydrateGrams": 5.13,
+  "fatGrams": 1.95,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 3.01,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-bogavante-cocido",
+  "name": "Bogavante cocido",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174209,
+  "caloriesKcal": 89,
+  "proteinGrams": 19,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.86,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.22,
+  "servings": [
+   {
+    "label": "1/2 unidad",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-cangrejo-cocido",
+  "name": "Cangrejo cocido",
+  "category": "Pescados y mariscos",
+  "source": "usda",
+  "fdcId": 174205,
+  "caloriesKcal": 83,
+  "proteinGrams": 17.88,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.74,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.99,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-merluza-cocinada",
+  "name": "Merluza cocinada",
+  "category": "Pescados y mariscos",
+  "source": "reference",
+  "caloriesKcal": 90,
+  "proteinGrams": 18.5,
+  "carbohydrateGrams": 0,
+  "fatGrams": 1.5,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.25,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-dorada-cocinada",
+  "name": "Dorada cocinada",
+  "category": "Pescados y mariscos",
+  "source": "reference",
+  "caloriesKcal": 125,
+  "proteinGrams": 21,
+  "carbohydrateGrams": 0,
+  "fatGrams": 4.5,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 filete",
+    "grams": 130
+   }
+  ]
+ },
+ {
+  "id": "seed-huevo-cocido",
+  "name": "Huevo cocido",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173424,
+  "caloriesKcal": 155,
+  "proteinGrams": 12.58,
+  "carbohydrateGrams": 1.12,
+  "fatGrams": 10.61,
+  "fiberGrams": 0,
+  "sugarsGrams": 1.12,
+  "saltGrams": 0.31,
+  "servings": [
+   {
+    "label": "1 huevo (M)",
+    "grams": 55
+   },
+   {
+    "label": "2 huevos",
+    "grams": 110
+   }
+  ]
+ },
+ {
+  "id": "seed-huevo-frito",
+  "name": "Huevo frito",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173423,
+  "caloriesKcal": 196,
+  "proteinGrams": 13.61,
+  "carbohydrateGrams": 0.83,
+  "fatGrams": 14.84,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.4,
+  "saltGrams": 0.52,
+  "servings": [
+   {
+    "label": "1 huevo",
+    "grams": 46
+   }
+  ]
+ },
+ {
+  "id": "seed-clara-de-huevo",
+  "name": "Clara de huevo",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 172183,
+  "caloriesKcal": 52,
+  "proteinGrams": 10.9,
+  "carbohydrateGrams": 0.73,
+  "fatGrams": 0.17,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.71,
+  "saltGrams": 0.42,
+  "servings": [
+   {
+    "label": "1 clara",
+    "grams": 33
+   }
+  ]
+ },
+ {
+  "id": "seed-yema-de-huevo",
+  "name": "Yema de huevo",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 172184,
+  "caloriesKcal": 322,
+  "proteinGrams": 15.86,
+  "carbohydrateGrams": 3.59,
+  "fatGrams": 26.54,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.56,
+  "saltGrams": 0.12,
+  "servings": [
+   {
+    "label": "1 yema",
+    "grams": 17
+   }
+  ]
+ },
+ {
+  "id": "seed-leche-entera",
+  "name": "Leche entera",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171265,
+  "caloriesKcal": 61,
+  "proteinGrams": 3.15,
+  "carbohydrateGrams": 4.8,
+  "fatGrams": 3.25,
+  "fiberGrams": 0,
+  "sugarsGrams": 4.8,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   },
+   {
+    "label": "1 taza",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-leche-semidesnatada",
+  "name": "Leche semidesnatada",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171267,
+  "caloriesKcal": 50,
+  "proteinGrams": 3.3,
+  "carbohydrateGrams": 4.8,
+  "fatGrams": 1.98,
+  "fiberGrams": 0,
+  "sugarsGrams": 4.8,
+  "saltGrams": 0.12,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   },
+   {
+    "label": "1 taza",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-leche-desnatada",
+  "name": "Leche desnatada",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171269,
+  "caloriesKcal": 34,
+  "proteinGrams": 3.37,
+  "carbohydrateGrams": 4.96,
+  "fatGrams": 0.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 4.96,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   },
+   {
+    "label": "1 taza",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-leche-con-chocolate",
+  "name": "Leche con chocolate",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170879,
+  "caloriesKcal": 83,
+  "proteinGrams": 3.17,
+  "carbohydrateGrams": 10.34,
+  "fatGrams": 3.39,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 9.54,
+  "saltGrams": 0.15,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-leche-condensada",
+  "name": "Leche condensada",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171275,
+  "caloriesKcal": 321,
+  "proteinGrams": 7.91,
+  "carbohydrateGrams": 54.4,
+  "fatGrams": 8.7,
+  "fiberGrams": 0,
+  "sugarsGrams": 54.4,
+  "saltGrams": 0.32,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-yogur-natural",
+  "name": "Yogur natural",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171284,
+  "caloriesKcal": 61,
+  "proteinGrams": 3.47,
+  "carbohydrateGrams": 4.66,
+  "fatGrams": 3.25,
+  "fiberGrams": 0,
+  "sugarsGrams": 4.66,
+  "saltGrams": 0.12,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-yogur-natural-desnatado",
+  "name": "Yogur natural desnatado",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170886,
+  "caloriesKcal": 63,
+  "proteinGrams": 5.25,
+  "carbohydrateGrams": 7.04,
+  "fatGrams": 1.55,
+  "fiberGrams": 0,
+  "sugarsGrams": 7.04,
+  "saltGrams": 0.18,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-yogur-griego-natural",
+  "name": "Yogur griego natural",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171304,
+  "caloriesKcal": 97,
+  "proteinGrams": 9,
+  "carbohydrateGrams": 3.98,
+  "fatGrams": 5,
+  "fiberGrams": 0,
+  "sugarsGrams": 3.98,
+  "saltGrams": 0.09,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-yogur-griego-0",
+  "name": "Yogur griego 0 %",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170894,
+  "caloriesKcal": 59,
+  "proteinGrams": 10.19,
+  "carbohydrateGrams": 3.6,
+  "fatGrams": 0.39,
+  "fiberGrams": 0,
+  "sugarsGrams": 3.24,
+  "saltGrams": 0.09,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-yogur-de-frutas",
+  "name": "Yogur de frutas",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170889,
+  "caloriesKcal": 99,
+  "proteinGrams": 3.98,
+  "carbohydrateGrams": 18.64,
+  "fatGrams": 1.15,
+  "fiberGrams": 0,
+  "sugarsGrams": 18.64,
+  "saltGrams": 0.13,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-kefir",
+  "name": "Kéfir",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170904,
+  "caloriesKcal": 43,
+  "proteinGrams": 3.79,
+  "carbohydrateGrams": 4.77,
+  "fatGrams": 1.02,
+  "fiberGrams": 0,
+  "sugarsGrams": 4.61,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-requeson-queso-cottage",
+  "name": "Requesón / queso cottage",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 172182,
+  "caloriesKcal": 81,
+  "proteinGrams": 10.45,
+  "carbohydrateGrams": 4.76,
+  "fatGrams": 2.27,
+  "fiberGrams": 0,
+  "sugarsGrams": 4,
+  "saltGrams": 0.77,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-cheddar",
+  "name": "Queso cheddar",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170899,
+  "caloriesKcal": 410,
+  "proteinGrams": 24.25,
+  "carbohydrateGrams": 2.13,
+  "fatGrams": 33.82,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.27,
+  "saltGrams": 1.61,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-mozzarella",
+  "name": "Queso mozzarella",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170845,
+  "caloriesKcal": 299,
+  "proteinGrams": 22.17,
+  "carbohydrateGrams": 2.4,
+  "fatGrams": 22.14,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.22,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 50
+   },
+   {
+    "label": "1 bola",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-crema",
+  "name": "Queso crema",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173418,
+  "caloriesKcal": 350,
+  "proteinGrams": 6.15,
+  "carbohydrateGrams": 5.52,
+  "fatGrams": 34.44,
+  "fiberGrams": 0,
+  "sugarsGrams": 3.76,
+  "saltGrams": 0.79,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-ricotta",
+  "name": "Ricotta",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170851,
+  "caloriesKcal": 150,
+  "proteinGrams": 7.54,
+  "carbohydrateGrams": 7.27,
+  "fatGrams": 10.18,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.27,
+  "saltGrams": 0.28,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-parmesano",
+  "name": "Queso parmesano",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170848,
+  "caloriesKcal": 392,
+  "proteinGrams": 35.75,
+  "carbohydrateGrams": 3.22,
+  "fatGrams": 25,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.11,
+  "saltGrams": 2.94,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-feta",
+  "name": "Queso feta",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173420,
+  "caloriesKcal": 265,
+  "proteinGrams": 14.21,
+  "carbohydrateGrams": 3.88,
+  "fatGrams": 21.49,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 2.85,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-azul",
+  "name": "Queso azul",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 172175,
+  "caloriesKcal": 353,
+  "proteinGrams": 21.4,
+  "carbohydrateGrams": 2.34,
+  "fatGrams": 28.74,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.5,
+  "saltGrams": 2.87,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-emmental",
+  "name": "Queso emmental",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171251,
+  "caloriesKcal": 393,
+  "proteinGrams": 26.96,
+  "carbohydrateGrams": 1.44,
+  "fatGrams": 30.99,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.47,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 25
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-de-cabra-blando",
+  "name": "Queso de cabra blando",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173435,
+  "caloriesKcal": 264,
+  "proteinGrams": 18.52,
+  "carbohydrateGrams": 0,
+  "fatGrams": 21.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.15,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 40
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-brie",
+  "name": "Queso brie",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 172177,
+  "caloriesKcal": 334,
+  "proteinGrams": 20.75,
+  "carbohydrateGrams": 0.45,
+  "fatGrams": 27.68,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.45,
+  "saltGrams": 1.57,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-edam",
+  "name": "Queso edam",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173419,
+  "caloriesKcal": 357,
+  "proteinGrams": 24.99,
+  "carbohydrateGrams": 1.43,
+  "fatGrams": 28.57,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 2.43,
+  "servings": [
+   {
+    "label": "1 loncha",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-manchego-curado",
+  "name": "Queso manchego curado",
+  "category": "Huevos y lácteos",
+  "source": "reference",
+  "caloriesKcal": 430,
+  "proteinGrams": 27,
+  "carbohydrateGrams": 0.5,
+  "fatGrams": 35,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.5,
+  "saltGrams": 1.8,
+  "servings": [
+   {
+    "label": "1 cuña",
+    "grams": 30
+   },
+   {
+    "label": "1 loncha",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-queso-fresco",
+  "name": "Queso fresco",
+  "category": "Huevos y lácteos",
+  "source": "reference",
+  "caloriesKcal": 180,
+  "proteinGrams": 12,
+  "carbohydrateGrams": 3,
+  "fatGrams": 13,
+  "fiberGrams": 0,
+  "sugarsGrams": 3,
+  "saltGrams": 0.9,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 80
+   }
+  ]
+ },
+ {
+  "id": "seed-nata-para-cocinar",
+  "name": "Nata para cocinar",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 170859,
+  "caloriesKcal": 340,
+  "proteinGrams": 2.84,
+  "carbohydrateGrams": 2.84,
+  "fatGrams": 36.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 2.84,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-nata-agria",
+  "name": "Nata agria",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 171257,
+  "caloriesKcal": 198,
+  "proteinGrams": 2.44,
+  "carbohydrateGrams": 4.63,
+  "fatGrams": 19.35,
+  "fiberGrams": 0,
+  "sugarsGrams": 3.41,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-mantequilla",
+  "name": "Mantequilla",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 173430,
+  "caloriesKcal": 717,
+  "proteinGrams": 0.85,
+  "carbohydrateGrams": 0.06,
+  "fatGrams": 81.11,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.06,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 cucharadita",
+    "grams": 5
+   },
+   {
+    "label": "1 porción",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-natillas",
+  "name": "Natillas",
+  "category": "Huevos y lácteos",
+  "source": "usda",
+  "fdcId": 169608,
+  "caloriesKcal": 130,
+  "proteinGrams": 1.45,
+  "carbohydrateGrams": 22.6,
+  "fatGrams": 3.78,
+  "fiberGrams": 0,
+  "sugarsGrams": 16.97,
+  "saltGrams": 0.43,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-flan",
+  "name": "Flan",
+  "category": "Huevos y lácteos",
+  "source": "reference",
+  "caloriesKcal": 125,
+  "proteinGrams": 3.5,
+  "carbohydrateGrams": 20,
+  "fatGrams": 3.5,
+  "fiberGrams": 0,
+  "sugarsGrams": 19,
+  "saltGrams": 0.15,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-aceite-de-oliva",
+  "name": "Aceite de oliva",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171413,
+  "caloriesKcal": 884,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 100,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 13
+   },
+   {
+    "label": "1 cucharadita",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-aceite-de-girasol",
+  "name": "Aceite de girasol",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171025,
+  "caloriesKcal": 884,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 100,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 13
+   }
+  ]
+ },
+ {
+  "id": "seed-aceite-de-coco",
+  "name": "Aceite de coco",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171412,
+  "caloriesKcal": 892,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 99.06,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 13
+   }
+  ]
+ },
+ {
+  "id": "seed-margarina",
+  "name": "Margarina",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 172347,
+  "caloriesKcal": 713,
+  "proteinGrams": 0.22,
+  "carbohydrateGrams": 0.75,
+  "fatGrams": 80.17,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 1.64,
+  "servings": [
+   {
+    "label": "1 cucharadita",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-almendras",
+  "name": "Almendras",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170567,
+  "caloriesKcal": 579,
+  "proteinGrams": 21.15,
+  "carbohydrateGrams": 21.55,
+  "fatGrams": 49.93,
+  "fiberGrams": 12.5,
+  "sugarsGrams": 4.35,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   },
+   {
+    "label": "1 unidad",
+    "grams": 1.2
+   }
+  ]
+ },
+ {
+  "id": "seed-nueces",
+  "name": "Nueces",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170187,
+  "caloriesKcal": 654,
+  "proteinGrams": 15.23,
+  "carbohydrateGrams": 13.71,
+  "fatGrams": 65.21,
+  "fiberGrams": 6.7,
+  "sugarsGrams": 2.61,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   },
+   {
+    "label": "1 nuez",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-cacahuetes",
+  "name": "Cacahuetes",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 172430,
+  "caloriesKcal": 567,
+  "proteinGrams": 25.8,
+  "carbohydrateGrams": 16.13,
+  "fatGrams": 49.24,
+  "fiberGrams": 8.5,
+  "sugarsGrams": 4.72,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-avellanas",
+  "name": "Avellanas",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170581,
+  "caloriesKcal": 628,
+  "proteinGrams": 14.95,
+  "carbohydrateGrams": 16.7,
+  "fatGrams": 60.75,
+  "fiberGrams": 9.7,
+  "sugarsGrams": 4.34,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-pistachos",
+  "name": "Pistachos",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170184,
+  "caloriesKcal": 560,
+  "proteinGrams": 20.16,
+  "carbohydrateGrams": 27.17,
+  "fatGrams": 45.32,
+  "fiberGrams": 10.6,
+  "sugarsGrams": 7.66,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-anacardos",
+  "name": "Anacardos",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170162,
+  "caloriesKcal": 553,
+  "proteinGrams": 18.22,
+  "carbohydrateGrams": 30.19,
+  "fatGrams": 43.85,
+  "fiberGrams": 3.3,
+  "sugarsGrams": 5.91,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-nueces-pecanas",
+  "name": "Nueces pecanas",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170182,
+  "caloriesKcal": 691,
+  "proteinGrams": 9.17,
+  "carbohydrateGrams": 13.86,
+  "fatGrams": 71.97,
+  "fiberGrams": 9.6,
+  "sugarsGrams": 3.97,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-nueces-de-brasil",
+  "name": "Nueces de Brasil",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170569,
+  "caloriesKcal": 659,
+  "proteinGrams": 14.32,
+  "carbohydrateGrams": 11.74,
+  "fatGrams": 67.1,
+  "fiberGrams": 7.5,
+  "sugarsGrams": 2.33,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-nueces-de-macadamia",
+  "name": "Nueces de macadamia",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170178,
+  "caloriesKcal": 718,
+  "proteinGrams": 7.91,
+  "carbohydrateGrams": 13.82,
+  "fatGrams": 75.77,
+  "fiberGrams": 8.6,
+  "sugarsGrams": 4.57,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-pinones",
+  "name": "Piñones",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170591,
+  "caloriesKcal": 673,
+  "proteinGrams": 13.69,
+  "carbohydrateGrams": 13.08,
+  "fatGrams": 68.37,
+  "fiberGrams": 3.7,
+  "sugarsGrams": 3.59,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 9
+   }
+  ]
+ },
+ {
+  "id": "seed-semillas-de-chia",
+  "name": "Semillas de chía",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170554,
+  "caloriesKcal": 486,
+  "proteinGrams": 16.54,
+  "carbohydrateGrams": 42.12,
+  "fatGrams": 30.74,
+  "fiberGrams": 34.4,
+  "sugarsGrams": null,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 12
+   }
+  ]
+ },
+ {
+  "id": "seed-semillas-de-lino",
+  "name": "Semillas de lino",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 169414,
+  "caloriesKcal": 534,
+  "proteinGrams": 18.29,
+  "carbohydrateGrams": 28.88,
+  "fatGrams": 42.16,
+  "fiberGrams": 27.3,
+  "sugarsGrams": 1.55,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 10
+   }
+  ]
+ },
+ {
+  "id": "seed-pipas-de-girasol",
+  "name": "Pipas de girasol",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170562,
+  "caloriesKcal": 584,
+  "proteinGrams": 20.78,
+  "carbohydrateGrams": 20,
+  "fatGrams": 51.46,
+  "fiberGrams": 8.6,
+  "sugarsGrams": 2.62,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-pipas-de-calabaza",
+  "name": "Pipas de calabaza",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170556,
+  "caloriesKcal": 559,
+  "proteinGrams": 30.23,
+  "carbohydrateGrams": 10.71,
+  "fatGrams": 49.05,
+  "fiberGrams": 6,
+  "sugarsGrams": 1.4,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 28
+   }
+  ]
+ },
+ {
+  "id": "seed-sesamo",
+  "name": "Sésamo",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 170150,
+  "caloriesKcal": 573,
+  "proteinGrams": 17.73,
+  "carbohydrateGrams": 23.45,
+  "fatGrams": 49.67,
+  "fiberGrams": 11.8,
+  "sugarsGrams": 0.3,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 9
+   }
+  ]
+ },
+ {
+  "id": "seed-mantequilla-de-cacahuete",
+  "name": "Mantequilla de cacahuete",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 172470,
+  "caloriesKcal": 598,
+  "proteinGrams": 22.21,
+  "carbohydrateGrams": 22.31,
+  "fatGrams": 51.36,
+  "fiberGrams": 5,
+  "sugarsGrams": 10.49,
+  "saltGrams": 0.04,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 16
+   }
+  ]
+ },
+ {
+  "id": "seed-tahini-crema-de-sesamo",
+  "name": "Tahini (crema de sésamo)",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 168604,
+  "caloriesKcal": 592,
+  "proteinGrams": 17.4,
+  "carbohydrateGrams": 21.5,
+  "fatGrams": 53.01,
+  "fiberGrams": 4.7,
+  "sugarsGrams": null,
+  "saltGrams": 0.09,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-mayonesa",
+  "name": "Mayonesa",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171009,
+  "caloriesKcal": 680,
+  "proteinGrams": 0.96,
+  "carbohydrateGrams": 0.57,
+  "fatGrams": 74.85,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.57,
+  "saltGrams": 1.59,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 14
+   }
+  ]
+ },
+ {
+  "id": "seed-ketchup",
+  "name": "Kétchup",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 168556,
+  "caloriesKcal": 101,
+  "proteinGrams": 1.04,
+  "carbohydrateGrams": 27.4,
+  "fatGrams": 0.1,
+  "fiberGrams": 0.3,
+  "sugarsGrams": 21.27,
+  "saltGrams": 2.27,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 17
+   }
+  ]
+ },
+ {
+  "id": "seed-mostaza",
+  "name": "Mostaza",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 172234,
+  "caloriesKcal": 60,
+  "proteinGrams": 3.74,
+  "carbohydrateGrams": 5.83,
+  "fatGrams": 3.34,
+  "fiberGrams": 4,
+  "sugarsGrams": 0.92,
+  "saltGrams": 2.76,
+  "servings": [
+   {
+    "label": "1 cucharadita",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-vinagre-de-manzana",
+  "name": "Vinagre de manzana",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 173469,
+  "caloriesKcal": 21,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0.93,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.4,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-salsa-de-soja",
+  "name": "Salsa de soja",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 174277,
+  "caloriesKcal": 53,
+  "proteinGrams": 8.14,
+  "carbohydrateGrams": 4.93,
+  "fatGrams": 0.57,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 0.4,
+  "saltGrams": 13.73,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 16
+   }
+  ]
+ },
+ {
+  "id": "seed-pesto",
+  "name": "Pesto",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171579,
+  "caloriesKcal": 418,
+  "proteinGrams": 9.83,
+  "carbohydrateGrams": 10.09,
+  "fatGrams": 37.6,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 6.33,
+  "saltGrams": 1.51,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-salsa-barbacoa",
+  "name": "Salsa barbacoa",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 174523,
+  "caloriesKcal": 172,
+  "proteinGrams": 0.82,
+  "carbohydrateGrams": 40.77,
+  "fatGrams": 0.63,
+  "fiberGrams": 0.9,
+  "sugarsGrams": 33.24,
+  "saltGrams": 2.57,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 17
+   }
+  ]
+ },
+ {
+  "id": "seed-salsa-de-tomate-para-pasta",
+  "name": "Salsa de tomate para pasta",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 171192,
+  "caloriesKcal": 50,
+  "proteinGrams": 1.39,
+  "carbohydrateGrams": 7.43,
+  "fatGrams": 1.61,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 4.91,
+  "saltGrams": 1.09,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-aceitunas-negras",
+  "name": "Aceitunas negras",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 169094,
+  "caloriesKcal": 116,
+  "proteinGrams": 0.84,
+  "carbohydrateGrams": 6.04,
+  "fatGrams": 10.9,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 0,
+  "saltGrams": 1.84,
+  "servings": [
+   {
+    "label": "5 unidades",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-pepinillos-en-vinagre",
+  "name": "Pepinillos en vinagre",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 168558,
+  "caloriesKcal": 12,
+  "proteinGrams": 0.5,
+  "carbohydrateGrams": 2.41,
+  "fatGrams": 0.3,
+  "fiberGrams": 1,
+  "sugarsGrams": 1.07,
+  "saltGrams": 2.02,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 35
+   }
+  ]
+ },
+ {
+  "id": "seed-alcaparras",
+  "name": "Alcaparras",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 172238,
+  "caloriesKcal": 23,
+  "proteinGrams": 2.36,
+  "carbohydrateGrams": 4.89,
+  "fatGrams": 0.86,
+  "fiberGrams": 3.2,
+  "sugarsGrams": 0.41,
+  "saltGrams": 5.87,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 9
+   }
+  ]
+ },
+ {
+  "id": "seed-sal",
+  "name": "Sal",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "usda",
+  "fdcId": 173468,
+  "caloriesKcal": 0,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 96.9,
+  "servings": [
+   {
+    "label": "1 pellizco",
+    "grams": 1
+   }
+  ]
+ },
+ {
+  "id": "seed-guacamole",
+  "name": "Guacamole",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "reference",
+  "caloriesKcal": 150,
+  "proteinGrams": 2,
+  "carbohydrateGrams": 8,
+  "fatGrams": 13.5,
+  "fiberGrams": 5.5,
+  "sugarsGrams": 1,
+  "saltGrams": 0.6,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-alioli",
+  "name": "Alioli",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "reference",
+  "caloriesKcal": 690,
+  "proteinGrams": 1,
+  "carbohydrateGrams": 1,
+  "fatGrams": 75,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.5,
+  "saltGrams": 1.5,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-tomate-frito",
+  "name": "Tomate frito",
+  "category": "Grasas, frutos secos y salsas",
+  "source": "reference",
+  "caloriesKcal": 85,
+  "proteinGrams": 1.5,
+  "carbohydrateGrams": 11,
+  "fatGrams": 4,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 9,
+  "saltGrams": 1,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   },
+   {
+    "label": "1 ración",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-agua",
+  "name": "Agua",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174158,
+  "caloriesKcal": 0,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   },
+   {
+    "label": "1 botella",
+    "grams": 500
+   }
+  ]
+ },
+ {
+  "id": "seed-cafe-solo",
+  "name": "Café solo",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 171890,
+  "caloriesKcal": 1,
+  "proteinGrams": 0.12,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0.02,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 60
+   },
+   {
+    "label": "1 taza grande",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-te-negro",
+  "name": "Té negro",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 173227,
+  "caloriesKcal": 1,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0.3,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 240
+   }
+  ]
+ },
+ {
+  "id": "seed-te-verde",
+  "name": "Té verde",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 171917,
+  "caloriesKcal": 1,
+  "proteinGrams": 0.22,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 240
+   }
+  ]
+ },
+ {
+  "id": "seed-cafe-con-leche",
+  "name": "Café con leche",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 32,
+  "proteinGrams": 1.7,
+  "carbohydrateGrams": 2.5,
+  "fatGrams": 1.7,
+  "fiberGrams": 0,
+  "sugarsGrams": 2.5,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-cerveza",
+  "name": "Cerveza",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 168746,
+  "caloriesKcal": 43,
+  "proteinGrams": 0.46,
+  "carbohydrateGrams": 3.55,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 caña",
+    "grams": 200
+   },
+   {
+    "label": "1 botellín",
+    "grams": 330
+   },
+   {
+    "label": "1 lata",
+    "grams": 330
+   }
+  ]
+ },
+ {
+  "id": "seed-cerveza-sin-alcohol",
+  "name": "Cerveza sin alcohol",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 22,
+  "proteinGrams": 0.3,
+  "carbohydrateGrams": 5,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 3,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 botellín",
+    "grams": 330
+   }
+  ]
+ },
+ {
+  "id": "seed-vino-tinto",
+  "name": "Vino tinto",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 173190,
+  "caloriesKcal": 85,
+  "proteinGrams": 0.07,
+  "carbohydrateGrams": 2.61,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.62,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 copa",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-vino-blanco",
+  "name": "Vino blanco",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174837,
+  "caloriesKcal": 82,
+  "proteinGrams": 0.07,
+  "carbohydrateGrams": 2.6,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.96,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 copa",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-licor-destilado-ginebra-ron-vodka-whisky",
+  "name": "Licor destilado (ginebra, ron, vodka, whisky)",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174815,
+  "caloriesKcal": 231,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 0,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 chupito",
+    "grams": 40
+   },
+   {
+    "label": "1 copa",
+    "grams": 50
+   }
+  ]
+ },
+ {
+  "id": "seed-zumo-de-naranja-natural",
+  "name": "Zumo de naranja natural",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 169098,
+  "caloriesKcal": 45,
+  "proteinGrams": 0.7,
+  "carbohydrateGrams": 10.4,
+  "fatGrams": 0.2,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 8.4,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-zumo-de-manzana",
+  "name": "Zumo de manzana",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 167771,
+  "caloriesKcal": 46,
+  "proteinGrams": 0.1,
+  "carbohydrateGrams": 11.3,
+  "fatGrams": 0.13,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 9.62,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-nectar-de-naranja",
+  "name": "Néctar de naranja",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 169044,
+  "caloriesKcal": 54,
+  "proteinGrams": 0.2,
+  "carbohydrateGrams": 13.41,
+  "fatGrams": 0,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 9.36,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-refresco-de-cola",
+  "name": "Refresco de cola",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 42,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 10.6,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 10.6,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 lata",
+    "grams": 330
+   },
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-refresco-de-cola-sin-azucar",
+  "name": "Refresco de cola sin azúcar",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 175099,
+  "caloriesKcal": 2,
+  "proteinGrams": 0.11,
+  "carbohydrateGrams": 0.29,
+  "fatGrams": 0.03,
+  "fiberGrams": 0,
+  "sugarsGrams": 0,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 lata",
+    "grams": 330
+   }
+  ]
+ },
+ {
+  "id": "seed-refresco-de-naranja-o-limon",
+  "name": "Refresco de naranja o limón",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 40,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 10,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 10,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 lata",
+    "grams": 330
+   }
+  ]
+ },
+ {
+  "id": "seed-bebida-energetica",
+  "name": "Bebida energética",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174171,
+  "caloriesKcal": 46,
+  "proteinGrams": 0.25,
+  "carbohydrateGrams": 12.08,
+  "fatGrams": 0.08,
+  "fiberGrams": 0,
+  "sugarsGrams": 12.08,
+  "saltGrams": 0.07,
+  "servings": [
+   {
+    "label": "1 lata",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-bebida-isotonica",
+  "name": "Bebida isotónica",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 26,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 6.4,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 6,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 botella",
+    "grams": 500
+   }
+  ]
+ },
+ {
+  "id": "seed-bebida-de-soja",
+  "name": "Bebida de soja",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 172446,
+  "caloriesKcal": 54,
+  "proteinGrams": 3.27,
+  "carbohydrateGrams": 6.28,
+  "fatGrams": 1.75,
+  "fiberGrams": 0.6,
+  "sugarsGrams": 3.99,
+  "saltGrams": 0.13,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-bebida-de-almendra-sin-azucar",
+  "name": "Bebida de almendra sin azúcar",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174832,
+  "caloriesKcal": 15,
+  "proteinGrams": 0.4,
+  "carbohydrateGrams": 1.31,
+  "fatGrams": 0.96,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 0.81,
+  "saltGrams": 0.18,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-bebida-de-avena",
+  "name": "Bebida de avena",
+  "category": "Bebidas",
+  "source": "reference",
+  "caloriesKcal": 45,
+  "proteinGrams": 1,
+  "carbohydrateGrams": 7,
+  "fatGrams": 1.5,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 4,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-cacao-soluble-en-polvo",
+  "name": "Cacao soluble (en polvo)",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 174122,
+  "caloriesKcal": 398,
+  "proteinGrams": 6.67,
+  "carbohydrateGrams": 83.73,
+  "fatGrams": 4,
+  "fiberGrams": 3.7,
+  "sugarsGrams": 65.55,
+  "saltGrams": 1.26,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   },
+   {
+    "label": "2 cucharadas",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-cacao-puro-en-polvo",
+  "name": "Cacao puro en polvo",
+  "category": "Bebidas",
+  "source": "usda",
+  "fdcId": 169593,
+  "caloriesKcal": 228,
+  "proteinGrams": 19.6,
+  "carbohydrateGrams": 57.9,
+  "fatGrams": 13.7,
+  "fiberGrams": 37,
+  "sugarsGrams": 1.75,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 6
+   }
+  ]
+ },
+ {
+  "id": "seed-azucar",
+  "name": "Azúcar",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169655,
+  "caloriesKcal": 387,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 99.98,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 99.8,
+  "saltGrams": 0,
+  "servings": [
+   {
+    "label": "1 cucharadita",
+    "grams": 5
+   },
+   {
+    "label": "1 sobre",
+    "grams": 6
+   }
+  ]
+ },
+ {
+  "id": "seed-miel",
+  "name": "Miel",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169640,
+  "caloriesKcal": 304,
+  "proteinGrams": 0.3,
+  "carbohydrateGrams": 82.4,
+  "fatGrams": 0,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 82.12,
+  "saltGrams": 0.01,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 21
+   },
+   {
+    "label": "1 cucharadita",
+    "grams": 7
+   }
+  ]
+ },
+ {
+  "id": "seed-mermelada",
+  "name": "Mermelada",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169641,
+  "caloriesKcal": 278,
+  "proteinGrams": 0.37,
+  "carbohydrateGrams": 68.86,
+  "fatGrams": 0.07,
+  "fiberGrams": 1.1,
+  "sugarsGrams": 48.5,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-jalea",
+  "name": "Jalea",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169642,
+  "caloriesKcal": 266,
+  "proteinGrams": 0.15,
+  "carbohydrateGrams": 69.95,
+  "fatGrams": 0.02,
+  "fiberGrams": 1,
+  "sugarsGrams": 51.22,
+  "saltGrams": 0.08,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-sirope-de-arce",
+  "name": "Sirope de arce",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169661,
+  "caloriesKcal": 260,
+  "proteinGrams": 0.04,
+  "carbohydrateGrams": 67.04,
+  "fatGrams": 0.06,
+  "fiberGrams": 0,
+  "sugarsGrams": 60.46,
+  "saltGrams": 0.03,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 20
+   }
+  ]
+ },
+ {
+  "id": "seed-chocolate-negro-70-85",
+  "name": "Chocolate negro (70-85 %)",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 170273,
+  "caloriesKcal": 598,
+  "proteinGrams": 7.79,
+  "carbohydrateGrams": 45.9,
+  "fatGrams": 42.63,
+  "fiberGrams": 10.9,
+  "sugarsGrams": 23.99,
+  "saltGrams": 0.05,
+  "servings": [
+   {
+    "label": "1 onza",
+    "grams": 10
+   },
+   {
+    "label": "1 tableta",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-chocolate-con-leche",
+  "name": "Chocolate con leche",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167587,
+  "caloriesKcal": 535,
+  "proteinGrams": 7.65,
+  "carbohydrateGrams": 59.4,
+  "fatGrams": 29.66,
+  "fiberGrams": 3.4,
+  "sugarsGrams": 51.5,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 onza",
+    "grams": 10
+   },
+   {
+    "label": "1 tableta",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-crema-de-cacao-y-avellanas",
+  "name": "Crema de cacao y avellanas",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 539,
+  "proteinGrams": 6.3,
+  "carbohydrateGrams": 57.5,
+  "fatGrams": 30.9,
+  "fiberGrams": 0,
+  "sugarsGrams": 56.3,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 cucharada",
+    "grams": 15
+   }
+  ]
+ },
+ {
+  "id": "seed-helado-de-vainilla",
+  "name": "Helado de vainilla",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167575,
+  "caloriesKcal": 207,
+  "proteinGrams": 3.5,
+  "carbohydrateGrams": 23.6,
+  "fatGrams": 11,
+  "fiberGrams": 0.7,
+  "sugarsGrams": 21.22,
+  "saltGrams": 0.2,
+  "servings": [
+   {
+    "label": "1 bola",
+    "grams": 60
+   },
+   {
+    "label": "1 tarrina",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-caramelos-duros",
+  "name": "Caramelos duros",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167990,
+  "caloriesKcal": 394,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 98,
+  "fatGrams": 0.2,
+  "fiberGrams": 0,
+  "sugarsGrams": 62.9,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 5
+   }
+  ]
+ },
+ {
+  "id": "seed-gominolas",
+  "name": "Gominolas",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167989,
+  "caloriesKcal": 396,
+  "proteinGrams": 0,
+  "carbohydrateGrams": 98.9,
+  "fatGrams": 0,
+  "fiberGrams": 0.1,
+  "sugarsGrams": 58.97,
+  "saltGrams": 0.11,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 3
+   }
+  ]
+ },
+ {
+  "id": "seed-cacahuetes-con-chocolate",
+  "name": "Cacahuetes con chocolate",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 168001,
+  "caloriesKcal": 519,
+  "proteinGrams": 13.1,
+  "carbohydrateGrams": 49.7,
+  "fatGrams": 33.5,
+  "fiberGrams": 4.7,
+  "sugarsGrams": 37.59,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-gelatina-preparada",
+  "name": "Gelatina (preparada)",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169596,
+  "caloriesKcal": 60,
+  "proteinGrams": 1.22,
+  "carbohydrateGrams": 14.19,
+  "fatGrams": 0,
+  "fiberGrams": 0,
+  "sugarsGrams": 13.49,
+  "saltGrams": 0.19,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 125
+   }
+  ]
+ },
+ {
+  "id": "seed-patatas-fritas-de-bolsa",
+  "name": "Patatas fritas de bolsa",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 169677,
+  "caloriesKcal": 532,
+  "proteinGrams": 6.39,
+  "carbohydrateGrams": 53.83,
+  "fatGrams": 33.98,
+  "fiberGrams": 3.1,
+  "sugarsGrams": 0.33,
+  "saltGrams": 1.32,
+  "servings": [
+   {
+    "label": "1 bolsa pequeña",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-nachos-de-maiz",
+  "name": "Nachos de maíz",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167558,
+  "caloriesKcal": 472,
+  "proteinGrams": 7.1,
+  "carbohydrateGrams": 67.78,
+  "fatGrams": 20.68,
+  "fiberGrams": 5.4,
+  "sugarsGrams": 0.78,
+  "saltGrams": 0.82,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-pretzels",
+  "name": "Pretzels",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 167555,
+  "caloriesKcal": 384,
+  "proteinGrams": 10.04,
+  "carbohydrateGrams": 80.39,
+  "fatGrams": 2.93,
+  "fiberGrams": 3.4,
+  "sugarsGrams": 2.21,
+  "saltGrams": 3.1,
+  "servings": [
+   {
+    "label": "1 puñado",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-tarta-de-manzana",
+  "name": "Tarta de manzana",
+  "category": "Dulces y snacks",
+  "source": "usda",
+  "fdcId": 175012,
+  "caloriesKcal": 265,
+  "proteinGrams": 2.4,
+  "carbohydrateGrams": 37.1,
+  "fatGrams": 12.5,
+  "fiberGrams": null,
+  "sugarsGrams": null,
+  "saltGrams": 0.53,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-turron-blando",
+  "name": "Turrón blando",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 510,
+  "proteinGrams": 10,
+  "carbohydrateGrams": 50,
+  "fatGrams": 30,
+  "fiberGrams": 3,
+  "sugarsGrams": 45,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-turron-duro",
+  "name": "Turrón duro",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 500,
+  "proteinGrams": 12,
+  "carbohydrateGrams": 52,
+  "fatGrams": 27,
+  "fiberGrams": 4,
+  "sugarsGrams": 46,
+  "saltGrams": 0.02,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-polvoron",
+  "name": "Polvorón",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 510,
+  "proteinGrams": 6.5,
+  "carbohydrateGrams": 52,
+  "fatGrams": 31,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 28,
+  "saltGrams": 0.1,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 30
+   }
+  ]
+ },
+ {
+  "id": "seed-palmera-de-chocolate",
+  "name": "Palmera de chocolate",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 480,
+  "proteinGrams": 6,
+  "carbohydrateGrams": 48,
+  "fatGrams": 29,
+  "fiberGrams": 2,
+  "sugarsGrams": 22,
+  "saltGrams": 0.6,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 70
+   }
+  ]
+ },
+ {
+  "id": "seed-churros",
+  "name": "Churros",
+  "category": "Dulces y snacks",
+  "source": "reference",
+  "caloriesKcal": 390,
+  "proteinGrams": 5,
+  "carbohydrateGrams": 41,
+  "fatGrams": 23,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 3,
+  "saltGrams": 0.5,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 35
+   }
+  ]
+ },
+ {
+  "id": "seed-tortilla-de-patatas",
+  "name": "Tortilla de patatas",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 195,
+  "proteinGrams": 6.3,
+  "carbohydrateGrams": 13.5,
+  "fatGrams": 12.8,
+  "fiberGrams": 1.2,
+  "sugarsGrams": 1.2,
+  "saltGrams": 0.6,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 130
+   },
+   {
+    "label": "1 pincho",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-tortilla-francesa",
+  "name": "Tortilla francesa",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 185,
+  "proteinGrams": 11,
+  "carbohydrateGrams": 0.5,
+  "fatGrams": 15,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.4,
+  "saltGrams": 0.7,
+  "servings": [
+   {
+    "label": "1 tortilla (2 huevos)",
+    "grams": 110
+   }
+  ]
+ },
+ {
+  "id": "seed-paella-mixta",
+  "name": "Paella mixta",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 150,
+  "proteinGrams": 7.5,
+  "carbohydrateGrams": 18,
+  "fatGrams": 5,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 0.8,
+  "saltGrams": 0.8,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-gazpacho",
+  "name": "Gazpacho",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 45,
+  "proteinGrams": 0.8,
+  "carbohydrateGrams": 4.5,
+  "fatGrams": 2.5,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 3.5,
+  "saltGrams": 0.6,
+  "servings": [
+   {
+    "label": "1 vaso",
+    "grams": 250
+   },
+   {
+    "label": "1 bol",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-salmorejo",
+  "name": "Salmorejo",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 120,
+  "proteinGrams": 2.5,
+  "carbohydrateGrams": 8,
+  "fatGrams": 8.5,
+  "fiberGrams": 1,
+  "sugarsGrams": 3.5,
+  "saltGrams": 0.9,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-croquetas-de-jamon",
+  "name": "Croquetas de jamón",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 230,
+  "proteinGrams": 7,
+  "carbohydrateGrams": 20,
+  "fatGrams": 13,
+  "fiberGrams": 1,
+  "sugarsGrams": 1.5,
+  "saltGrams": 1.1,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 30
+   },
+   {
+    "label": "1 ración (6)",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-lentejas-estofadas",
+  "name": "Lentejas estofadas",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 110,
+  "proteinGrams": 6.5,
+  "carbohydrateGrams": 13,
+  "fatGrams": 3.5,
+  "fiberGrams": 4,
+  "sugarsGrams": 1,
+  "saltGrams": 0.8,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-macarrones-con-tomate",
+  "name": "Macarrones con tomate",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 135,
+  "proteinGrams": 4.5,
+  "carbohydrateGrams": 22,
+  "fatGrams": 3,
+  "fiberGrams": 1.8,
+  "sugarsGrams": 3,
+  "saltGrams": 0.5,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-espaguetis-a-la-bolonesa",
+  "name": "Espaguetis a la boloñesa",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 140,
+  "proteinGrams": 7,
+  "carbohydrateGrams": 17,
+  "fatGrams": 5,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 3,
+  "saltGrams": 0.6,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-ensaladilla-rusa",
+  "name": "Ensaladilla rusa",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 190,
+  "proteinGrams": 3,
+  "carbohydrateGrams": 10,
+  "fatGrams": 15,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 2,
+  "saltGrams": 0.8,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-arroz-con-pollo",
+  "name": "Arroz con pollo",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 150,
+  "proteinGrams": 9.5,
+  "carbohydrateGrams": 18,
+  "fatGrams": 4.5,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 0.8,
+  "saltGrams": 0.8,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-pollo-al-ajillo",
+  "name": "Pollo al ajillo",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 190,
+  "proteinGrams": 22,
+  "carbohydrateGrams": 1.5,
+  "fatGrams": 10,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 0.2,
+  "saltGrams": 0.7,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-pisto",
+  "name": "Pisto",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 70,
+  "proteinGrams": 1.2,
+  "carbohydrateGrams": 6,
+  "fatGrams": 4.5,
+  "fiberGrams": 2,
+  "sugarsGrams": 4.5,
+  "saltGrams": 0.5,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-patatas-bravas",
+  "name": "Patatas bravas",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 170,
+  "proteinGrams": 2.2,
+  "carbohydrateGrams": 22,
+  "fatGrams": 8,
+  "fiberGrams": 2,
+  "sugarsGrams": 2,
+  "saltGrams": 0.7,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 200
+   }
+  ]
+ },
+ {
+  "id": "seed-patatas-fritas-freidora",
+  "name": "Patatas fritas (freidora)",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 170698,
+  "caloriesKcal": 312,
+  "proteinGrams": 3.43,
+  "carbohydrateGrams": 41.44,
+  "fatGrams": 14.73,
+  "fiberGrams": 3.8,
+  "sugarsGrams": 0.3,
+  "saltGrams": 0.53,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pan-con-tomate",
+  "name": "Pan con tomate",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 230,
+  "proteinGrams": 6,
+  "carbohydrateGrams": 38,
+  "fatGrams": 6,
+  "fiberGrams": 2.5,
+  "sugarsGrams": 3,
+  "saltGrams": 1.2,
+  "servings": [
+   {
+    "label": "1 rebanada",
+    "grams": 60
+   }
+  ]
+ },
+ {
+  "id": "seed-bocadillo-de-jamon-serrano",
+  "name": "Bocadillo de jamón serrano",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 270,
+  "proteinGrams": 13,
+  "carbohydrateGrams": 38,
+  "fatGrams": 7,
+  "fiberGrams": 2,
+  "sugarsGrams": 2,
+  "saltGrams": 2.2,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 180
+   }
+  ]
+ },
+ {
+  "id": "seed-empanada-de-atun",
+  "name": "Empanada de atún",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 250,
+  "proteinGrams": 8,
+  "carbohydrateGrams": 28,
+  "fatGrams": 12,
+  "fiberGrams": 1.5,
+  "sugarsGrams": 2,
+  "saltGrams": 1.2,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 120
+   }
+  ]
+ },
+ {
+  "id": "seed-crema-de-verduras",
+  "name": "Crema de verduras",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 45,
+  "proteinGrams": 1.2,
+  "carbohydrateGrams": 6,
+  "fatGrams": 1.8,
+  "fiberGrams": 1.2,
+  "sugarsGrams": 2.5,
+  "saltGrams": 0.5,
+  "servings": [
+   {
+    "label": "1 bol",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-caldo-de-pollo",
+  "name": "Caldo de pollo",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 8,
+  "proteinGrams": 0.8,
+  "carbohydrateGrams": 0.4,
+  "fatGrams": 0.3,
+  "fiberGrams": 0,
+  "sugarsGrams": 0.2,
+  "saltGrams": 0.8,
+  "servings": [
+   {
+    "label": "1 taza",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-sopa-de-fideos",
+  "name": "Sopa de fideos",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 35,
+  "proteinGrams": 2.5,
+  "carbohydrateGrams": 4,
+  "fatGrams": 1,
+  "fiberGrams": 0.2,
+  "sugarsGrams": 0.3,
+  "saltGrams": 0.7,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-albondigas-en-salsa",
+  "name": "Albóndigas en salsa",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 150,
+  "proteinGrams": 10,
+  "carbohydrateGrams": 7,
+  "fatGrams": 9,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 2,
+  "saltGrams": 0.9,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 30
+   },
+   {
+    "label": "1 ración (5)",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-calamares-a-la-romana",
+  "name": "Calamares a la romana",
+  "category": "Platos preparados",
+  "source": "reference",
+  "caloriesKcal": 235,
+  "proteinGrams": 11,
+  "carbohydrateGrams": 20,
+  "fatGrams": 12,
+  "fiberGrams": 0.8,
+  "sugarsGrams": 0.5,
+  "saltGrams": 0.9,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ },
+ {
+  "id": "seed-pizza-de-queso",
+  "name": "Pizza de queso",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 170317,
+  "caloriesKcal": 268,
+  "proteinGrams": 10.36,
+  "carbohydrateGrams": 29.02,
+  "fatGrams": 12.28,
+  "fiberGrams": 2.2,
+  "sugarsGrams": 3.57,
+  "saltGrams": 1.12,
+  "servings": [
+   {
+    "label": "1 porción",
+    "grams": 110
+   }
+  ]
+ },
+ {
+  "id": "seed-hamburguesa-con-pan-y-condimentos",
+  "name": "Hamburguesa con pan y condimentos",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 170710,
+  "caloriesKcal": 256,
+  "proteinGrams": 15.68,
+  "carbohydrateGrams": 22.14,
+  "fatGrams": 11.6,
+  "fiberGrams": 1.1,
+  "sugarsGrams": 3.67,
+  "saltGrams": 0.94,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 220
+   }
+  ]
+ },
+ {
+  "id": "seed-nuggets-de-pollo",
+  "name": "Nuggets de pollo",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 173297,
+  "caloriesKcal": 302,
+  "proteinGrams": 15.79,
+  "carbohydrateGrams": 15.09,
+  "fatGrams": 19.81,
+  "fiberGrams": null,
+  "sugarsGrams": 0.08,
+  "saltGrams": 1.42,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 18
+   },
+   {
+    "label": "1 ración (6)",
+    "grams": 108
+   }
+  ]
+ },
+ {
+  "id": "seed-lasana",
+  "name": "Lasaña",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 169851,
+  "caloriesKcal": 184,
+  "proteinGrams": 11.28,
+  "carbohydrateGrams": 10.33,
+  "fatGrams": 10.84,
+  "fiberGrams": 1.6,
+  "sugarsGrams": 3.53,
+  "saltGrams": 1.13,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 300
+   }
+  ]
+ },
+ {
+  "id": "seed-ravioli-de-queso",
+  "name": "Ravioli de queso",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 169037,
+  "caloriesKcal": 159,
+  "proteinGrams": 7.44,
+  "carbohydrateGrams": 19.64,
+  "fatGrams": 5.61,
+  "fiberGrams": 1.1,
+  "sugarsGrams": 4.85,
+  "saltGrams": 0.67,
+  "servings": [
+   {
+    "label": "1 plato",
+    "grams": 250
+   }
+  ]
+ },
+ {
+  "id": "seed-burrito-de-alubias",
+  "name": "Burrito de alubias",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 170734,
+  "caloriesKcal": 209,
+  "proteinGrams": 7.35,
+  "carbohydrateGrams": 31.23,
+  "fatGrams": 6.05,
+  "fiberGrams": 4.2,
+  "sugarsGrams": 1.73,
+  "saltGrams": 1.41,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 190
+   }
+  ]
+ },
+ {
+  "id": "seed-empanada-de-carne",
+  "name": "Empanada de carne",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 167660,
+  "caloriesKcal": 335,
+  "proteinGrams": 11.31,
+  "carbohydrateGrams": 31.19,
+  "fatGrams": 18.37,
+  "fiberGrams": 2,
+  "sugarsGrams": 1.84,
+  "saltGrams": 1.1,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 100
+   }
+  ]
+ },
+ {
+  "id": "seed-falafel",
+  "name": "Falafel",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 172455,
+  "caloriesKcal": 333,
+  "proteinGrams": 13.31,
+  "carbohydrateGrams": 31.84,
+  "fatGrams": 17.8,
+  "fiberGrams": null,
+  "sugarsGrams": null,
+  "saltGrams": 0.74,
+  "servings": [
+   {
+    "label": "1 unidad",
+    "grams": 17
+   }
+  ]
+ },
+ {
+  "id": "seed-ensalada-de-atun",
+  "name": "Ensalada de atún",
+  "category": "Platos preparados",
+  "source": "usda",
+  "fdcId": 175160,
+  "caloriesKcal": 187,
+  "proteinGrams": 16.04,
+  "carbohydrateGrams": 9.41,
+  "fatGrams": 9.26,
+  "fiberGrams": 0,
+  "sugarsGrams": null,
+  "saltGrams": 1,
+  "servings": [
+   {
+    "label": "1 ración",
+    "grams": 150
+   }
+  ]
+ }
+]

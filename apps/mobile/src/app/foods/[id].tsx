@@ -55,6 +55,9 @@ export default function FoodDetailScreen() {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [fiber, setFiber] = useState('');
+  const [sugars, setSugars] = useState('');
+  const [salt, setSalt] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -103,6 +106,9 @@ export default function FoodDetailScreen() {
     setProtein(formatOptional(food.proteinGrams));
     setCarbs(formatOptional(food.carbohydrateGrams));
     setFat(formatOptional(food.fatGrams));
+    setFiber(formatOptional(food.fiberGrams));
+    setSugars(formatOptional(food.sugarsGrams));
+    setSalt(formatOptional(food.saltGrams));
     setFormError(null);
     setEditing(true);
   };
@@ -120,12 +126,18 @@ export default function FoodDetailScreen() {
     const proteinValue = parseOptionalNumber(protein);
     const carbsValue = parseOptionalNumber(carbs);
     const fatValue = parseOptionalNumber(fat);
+    const fiberValue = parseOptionalNumber(fiber);
+    const sugarsValue = parseOptionalNumber(sugars);
+    const saltValue = parseOptionalNumber(salt);
 
     if (
       !caloriesValue.valid ||
       !proteinValue.valid ||
       !carbsValue.valid ||
-      !fatValue.valid
+      !fatValue.valid ||
+      !fiberValue.valid ||
+      !sugarsValue.valid ||
+      !saltValue.valid
     ) {
       setFormError('Los valores deben ser números válidos o estar vacíos.');
       return;
@@ -136,6 +148,9 @@ export default function FoodDetailScreen() {
       proteinGrams: proteinValue.value,
       carbohydrateGrams: carbsValue.value,
       fatGrams: fatValue.value,
+      fiberGrams: fiberValue.value,
+      sugarsGrams: sugarsValue.value,
+      saltGrams: saltValue.value,
     });
 
     if (!macros.success) {
@@ -222,6 +237,11 @@ export default function FoodDetailScreen() {
               />
               <MacroItem label="Grasas" unit="g" value={food.fatGrams} />
             </View>
+            <View style={styles.macroRow}>
+              <MacroItem label="Fibra" unit="g" value={food.fiberGrams} />
+              <MacroItem label="Azúcares" unit="g" value={food.sugarsGrams} />
+              <MacroItem label="Sal" unit="g" value={food.saltGrams} />
+            </View>
           </Card>
 
           <Card>
@@ -294,6 +314,16 @@ export default function FoodDetailScreen() {
                 onChange={setCarbs}
               />
               <Field keyboard label="Grasas (g)" value={fat} onChange={setFat} />
+            </View>
+            <View style={styles.macroFieldsRow}>
+              <Field keyboard label="Fibra (g)" value={fiber} onChange={setFiber} />
+              <Field
+                keyboard
+                label="Azúcares (g)"
+                value={sugars}
+                onChange={setSugars}
+              />
+              <Field keyboard label="Sal (g)" value={salt} onChange={setSalt} />
             </View>
             {formError ? (
               <Text style={styles.errorText}>{formError}</Text>

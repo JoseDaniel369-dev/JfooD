@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { makeNutrients } from '@jfood/core';
+
 import {
   fetchProduct,
   mapOpenFoodFactsProduct,
@@ -35,7 +37,7 @@ test('a complete product is mapped with per-100 g values', () => {
     barcode: '8410000123456',
     name: 'Crema de cacao',
     brand: 'Marca Uno',
-    per100g: { caloriesKcal: 539, proteinGrams: 6.3, carbohydrateGrams: 57.5, fatGrams: 30.9 },
+    per100g: makeNutrients({ caloriesKcal: 539, proteinGrams: 6.3, carbohydrateGrams: 57.5, fatGrams: 30.9 }),
     incomplete: false,
   });
 });
@@ -53,12 +55,7 @@ test('missing or implausible nutrients stay unknown instead of becoming zero', (
     { status: 1, product: { product_name: 'Raro', nutriments: { 'energy-kcal_100g': 99999, fat_100g: 500 } } },
     '8410000123456',
   );
-  assert.deepEqual(absurd?.per100g, {
-    caloriesKcal: null,
-    proteinGrams: null,
-    carbohydrateGrams: null,
-    fatGrams: null,
-  });
+  assert.deepEqual(absurd?.per100g, makeNutrients());
 });
 
 test('calories are derived from kilojoules when kcal is absent', () => {
@@ -85,4 +82,52 @@ test('fetchProduct handles found, missing and failing services', async () => {
 
   const down = async () => new Response('', { status: 503 });
   await assert.rejects(() => fetchProduct('8410000123456', down as typeof fetch), /no responde/);
+});
+
+test('one implausible value does not discard the plausible ones', () => {
+  const product = mapOpenFoodFactsProduct(
+    {
+      status: 1,
+      product: {
+        product_name: 'Datos mezclados',
+        nutriments: {
+          'energy-kcal_100g': 320,
+          proteins_100g: 12,
+          carbohydrates_100g: 60,
+          fat_100g: 500,
+        },
+      },
+    },
+    '8410000123456',
+  );
+  assert.deepEqual(
+    product?.per100g,
+    makeNutrients({ caloriesKcal: 320, proteinGrams: 12, carbohydrateGrams: 60 }),
+  );
+  assert.equal(product?.incomplete, true);
+});
+
+test('macros that add up to more than 100 g are dropped but calories stay', () => {
+  const product = mapOpenFoodFactsProduct(
+    {
+      status: 1,
+      product: {
+        product_name: 'Suma imposible',
+        nutriments: {
+          'energy-kcal_100g': 400,
+          proteins_100g: 40,
+          carbohydrates_100g: 50,
+          fat_100g: 30,
+        },
+      },
+    },
+    '8410000123456',
+  );
+  assert.deepEqual(product?.per100g, makeNutrients({ caloriesKcal: 400 }));
+});
+
+test('a UPC-A code is stored as its EAN-13 form so both readers find the same food', () => {
+  assert.equal(normalizeBarcode('036000291452'), '0036000291452');
+  assert.equal(normalizeBarcode('0036000291452'), '0036000291452');
+  assert.equal(normalizeBarcode('1234567'), null);
 });

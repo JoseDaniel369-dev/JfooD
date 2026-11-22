@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   Nunito_400Regular,
@@ -13,7 +14,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/nunito';
 import { ToastProvider } from '@/components/Toast';
-import { migrateDatabase } from '@/data/sqlite/migrate';
+import { initializeDatabase } from '@/data/sqlite/initializeDatabase';
 import {
   darkColors,
   lightColors,
@@ -35,21 +36,23 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <Suspense fallback={<AppLoading />}>
-        <SQLiteProvider
-          databaseName="jfood.db"
-          onInit={migrateDatabase}
-          useSuspense
-        >
-          <ThemeProvider>
-            <ToastProvider>
-              <RootNavigator />
-            </ToastProvider>
-          </ThemeProvider>
-        </SQLiteProvider>
-      </Suspense>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={stylesLoading.root}>
+      <SafeAreaProvider>
+        <Suspense fallback={<AppLoading />}>
+          <SQLiteProvider
+            databaseName="jfood.db"
+            onInit={initializeDatabase}
+            useSuspense
+          >
+            <ThemeProvider>
+              <ToastProvider>
+                <RootNavigator />
+              </ToastProvider>
+            </ThemeProvider>
+          </SQLiteProvider>
+        </Suspense>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -89,6 +92,7 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen name="recipe" options={{ title: 'Receta' }} />
+        <Stack.Screen name="summary" options={{ title: 'Resumen semanal' }} />
         <Stack.Screen
           name="barcode"
           options={{
@@ -128,6 +132,9 @@ function AppLoading() {
 }
 
 const stylesLoading = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   loading: {
     alignItems: 'center',
     flex: 1,

@@ -19,9 +19,13 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 
-import { computeBmi, type BmiResult } from '@jfood/core';
+import { PROFILE_LIMITS, computeBmi, type BmiResult } from '@jfood/core';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Segmented } from '@/components/Segmented';
+import { useAchievements } from '@/features/achievements/useAchievements';
+import { AchievementsSection } from '@/features/progress/components/AchievementsSection';
+import { CaloriesSection } from '@/features/progress/components/CaloriesSection';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -50,8 +54,6 @@ import {
 } from '@/theme';
 import type { WeightLog } from '@/data/sqlite/repositories/weightRepository';
 
-const MAX_WEIGHT_KG = 300;
-
 const PERIOD_OPTIONS = [
   { label: '7 días', value: 7 },
   { label: '14 días', value: 14 },
@@ -59,8 +61,18 @@ const PERIOD_OPTIONS = [
   { label: '90 días', value: 90 },
 ] as const;
 
+const SECTIONS = [
+  { value: 'weight', label: 'Peso' },
+  { value: 'calories', label: 'Calorías' },
+  { value: 'achievements', label: 'Logros' },
+] as const;
+
+type Section = (typeof SECTIONS)[number]['value'];
+
 export default function ProgressScreen() {
   const { colors } = useTheme();
+  const [section, setSection] = useState<Section>('weight');
+  const { achievements } = useAchievements();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { showToast } = useToast();
   const { logs, loading, error, load, save, remove } = useWeightLogs();
@@ -107,8 +119,13 @@ export default function ProgressScreen() {
       return;
     }
 
-    if (parsedWeight > MAX_WEIGHT_KG) {
-      setFormError('El peso no puede superar los 300 kg.');
+    if (
+      parsedWeight < PROFILE_LIMITS.minWeightKg ||
+      parsedWeight > PROFILE_LIMITS.maxWeightKg
+    ) {
+      setFormError(
+        `El peso debe estar entre ${PROFILE_LIMITS.minWeightKg} y ${PROFILE_LIMITS.maxWeightKg} kg.`,
+      );
       return;
     }
 
@@ -191,9 +208,21 @@ export default function ProgressScreen() {
     <Screen>
       <ScreenHeader
         title="Tu progreso"
-        subtitle="Registra tu peso y sigue la evolución"
+        subtitle="Peso, calorías y logros"
       />
 
+      <Segmented
+        accessibilityLabel="Sección de progreso"
+        onChange={setSection}
+        options={SECTIONS}
+        value={section}
+      />
+
+      {section === 'calories' ? <CaloriesSection /> : null}
+      {section === 'achievements' ? <AchievementsSection achievements={achievements} /> : null}
+
+      {section === 'weight' ? (
+        <>
       {error && logs.length > 0 ? (
         <Card style={styles.errorBanner}>
           <Text style={styles.errorBannerText}>{error}</Text>
@@ -398,6 +427,8 @@ export default function ProgressScreen() {
           />
         )}
       </Card>
+        </>
+      ) : null}
 
       <ConfirmDialog
         confirmLabel="Eliminar"

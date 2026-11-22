@@ -2,12 +2,33 @@ import { z } from 'zod';
 
 export const nullableNutrientSchema = z.number().min(0).nullable();
 
+/**
+ * Every nutrient tracked per food, in the order they are stored and shown.
+ * The first four are the main ones; the rest are optional extras, so a food
+ * (or an old backup) without them simply has them unknown (null).
+ */
+export const NUTRIENT_KEYS = [
+  'caloriesKcal',
+  'proteinGrams',
+  'carbohydrateGrams',
+  'fatGrams',
+  'fiberGrams',
+  'sugarsGrams',
+  'saltGrams',
+] as const;
+
+export type NutrientKey = (typeof NUTRIENT_KEYS)[number];
+
 export const nutrientsPer100gSchema = z
   .object({
     caloriesKcal: nullableNutrientSchema,
     proteinGrams: nullableNutrientSchema,
     carbohydrateGrams: nullableNutrientSchema,
     fatGrams: nullableNutrientSchema,
+    // Added later: data saved before them parses with these as unknown.
+    fiberGrams: nullableNutrientSchema.default(null),
+    sugarsGrams: nullableNutrientSchema.default(null),
+    saltGrams: nullableNutrientSchema.default(null),
   })
   .strict();
 
@@ -15,17 +36,34 @@ export const gramsSchema = z.number().positive().max(100_000);
 
 export type Nutrients = z.infer<typeof nutrientsPer100gSchema>;
 
+/** Nutrients with nothing known. */
+export function unknownNutrients(): Nutrients {
+  return {
+    caloriesKcal: null,
+    proteinGrams: null,
+    carbohydrateGrams: null,
+    fatGrams: null,
+    fiberGrams: null,
+    sugarsGrams: null,
+    saltGrams: null,
+  };
+}
+
+/** Builds a full Nutrients object: what is not given is unknown (null). */
+export function makeNutrients(values: Partial<Nutrients> = {}): Nutrients {
+  return { ...unknownNutrients(), ...values };
+}
+
 /** Calculates consumed nutrients from values expressed per 100 grams. */
 export function calculateNutrients(per100g: Nutrients, grams: number): Nutrients {
   const nutrients = nutrientsPer100gSchema.parse(per100g);
   const validGrams = gramsSchema.parse(grams);
 
-  return {
-    caloriesKcal: scaleNutrient(nutrients.caloriesKcal, validGrams),
-    proteinGrams: scaleNutrient(nutrients.proteinGrams, validGrams),
-    carbohydrateGrams: scaleNutrient(nutrients.carbohydrateGrams, validGrams),
-    fatGrams: scaleNutrient(nutrients.fatGrams, validGrams),
-  };
+  const result = unknownNutrients();
+  for (const key of NUTRIENT_KEYS) {
+    result[key] = scaleNutrient(nutrients[key], validGrams);
+  }
+  return result;
 }
 
 /**
@@ -38,7 +76,12 @@ export const FOOD_INPUT_LIMITS = {
   maxMacroGramsPer100g: 100,
   /** protein + carbohydrates + fat cannot exceed 100 g of food (small tolerance). */
   maxMacroSumGramsPer100g: 102,
+  /** Sugars are a part of the carbohydrates; this much rounding slack is allowed. */
+  sugarsOverCarbohydratesToleranceGrams: 0.5,
 } as const;
+
+const MACRO_KEYS = ['proteinGrams', 'carbohydrateGrams', 'fatGrams'] as const;
+const EXTRA_GRAM_KEYS = ['fiberGrams', 'sugarsGrams', 'saltGrams'] as const;
 
 export const foodInputNutrientsSchema = nutrientsPer100gSchema.superRefine(
   (value, context) => {
@@ -53,7 +96,7 @@ export const foodInputNutrientsSchema = nutrientsPer100gSchema.superRefine(
       });
     }
 
-    for (const key of ['proteinGrams', 'carbohydrateGrams', 'fatGrams'] as const) {
+    for (const key of MACRO_KEYS) {
       const grams = value[key];
       if (grams !== null && grams > FOOD_INPUT_LIMITS.maxMacroGramsPer100g) {
         context.addIssue({
@@ -62,6 +105,31 @@ export const foodInputNutrientsSchema = nutrientsPer100gSchema.superRefine(
           message: 'Un macronutriente no puede superar 100 g por cada 100 g.',
         });
       }
+    }
+
+    for (const key of EXTRA_GRAM_KEYS) {
+      const grams = value[key];
+      if (grams !== null && grams > FOOD_INPUT_LIMITS.maxMacroGramsPer100g) {
+        context.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'Fibra, azúcares y sal no pueden superar 100 g por cada 100 g.',
+        });
+      }
+    }
+
+    if (
+      value.sugarsGrams !== null &&
+      value.carbohydrateGrams !== null &&
+      value.sugarsGrams >
+        value.carbohydrateGrams +
+          FOOD_INPUT_LIMITS.sugarsOverCarbohydratesToleranceGrams
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['sugarsGrams'],
+        message: 'Los azúcares no pueden superar a los hidratos de carbono.',
+      });
     }
 
     const macroSum =
@@ -99,14 +167,11 @@ export type PartialNutrients = {
  * Use `sumNutrients` when a strict total (null if anything is unknown) is needed.
  */
 export function sumNutrientsKnown(items: readonly Nutrients[]): PartialNutrients {
-  return {
-    caloriesKcal: partialNutrient(items.map((item) => item.caloriesKcal)),
-    proteinGrams: partialNutrient(items.map((item) => item.proteinGrams)),
-    carbohydrateGrams: partialNutrient(
-      items.map((item) => item.carbohydrateGrams),
-    ),
-    fatGrams: partialNutrient(items.map((item) => item.fatGrams)),
-  };
+  const result = {} as PartialNutrients;
+  for (const key of NUTRIENT_KEYS) {
+    result[key] = partialNutrient(items.map((item) => item[key]));
+  }
+  return result;
 }
 
 function partialNutrient(values: readonly (number | null)[]): PartialNutrient {
@@ -129,14 +194,11 @@ function partialNutrient(values: readonly (number | null)[]): PartialNutrient {
  * A total is null when any of its components is unknown.
  */
 export function sumNutrients(items: readonly Nutrients[]): Nutrients {
-  return {
-    caloriesKcal: sumNutrient(items.map((item) => item.caloriesKcal)),
-    proteinGrams: sumNutrient(items.map((item) => item.proteinGrams)),
-    carbohydrateGrams: sumNutrient(
-      items.map((item) => item.carbohydrateGrams),
-    ),
-    fatGrams: sumNutrient(items.map((item) => item.fatGrams)),
-  };
+  const result = unknownNutrients();
+  for (const key of NUTRIENT_KEYS) {
+    result[key] = sumNutrient(items.map((item) => item[key]));
+  }
+  return result;
 }
 
 function scaleNutrient(value: number | null, grams: number): number | null {

@@ -9,7 +9,25 @@ export interface RecognitionError {
   message: string;
 }
 
-const RECOGNIZE_TIMEOUT_MS = 40_000;
+/**
+ * Render's free tier sleeps after inactivity and takes up to ~50 s to wake up,
+ * on top of the few seconds Gemini needs, so the wait must be generous.
+ */
+const RECOGNIZE_TIMEOUT_MS = 75_000;
+const WAKE_UP_TIMEOUT_MS = 70_000;
+
+/**
+ * Pings the server so it is already awake when the person takes the photo.
+ * Fire and forget: it never throws and never blocks the screen.
+ */
+export function warmUpServer(): void {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), WAKE_UP_TIMEOUT_MS);
+
+  fetch(`${getApiBaseUrl()}/health`, { signal: controller.signal })
+    .catch(() => undefined)
+    .finally(() => clearTimeout(timeoutId));
+}
 
 /** Identifies the foods in a photo (data URI or base64). */
 export function recognizeImage(imageBase64: string): Promise<RecognitionResult> {
@@ -19,6 +37,20 @@ export function recognizeImage(imageBase64: string): Promise<RecognitionResult> 
 /** Extracts the foods mentioned in a free-text description of a meal. */
 export function recognizeText(text: string): Promise<RecognitionResult> {
   return postRecognition('/parse-meal', { text });
+}
+
+/**
+ * The shared app token (EXPO_PUBLIC_APP_TOKEN, matching APP_TOKEN on the API)
+ * is not a secret — it ships inside the APK — but it keeps casual traffic out.
+ */
+export function buildHeaders(
+  token: string | undefined = process.env.EXPO_PUBLIC_APP_TOKEN,
+): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['x-app-token'] = token;
+  }
+  return headers;
 }
 
 async function postRecognition(
@@ -33,7 +65,7 @@ async function postRecognition(
   try {
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildHeaders(),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });

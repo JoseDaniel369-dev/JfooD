@@ -73,6 +73,21 @@ Además de la foto, el escáner admite describir la comida ("2 huevos y un café
 
 La variante experimental puede escanear códigos de barras (EAN/UPC). El producto se busca primero en la base local y, si no está, en [Open Food Facts](https://world.openfoodfacts.org) (API pública, sin clave); solo se guardan nombre, marca y calorías/macros por 100 g, y cualquier valor ausente o inverosímil queda como desconocido. Los datos de Open Food Facts están bajo licencia [ODbL](https://opendatacommons.org/licenses/odbl/): se muestra la atribución en la pantalla del escáner. La variante estable no declara permisos de cámara.
 
+## Catálogo base y micronutrientes
+
+- **Catálogo precargado:** cada instalación incluye ~340 alimentos comunes en español con sus raciones típicas (1 manzana, 1 rebanada de pan…), marcados `source = 'seed'` y no editables. ~290 proceden de [USDA FoodData Central](https://fdc.nal.usda.gov/) (SR Legacy, dominio público CC0) y ~50 (embutidos y platos españoles) son valores de referencia orientativos. Se cargan al abrir la base de datos (`initializeDatabase`) y se refrescan solo si sube `SEED_VERSION`; nunca se tocan los alimentos del usuario.
+- **Regenerar el catálogo:** edita `apps/mobile/scripts/seed/*.mjs` y ejecuta `node apps/mobile/scripts/build-seed-catalog.mjs <carpeta-CSV-USDA-SR-Legacy>`. El script valida cada fila con el mismo esquema que la app y falla si algo es imposible. Después sube `SEED_VERSION`.
+- **Fibra, azúcares y sal:** cada alimento y cada entrada guardan también estos tres valores (desconocidos = `NULL`, nunca cero). Las referencias diarias (fibra mínima, azúcares y sal máximos) se calculan a partir del objetivo de calorías.
+- **Iconos y splash:** `node apps/mobile/scripts/generate-brand-assets.mjs` regenera todas las imágenes de marca a partir de un único glifo SVG.
+
+## Protección de la API
+
+Variables opcionales del backend (Render) para que nadie pueda gastar el cupo de Gemini:
+
+- `APP_TOKEN`: secreto compartido; si se define, `/recognize` y `/parse-meal` exigen la cabecera `x-app-token`. La app la envía si se compila con `EXPO_PUBLIC_APP_TOKEN` con el mismo valor (por ejemplo en el bloque `env` del perfil `experimental` de `eas.json`). Va dentro del APK, así que solo frena el tráfico casual.
+- `RECOGNIZE_DAILY_LIMIT_PER_IP` (por defecto 40): análisis al día por IP, además del tope global `RECOGNIZE_DAILY_LIMIT` (300). Las llamadas que fallan en Gemini no consumen cupo.
+- Si Gemini responde 429/503, la API contesta `503 UPSTREAM_BUSY` y la app muestra «servicio saturado».
+
 ## Requisitos
 
 - Node.js 22.13 o superior.
