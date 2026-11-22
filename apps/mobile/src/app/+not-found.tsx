@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, useTheme, type ThemeColors, fonts, fontSizes } from '@/theme';
 
 export default function NotFoundScreen() {
   const { colors } = useTheme();
@@ -32,8 +32,8 @@ function createStyles(colors: ThemeColors) {
     },
     title: {
       color: colors.text,
-      fontSize: 22,
-      fontWeight: '700',
+      fontSize: fontSizes.heading,
+      fontFamily: fonts.heading,
     },
     button: {
       backgroundColor: colors.primary,
@@ -42,7 +42,7 @@ function createStyles(colors: ThemeColors) {
     },
     buttonText: {
       color: colors.textOnPrimary,
-      fontWeight: '600',
+      fontFamily: fonts.semibold,
     },
   });
 }

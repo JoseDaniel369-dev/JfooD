@@ -8,7 +8,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Segmented } from '@/components/Segmented';
 import { Skeleton } from '@/components/Skeleton';
 import { useMacroHistory } from '@/features/progress/hooks/useMacroHistory';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts } from '@/theme';
 
 const PERIODS = [
   { value: '7', label: '7 días' },
@@ -125,7 +125,7 @@ function createStyles(colors: ThemeColors) {
     fiberLabel: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     fiberValue: {
       ...typography.body,

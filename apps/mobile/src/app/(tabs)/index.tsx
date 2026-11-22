@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -11,11 +12,12 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Confetti } from '@/components/Confetti';
+import { CalorieHero } from '@/components/CalorieHero';
 import { MacroPill } from '@/components/MacroPill';
-import { ProgressRing } from '@/components/ProgressRing';
 import { Screen } from '@/components/Screen';
 import { ScreenSkeleton } from '@/components/Skeleton';
 import { SectionHeader } from '@/components/SectionHeader';
+import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { WaterBottle } from '@/components/WaterBottle';
 import { WeekStrip } from '@/components/WeekStrip';
@@ -30,17 +32,14 @@ import { addDays } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import {
   describeExtras,
-  describeUnknown,
   formatGrams,
-  formatPartialAmount,
-  remainingCalories,
 } from '@/features/diary/utils/totals';
 import { foodEmoji } from '@/features/foods/utils/foodEmoji';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
 import { scheduleReminders } from '@/features/reminders/notifications';
-import { NEXT_MEAL_LABELS, greetingForHour, greetingLine } from '@/features/home/greeting';
-import { buildInsights, type Insight } from '@/features/insights/buildInsights';
-import { useCountUp } from '@/features/motion/useCountUp';
+import { NEXT_MEAL_LABELS, greetingLine } from '@/features/home/greeting';
+import { buildInsights } from '@/features/insights/buildInsights';
+import { InsightCarousel } from '@/features/insights/components/InsightCarousel';
 import { staggerIn } from '@/features/motion/springs';
 import { useDisplayName } from '@/features/profile/hooks/useDisplayName';
 import { useWeightLogs } from '@/features/progress/hooks/useWeightLogs';
@@ -51,13 +50,14 @@ import { useWaterDay } from '@/features/water/hooks/useWaterDay';
 import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
 import { WATER_EXTRA_PRESETS, parseWaterAmount } from '@/features/water/utils/goal';
 import {
-  gradients,
   radius,
   spacing,
   tabularNumbers,
   typography,
   useTheme,
   type ThemeColors,
+  fontSizes,
+  fonts,
 } from '@/theme';
 
 export default function HomeScreen() {
@@ -158,10 +158,7 @@ export default function HomeScreen() {
   }
 
   const kcal = day.consumedPartial.caloriesKcal;
-  const remaining = remainingCalories(day.goals.caloriesKcal, kcal);
-  const unknownCaloriesNotice = describeUnknown(kcal);
   const extras = describeExtras(day.consumedPartial, day.targets, day.entries.length > 0);
-  const greeting = greetingForHour(hour);
 
   const sortedWeights = [...weight.logs].sort((a, b) => a.localDate.localeCompare(b.localDate));
   const latestWeight = sortedWeights[sortedWeights.length - 1] ?? null;
@@ -247,63 +244,24 @@ export default function HomeScreen() {
     <Screen fab>
       <Animated.View entering={staggerIn(0)} style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.greeting}>
-            {greetingLine(hour, name)} {greeting.emoji}
-          </Text>
+          <Text style={styles.greeting}>{greetingLine(hour, name)}</Text>
           <Text style={styles.subtitle}>Esto es lo que llevas hoy</Text>
         </View>
         <View
           accessibilityLabel={`Racha de ${streak.current} días`}
           style={styles.streakChip}
         >
-          <Text style={styles.streakEmoji}>🔥</Text>
+          <Ionicons color={colors.accent} name="flame" size={20} />
           <Text style={styles.streakNumber}>{streak.current}</Text>
         </View>
       </Animated.View>
 
       <Animated.View entering={staggerIn(1)}>
-        <Card variant="hero">
-          <View style={styles.heroRow}>
-            <ProgressRing
-              accessibilityLabel={`${formatPartialAmount(kcal)} de ${day.goals.caloriesKcal} kilocalorías`}
-              gradient={gradients.accent}
-              maximum={day.goals.caloriesKcal}
-              size={148}
-              strokeWidth={14}
-              value={kcal.knownTotal}
-            >
-              <AnimatedNumber
-                color={colors.onHero}
-                prefix={remaining.approximate ? (remaining.over ? '≥ ' : '≤ ') : ''}
-                style={styles.ringValue}
-                value={remaining.amount}
-              />
-              <Text style={styles.ringLabel}>{remaining.over ? 'de más' : 'restantes'}</Text>
-            </ProgressRing>
-
-            <View style={styles.heroMain}>
-              <Text style={styles.heroLabel}>HAS COMIDO</Text>
-              <AnimatedNumber
-                color={colors.onHero}
-                prefix={kcal.complete ? '' : '≥ '}
-                style={styles.heroValue}
-                value={kcal.knownTotal}
-              />
-              <Text style={styles.heroGoal}>de {Math.round(day.goals.caloriesKcal)} kcal</Text>
-            </View>
-          </View>
-
-          {unknownCaloriesNotice ? (
-            <Text style={styles.heroNotice}>
-              {unknownCaloriesNotice}. Completa sus datos para ver el total real.
-            </Text>
-          ) : null}
-          {day.goalsAreDefault ? (
-            <Text style={styles.heroNotice}>
-              Objetivos provisionales: no calculados con tus datos personales.
-            </Text>
-          ) : null}
-        </Card>
+        <CalorieHero
+          goalKcal={day.goals.caloriesKcal}
+          goalsAreDefault={day.goalsAreDefault}
+          kcal={kcal}
+        />
       </Animated.View>
 
       <Animated.View entering={staggerIn(2)}>
@@ -372,18 +330,18 @@ export default function HomeScreen() {
               : 'Aún no hay registros esta semana'}
           </Text>
           <View style={styles.weekActions}>
-            <Chip emoji="📊" label="Resumen semanal" onPress={() => router.push('/summary')} />
+            <Chip icon="bar-chart-outline" label="Resumen semanal" onPress={() => router.push('/summary')} />
           </View>
         </Card>
       </Animated.View>
 
-      {insights.map((insight, index) => (
-        <Animated.View key={insight.kind} entering={staggerIn(4 + index)}>
-          <InsightCard insight={insight} />
+      {insights.length > 0 ? (
+        <Animated.View entering={staggerIn(4)}>
+          <InsightCarousel insights={insights} />
         </Animated.View>
-      ))}
+      ) : null}
 
-      <Animated.View entering={staggerIn(4 + insights.length)}>
+      <Animated.View entering={staggerIn(5)}>
         <Card>
           <SectionHeader
             caption={nextMealEmpty ? 'Un toque y listo' : 'Ya tienes algo registrado'}
@@ -398,68 +356,76 @@ export default function HomeScreen() {
                 onPress={() => openAddFood(nextMeal, food.id)}
               />
             ))}
-            <Chip emoji="➕" label="Buscar" onPress={() => openAddFood(nextMeal)} />
+            <Chip icon="search" label="Buscar" onPress={() => openAddFood(nextMeal)} />
             {nextMealEmpty ? (
-              <Chip emoji="🔁" label="Repetir ayer" onPress={() => void handleRepeatYesterday()} />
+              <Chip icon="repeat" label="Repetir ayer" onPress={() => void handleRepeatYesterday()} />
             ) : null}
           </View>
         </Card>
       </Animated.View>
 
-      <Animated.View entering={staggerIn(5 + insights.length)} style={styles.bento}>
-        <Card style={styles.waterTile}>
-          <Text style={styles.tileTitle}>Agua</Text>
-          <View style={styles.waterBody}>
-            <WaterBottle goalMl={waterGoal} valueMl={waterTotal} width={46} />
-            <View style={styles.waterInfo}>
-              <Text style={styles.waterAmount}>{formatLiters(waterTotal)}</Text>
-              <Text style={styles.tileCaption}>de {formatLiters(waterGoal)}</Text>
+      <Animated.View entering={staggerIn(6)}>
+        <Card>
+          <View style={styles.waterHeader}>
+            <View style={styles.waterBody}>
+              <WaterBottle goalMl={waterGoal} valueMl={waterTotal} width={46} />
+              <View style={styles.waterInfo}>
+                <Text style={styles.tileTitle}>Agua</Text>
+                <Text style={styles.waterAmount}>{formatLiters(waterTotal)}</Text>
+                <Text style={styles.tileCaption}>de {formatLiters(waterGoal)}</Text>
+              </View>
+            </View>
+            <View style={styles.waterButtons}>
+              <Chip label="+250 ml" onPress={() => void handleAddWater(250)} />
+              <Chip label="+500 ml" onPress={() => void handleAddWater(500)} />
+              <Chip
+                accessibilityLabel="Añadir otra cantidad de agua"
+                icon="add"
+                label="Otra"
+                onPress={() => setCustomWater('')}
+              />
             </View>
           </View>
-          <View style={styles.waterButtons}>
-            <Chip label="+250" onPress={() => void handleAddWater(250)} />
-            <Chip label="+500" onPress={() => void handleAddWater(500)} />
-            <Chip
-              accessibilityLabel="Añadir otra cantidad de agua"
-              label="Otra…"
-              onPress={() => setCustomWater('')}
-            />
-          </View>
         </Card>
-
-        <View style={styles.tileColumn}>
-          <Card style={styles.smallTile}>
-            <Text style={styles.tileEmoji}>🔥</Text>
-            <Text style={styles.tileValue}>
-              {streak.current} {streak.current === 1 ? 'día' : 'días'}
-            </Text>
-            <Text style={styles.tileCaption}>
-              {streak.best > 0 ? `Mejor racha: ${streak.best}` : 'Registra hoy para empezar'}
-            </Text>
-          </Card>
-
-          <AnimatedPressable
-            accessibilityLabel="Ver progreso de peso"
-            accessibilityRole="button"
-            haptic
-            onPress={() => router.push('/(tabs)/progress')}
-          >
-            <Card style={styles.smallTile}>
-              <Text style={styles.tileEmoji}>⚖️</Text>
-              <Text style={styles.tileValue}>
-                {latestWeight ? `${latestWeight.weightKg.toFixed(1)} kg` : '— kg'}
-              </Text>
-              <Text style={styles.tileCaption}>
-                {weightChange === null
-                  ? 'Registra tu peso'
-                  : `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg vs anterior`}
-              </Text>
-            </Card>
-          </AnimatedPressable>
-        </View>
       </Animated.View>
 
-      <Animated.View entering={staggerIn(6 + insights.length)}>
+      <Animated.View entering={staggerIn(6)} style={styles.tiles}>
+        <Card style={styles.smallTile}>
+          <Ionicons color={colors.accent} name="flame" size={24} />
+          <Text style={styles.tileValue}>
+            {streak.best} {streak.best === 1 ? 'día' : 'días'}
+          </Text>
+          <Text style={styles.tileCaption}>
+            {streak.best > 0 ? 'Tu mejor racha' : 'Registra hoy para empezar'}
+          </Text>
+        </Card>
+
+        <AnimatedPressable
+          accessibilityHint="Abre el progreso de peso"
+          accessibilityLabel={`Peso: ${latestWeight ? `${latestWeight.weightKg.toFixed(1)} kilos` : 'sin registro'}`}
+          accessibilityRole="button"
+          haptic
+          onPress={() => router.push('/(tabs)/progress')}
+          style={styles.tileButton}
+        >
+          <Card style={styles.smallTile}>
+            <View style={styles.tileHeader}>
+              <Ionicons color={colors.primary} name="scale-outline" size={24} />
+              <Ionicons color={colors.textMuted} name="chevron-forward" size={18} />
+            </View>
+            <Text style={styles.tileValue}>
+              {latestWeight ? `${latestWeight.weightKg.toFixed(1)} kg` : '— kg'}
+            </Text>
+            <Text style={styles.tileCaption}>
+              {weightChange === null
+                ? 'Registra tu peso'
+                : `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg vs anterior`}
+            </Text>
+          </Card>
+        </AnimatedPressable>
+      </Animated.View>
+
+      <Animated.View entering={staggerIn(7)}>
         <Card>
           <SectionHeader
             actionLabel="Ver diario"
@@ -485,9 +451,11 @@ export default function HomeScreen() {
       title="¿Cuánta agua?"
       visible={customWater !== null}
     >
-      <TextInput
+      <TextField
         accessibilityLabel="Cantidad de agua en mililitros"
         autoFocus
+        error={customWaterError}
+        inputStyle={styles.waterInput}
         keyboardType="number-pad"
         maxLength={4}
         onChangeText={(text) => {
@@ -496,12 +464,9 @@ export default function HomeScreen() {
         }}
         onSubmitEditing={() => void handleAddCustomWater()}
         placeholder="ml"
-        placeholderTextColor={colors.textMuted}
         returnKeyType="done"
-        style={styles.waterInput}
         value={customWater ?? ''}
       />
-      {customWaterError ? <Text style={styles.waterError}>{customWaterError}</Text> : null}
       <View style={styles.waterButtons}>
         {WATER_EXTRA_PRESETS.map((amount) => (
           <Chip key={amount} label={`${amount} ml`} onPress={() => setCustomWater(String(amount))} />
@@ -511,48 +476,6 @@ export default function HomeScreen() {
     </BottomSheet>
     <Confetti burst={confettiBurst} />
     </>
-  );
-}
-
-function InsightCard({ insight }: { insight: Insight }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  const background =
-    insight.tone === 'success'
-      ? colors.primaryLight
-      : insight.tone === 'warning'
-        ? colors.carbohydratesLight
-        : colors.surfaceMuted;
-
-  return (
-    <View
-      accessibilityLabel={`${insight.title}. ${insight.message}`}
-      style={[styles.insight, { backgroundColor: background }]}
-    >
-      <Text style={styles.insightEmoji}>{insight.emoji}</Text>
-      <View style={styles.insightText}>
-        <Text style={styles.insightTitle}>{insight.title}</Text>
-        <Text style={styles.insightMessage}>{insight.message}</Text>
-      </View>
-    </View>
-  );
-}
-
-function AnimatedNumber({
-  value,
-  color,
-  style,
-  prefix = '',
-}: {
-  value: number | null;
-  color: string;
-  style?: object;
-  prefix?: string;
-}) {
-  const display = useCountUp(value ?? 0, 600, 0);
-  return (
-    <Text style={[style, { color }]}>{value === null ? '—' : `${prefix}${String(display)}`}</Text>
   );
 }
 
@@ -587,56 +510,13 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.pill,
       flexDirection: 'row',
       gap: spacing.xs,
+      minHeight: 40,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-    },
-    streakEmoji: {
-      fontSize: 18,
     },
     streakNumber: {
       ...typography.title,
       ...tabularNumbers,
       color: colors.text,
-    },
-    heroRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: spacing.xl,
-    },
-    ringValue: {
-      ...typography.display,
-      ...tabularNumbers,
-      fontSize: 34,
-    },
-    ringLabel: {
-      ...typography.caption,
-      color: colors.onHero,
-      opacity: 0.85,
-    },
-    heroMain: {
-      flex: 1,
-      gap: 2,
-    },
-    heroLabel: {
-      ...typography.label,
-      color: colors.onHero,
-      opacity: 0.8,
-    },
-    heroValue: {
-      ...typography.displayLarge,
-      ...tabularNumbers,
-    },
-    heroGoal: {
-      ...typography.body,
-      color: colors.onHero,
-      opacity: 0.85,
-    },
-    heroNotice: {
-      ...typography.caption,
-      color: colors.onHero,
-      fontSize: 12,
-      lineHeight: 17,
-      opacity: 0.85,
     },
     pills: {
       gap: spacing.sm,
@@ -654,18 +534,16 @@ function createStyles(colors: ThemeColors) {
       color: colors.textMuted,
     },
     extraValue: {
-      ...typography.title,
+      ...typography.bodyStrong,
       ...tabularNumbers,
       color: colors.text,
-      fontSize: 16,
     },
     extraExceeded: {
       color: colors.warning,
     },
     extraTarget: {
-      ...typography.caption,
+      ...typography.micro,
       color: colors.textMuted,
-      fontSize: 11,
     },
     weekActions: {
       alignItems: 'center',
@@ -675,93 +553,58 @@ function createStyles(colors: ThemeColors) {
       color: colors.textMuted,
       textAlign: 'center',
     },
-    insight: {
-      alignItems: 'center',
-      borderRadius: radius.lg,
-      flexDirection: 'row',
-      gap: spacing.md,
-      padding: spacing.lg,
-    },
-    insightEmoji: {
-      fontSize: 28,
-    },
-    insightText: {
-      flex: 1,
-      gap: 2,
-    },
-    insightTitle: {
-      ...typography.title,
-      color: colors.text,
-      fontSize: 16,
-    },
-    insightMessage: {
-      ...typography.body,
-      color: colors.text,
-      fontSize: 14,
-    },
     suggestions: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: spacing.sm,
     },
-    bento: {
-      flexDirection: 'row',
-      gap: spacing.md,
-    },
-    waterTile: {
-      flex: 1.15,
-      gap: spacing.md,
+    waterHeader: {
+      gap: spacing.lg,
     },
     waterBody: {
       alignItems: 'center',
       flexDirection: 'row',
-      gap: spacing.md,
+      gap: spacing.lg,
     },
     waterInfo: {
       flex: 1,
       gap: 2,
     },
     waterAmount: {
-      ...typography.title,
+      ...typography.headline,
       ...tabularNumbers,
       color: colors.water,
-      fontSize: 22,
     },
     waterButtons: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: spacing.sm,
     },
-    waterError: {
-      ...typography.caption,
-      color: colors.danger,
-      textAlign: 'center',
-    },
     waterInput: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: 22,
-      padding: spacing.md,
+      fontFamily: fonts.heading,
+      fontSize: fontSizes.heading,
       textAlign: 'center',
     },
-    tileColumn: {
-      flex: 1,
+    tiles: {
+      flexDirection: 'row',
       gap: spacing.md,
+    },
+    tileButton: {
+      flex: 1,
     },
     smallTile: {
       flex: 1,
       gap: spacing.xs,
       padding: spacing.lg,
     },
+    tileHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
     tileTitle: {
       ...typography.title,
       color: colors.text,
-    },
-    tileEmoji: {
-      fontSize: 22,
     },
     tileValue: {
       ...typography.title,
@@ -771,8 +614,6 @@ function createStyles(colors: ThemeColors) {
     tileCaption: {
       ...typography.caption,
       color: colors.textMuted,
-      fontSize: 12,
     },
   });
 }
-

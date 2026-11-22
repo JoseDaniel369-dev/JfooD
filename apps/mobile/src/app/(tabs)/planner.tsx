@@ -38,7 +38,7 @@ import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
 import { scheduleReminders } from '@/features/reminders/notifications';
 import { usePlanDay } from '@/features/plan/hooks/usePlanDay';
 import { usePlanWeekOverview } from '@/features/plan/hooks/usePlanWeekOverview';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts } from '@/theme';
 import type { PartialNutrient } from '@jfood/core';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
@@ -330,7 +330,7 @@ export default function PlannerScreen() {
             />
             <TotalItem
               color={colors.carbohydrates}
-              label="Carbos"
+              label="Hidratos"
               unit="g"
               value={day.consumedPartial.carbohydrateGrams}
             />
@@ -341,14 +341,12 @@ export default function PlannerScreen() {
               value={day.consumedPartial.fatGrams}
             />
           </View>
+          {describeUnknown(day.consumedPartial.caloriesKcal) ? (
+            <Text style={styles.unknownNotice}>
+              {describeUnknown(day.consumedPartial.caloriesKcal)}: los totales son un mínimo.
+            </Text>
+          ) : null}
         </Card>
-
-        {describeUnknown(day.consumedPartial.caloriesKcal) ? (
-          <Text style={styles.unknownNotice}>
-            {describeUnknown(day.consumedPartial.caloriesKcal)}: los totales son
-            un mínimo.
-          </Text>
-        ) : null}
 
         <Card animated delay={100}>
           <SectionHeader
@@ -388,7 +386,7 @@ export default function PlannerScreen() {
           <Button
             icon="copy-outline"
             title="Copiar al diario"
-            variant="accent"
+            variant="primary"
             onPress={() => void openCopyConfirm()}
           />
         ) : null}
@@ -501,12 +499,12 @@ function createStyles(colors: ThemeColors) {
     totalValue: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     totalUnit: {
       ...typography.caption,
       color: colors.textMuted,
-      fontWeight: '400',
+      fontFamily: fonts.regular,
     },
   });
 }

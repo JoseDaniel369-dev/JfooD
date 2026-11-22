@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
@@ -19,11 +20,20 @@ import { useReminderScheduler } from '@/features/reminders/useReminderScheduler'
 import { initializeDatabase } from '@/data/sqlite/initializeDatabase';
 import {
   darkColors,
+  fonts,
   lightColors,
   ThemeProvider,
   useTheme,
   type ThemeColors,
 } from '@/theme';
+
+// The native splash stays up until the fonts, the database and the theme are ready,
+// so the first thing on screen is the app itself (no splash → spinner → content flicker).
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+function hideSplash() {
+  void SplashScreen.hideAsync().catch(() => undefined);
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -38,6 +48,7 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) {
     return <AppLoading />;
   }
+  // (If the fonts failed, the app goes on with the system font.)
 
   return (
     <GestureHandlerRootView style={stylesLoading.root}>
@@ -76,8 +87,12 @@ function DatabaseBoundary({ children }: PropsWithChildren) {
   // The provider calls onError while rendering: defer the state update.
   const handleError = useCallback((failure: Error) => {
     queueMicrotask(() => setError(failure));
+    hideSplash();
   }, []);
-  const handleReady = useCallback(() => setReady(true), []);
+  const handleReady = useCallback(() => {
+    setReady(true);
+    hideSplash();
+  }, []);
 
   if (error) {
     return (
@@ -286,7 +301,7 @@ function createStyles(colors: ThemeColors) {
     headerTitle: {
       color: colors.text,
       fontSize: 17,
-      fontWeight: '600',
+      fontFamily: fonts.heading,
     },
   });
 }

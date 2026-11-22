@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { fonts, spacing, useTheme, type ThemeColors } from '@/theme';
+import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface ScreenHeaderProps {
-  title: string;
+  /** Title of a tab screen. Leave it out on screens that already have a native header title. */
+  title?: string;
   subtitle?: string;
 }
 
@@ -14,7 +15,11 @@ export function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      {title ? (
+        <Text accessibilityRole="header" maxFontSizeMultiplier={1.3} style={styles.title}>
+          {title}
+        </Text>
+      ) : null}
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
@@ -23,18 +28,15 @@ export function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: {
-      gap: spacing.sm,
+      gap: spacing.xs,
     },
     title: {
+      ...typography.titleLarge,
       color: colors.text,
-      fontFamily: fonts.heading,
-      fontSize: 30,
-      letterSpacing: -0.8,
     },
     subtitle: {
+      ...typography.body,
       color: colors.textMuted,
-      fontSize: 15,
-      lineHeight: 22,
     },
   });
 }

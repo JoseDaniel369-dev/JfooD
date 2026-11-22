@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { spacing, typography, useTheme, type ThemeColors, fonts } from '@/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -22,14 +22,16 @@ export function SectionHeader({
   return (
     <View style={styles.container}>
       <View style={styles.copy}>
-        <Text style={styles.title}>{title}</Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          {title}
+        </Text>
         {caption ? <Text style={styles.caption}>{caption}</Text> : null}
       </View>
       {actionLabel && onAction ? (
         <Pressable
           accessibilityLabel={actionLabel}
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           onPress={onAction}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
@@ -60,12 +62,14 @@ function createStyles(colors: ThemeColors) {
       color: colors.textMuted,
     },
     action: {
-      padding: spacing.xs,
+      justifyContent: 'center',
+      minHeight: 44,
+      paddingHorizontal: spacing.xs,
     },
     actionText: {
       ...typography.caption,
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     pressed: {
       opacity: 0.75,

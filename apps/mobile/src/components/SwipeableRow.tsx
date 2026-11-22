@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { hapticImpact } from '@/features/haptics/haptics';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 interface SwipeableRowProps extends PropsWithChildren {
   /** Swipe the row to the left to delete it. */
@@ -58,6 +58,7 @@ export function SwipeableRow({ onDelete, onDuplicate, children }: SwipeableRowPr
                 label="Duplicar"
                 progress={progress}
                 style={styles.duplicate}
+                tone="onPrimary"
               />
             )
           : undefined
@@ -70,6 +71,7 @@ export function SwipeableRow({ onDelete, onDuplicate, children }: SwipeableRowPr
                 label="Eliminar"
                 progress={progress}
                 style={styles.delete}
+                tone="onDanger"
               />
             )
           : undefined
@@ -86,13 +88,17 @@ function Action({
   label,
   progress,
   style,
+  tone,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   progress: SharedValue<number>;
   style: StyleProp<ViewStyle>;
+  /** Which "text on this background" colour the action uses (white fails on the dark-mode colours). */
+  tone: 'onPrimary' | 'onDanger';
 }) {
   const { colors } = useTheme();
+  const foreground = tone === 'onDanger' ? colors.onDanger : colors.textOnPrimary;
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const contentStyle = useAnimatedStyle(() => ({
@@ -105,8 +111,8 @@ function Action({
   return (
     <View style={[styles.action, style]}>
       <Animated.View style={[styles.actionContent, contentStyle]}>
-        <Ionicons color="#FFFFFF" name={icon} size={22} />
-        <Text style={styles.actionLabel}>{label}</Text>
+        <Ionicons color={foreground} name={icon} size={22} />
+        <Text style={[styles.actionLabel, { color: foreground }]}>{label}</Text>
       </Animated.View>
     </View>
   );
@@ -135,8 +141,7 @@ function createStyles(colors: ThemeColors) {
     },
     actionLabel: {
       ...typography.caption,
-      color: '#FFFFFF',
-      fontSize: 12,
+      fontSize: fontSizes.small,
     },
   });
 }

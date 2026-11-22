@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   computeChange,
   computeWeeklyTrend,
+  weightChangeTone,
   type TrendLog,
 } from '@/features/progress/utils/trend';
 
@@ -48,5 +49,24 @@ describe('computeWeeklyTrend', () => {
     ];
 
     assert.equal(computeWeeklyTrend(logs), 71);
+  });
+});
+
+describe('weightChangeTone', () => {
+  it('is good when the weight moves the way the goal asks', () => {
+    assert.equal(weightChangeTone(-0.4, 'lose'), 'good');
+    assert.equal(weightChangeTone(0.4, 'gain'), 'good');
+  });
+
+  it('asks for attention (never "error") when it moves the other way', () => {
+    assert.equal(weightChangeTone(0.4, 'lose'), 'attention');
+    assert.equal(weightChangeTone(-0.4, 'gain'), 'attention');
+  });
+
+  it('is neutral when maintaining, unchanged, unknown or without a goal', () => {
+    assert.equal(weightChangeTone(1, 'maintain'), 'neutral');
+    assert.equal(weightChangeTone(0, 'lose'), 'neutral');
+    assert.equal(weightChangeTone(null, 'lose'), 'neutral');
+    assert.equal(weightChangeTone(-1, null), 'neutral');
   });
 });

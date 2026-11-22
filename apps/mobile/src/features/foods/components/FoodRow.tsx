@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import type { Food } from '@/features/foods/types';
 import { foodEmoji } from '@/features/foods/utils/foodEmoji';
-import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
 interface FoodRowProps {
   food: Food;
@@ -103,7 +103,8 @@ function createStyles(colors: ThemeColors) {
       width: 44,
     },
     emojiText: {
-      fontSize: 24,
+      fontSize: fontSizes.headline,
+      fontFamily: fonts.regular,
     },
     text: {
       flex: 1,
@@ -112,13 +113,13 @@ function createStyles(colors: ThemeColors) {
     name: {
       ...typography.title,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
     },
     meta: {
       ...typography.caption,
       ...tabularNumbers,
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: fontSizes.small,
     },
     iconButton: {
       alignItems: 'center',

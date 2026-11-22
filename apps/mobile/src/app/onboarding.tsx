@@ -35,6 +35,7 @@ import {
   typography,
   useTheme,
   type ThemeColors,
+  fontSizes,
 } from '@/theme';
 
 type OnboardingStep = 'welcome' | 'profile' | 'reminders' | 'done';
@@ -45,7 +46,7 @@ type MealKey = 'breakfast' | 'lunch' | 'dinner';
 
 const MEAL_CHOICES: { key: MealKey; emoji: string; label: string }[] = [
   { key: 'breakfast', emoji: '🍳', label: 'Desayuno · 9:00' },
-  { key: 'lunch', emoji: '🥗', label: 'Comida · 14:00' },
+  { key: 'lunch', emoji: '🥗', label: 'Almuerzo · 14:00' },
   { key: 'dinner', emoji: '🍝', label: 'Cena · 21:00' },
 ];
 
@@ -306,7 +307,7 @@ export default function OnboardingScreen() {
               </Text>
               <View style={styles.goalsRow}>
                 <GoalChip color={colors.onHero} label="Proteínas" value={goals.proteinGrams} />
-                <GoalChip color={colors.onHero} label="Carbos" value={goals.carbohydrateGrams} />
+                <GoalChip color={colors.onHero} label="Hidratos" value={goals.carbohydrateGrams} />
                 <GoalChip color={colors.onHero} label="Grasas" value={goals.fatGrams} />
               </View>
             </Card>
@@ -375,13 +376,13 @@ function createStyles(colors: ThemeColors) {
     brand: {
       color: colors.text,
       fontFamily: fonts.brand,
-      fontSize: 40,
+      fontSize: fontSizes.numeral,
       letterSpacing: -1,
     },
     welcomeSubtitle: {
       ...typography.body,
       color: colors.textMuted,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
       textAlign: 'center',
     },
     valueProps: {
@@ -407,7 +408,7 @@ function createStyles(colors: ThemeColors) {
     valueTitle: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     valueText: {
       ...typography.caption,
@@ -423,7 +424,7 @@ function createStyles(colors: ThemeColors) {
     nameLabel: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     nameInput: {
       backgroundColor: colors.surface,
@@ -431,7 +432,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 18,
+      fontSize: fontSizes.title,
+      fontFamily: fonts.regular,
       padding: spacing.md,
     },
     choices: {
@@ -445,7 +447,7 @@ function createStyles(colors: ThemeColors) {
     stepTitle: {
       color: colors.text,
       fontFamily: fonts.heading,
-      fontSize: 28,
+      fontSize: fontSizes.titleLarge,
       letterSpacing: -0.5,
     },
     stepSubtitle: {
@@ -456,19 +458,20 @@ function createStyles(colors: ThemeColors) {
     goalsLabel: {
       color: colors.onHero,
       fontSize: typography.label.fontSize,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
       letterSpacing: typography.label.letterSpacing,
       opacity: 0.75,
     },
     goalsCalories: {
       color: colors.onHero,
-      fontSize: 44,
-      fontWeight: '700',
+      fontSize: fontSizes.numeral,
+      fontFamily: fonts.heading,
       letterSpacing: -1.5,
     },
     goalsUnit: {
       color: colors.onHero,
-      fontSize: 15,
+      fontSize: fontSizes.body,
+      fontFamily: fonts.regular,
       opacity: 0.7,
     },
     goalsRow: {
@@ -484,12 +487,13 @@ function createStyles(colors: ThemeColors) {
     },
     goalChipLabel: {
       color: colors.onHero,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
       opacity: 0.75,
     },
     goalChipValue: {
-      fontSize: 15,
-      fontWeight: '700',
+      fontSize: fontSizes.body,
+      fontFamily: fonts.heading,
     },
   });
 }

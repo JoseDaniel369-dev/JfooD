@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenSkeleton } from '@/components/Skeleton';
-import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, useTheme, type ThemeColors, fonts, fontSizes } from '@/theme';
 
 /** Placeholder shapes (with a shimmer) while a screen loads its data. */
 export function LoadingState() {
@@ -49,7 +49,8 @@ function createStyles(colors: ThemeColors) {
     },
     message: {
       color: colors.textMuted,
-      fontSize: 15,
+      fontSize: fontSizes.body,
+      fontFamily: fonts.regular,
       lineHeight: 22,
       textAlign: 'center',
     },
@@ -61,7 +62,7 @@ function createStyles(colors: ThemeColors) {
     },
     buttonText: {
       color: colors.textOnPrimary,
-      fontWeight: '600',
+      fontFamily: fonts.semibold,
     },
     pressed: {
       opacity: 0.8,

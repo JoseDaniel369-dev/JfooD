@@ -20,6 +20,8 @@ import {
   typography,
   useTheme,
   type ThemeColors,
+  fontSizes,
+  fonts,
 } from '@/theme';
 
 const QUICK_GRAMS = [50, 100, 150, 200] as const;
@@ -247,7 +249,8 @@ function createStyles(colors: ThemeColors) {
       width: 52,
     },
     emojiText: {
-      fontSize: 28,
+      fontSize: fontSizes.titleLarge,
+      fontFamily: fonts.regular,
     },
     titleText: {
       flex: 1,
@@ -256,7 +259,7 @@ function createStyles(colors: ThemeColors) {
     name: {
       ...typography.title,
       color: colors.text,
-      fontSize: 20,
+      fontSize: fontSizes.subtitle,
     },
     brand: {
       ...typography.caption,
@@ -286,7 +289,7 @@ function createStyles(colors: ThemeColors) {
     amountUnit: {
       ...typography.title,
       color: colors.textMuted,
-      fontSize: 22,
+      fontSize: fontSizes.heading,
     },
     error: {
       ...typography.caption,

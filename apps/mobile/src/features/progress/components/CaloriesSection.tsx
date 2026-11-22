@@ -11,7 +11,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Skeleton } from '@/components/Skeleton';
 import { formatLocalDate } from '@/features/diary/utils/date';
 import { useCalorieHistory } from '@/features/progress/hooks/useCalorieHistory';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
 /** Calories of the last 30 days against the goal, and the way into the weekly summary. */
 export function CaloriesSection() {
@@ -116,7 +116,8 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.md,
     },
     summaryEmoji: {
-      fontSize: 30,
+      fontSize: fontSizes.titleLarge,
+      fontFamily: fonts.regular,
     },
     summaryText: {
       flex: 1,

@@ -4,14 +4,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
-import { addDays, startOfWeek, toLocalDate } from '@/features/diary/utils/date';
+import { addDays, formatLocalDate, startOfWeek, toLocalDate } from '@/features/diary/utils/date';
 import {
   buildWeekStrip,
   formatWeekRange,
   type WeekStripDay,
   type WeekStripDayData,
 } from '@/features/diary/utils/weekStrip';
-import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 interface WeekStripProps {
   selectedDate: string;
@@ -67,6 +67,7 @@ export function WeekStrip({
                 accessibilityLabel="Ir a hoy"
                 accessibilityRole="button"
                 haptic
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 onPress={() => onSelect(today)}
                 style={styles.todayButton}
               >
@@ -106,8 +107,8 @@ function DayCell({ day, onPress }: { day: WeekStripDay; onPress: () => void }) {
 
   return (
     <AnimatedPressable
-      accessibilityLabel={`${day.dayNumber}${day.isToday ? ', hoy' : ''}${
-        day.logged ? ', con registros' : ''
+      accessibilityLabel={`${formatLocalDate(day.date)}${day.isToday ? ', hoy' : ''}${
+        day.logged ? `, con registros, ${Math.round(day.progress * 100)} % del objetivo` : ', sin registros'
       }`}
       accessibilityRole="button"
       accessibilityState={{ selected: day.isSelected }}
@@ -115,7 +116,12 @@ function DayCell({ day, onPress }: { day: WeekStripDay; onPress: () => void }) {
       onPress={onPress}
       style={styles.cell}
     >
-      <Text style={[styles.weekday, day.isSelected && styles.weekdaySelected]}>{day.weekday}</Text>
+      <Text
+        maxFontSizeMultiplier={1.2}
+        style={[styles.weekday, day.isSelected && styles.weekdaySelected]}
+      >
+        {day.weekday}
+      </Text>
 
       <View style={[styles.circle, day.isSelected && styles.circleSelected, day.isToday && !day.isSelected && styles.circleToday]}>
         {day.progress > 0 && !day.isSelected ? (
@@ -136,6 +142,7 @@ function DayCell({ day, onPress }: { day: WeekStripDay; onPress: () => void }) {
           </Svg>
         ) : null}
         <Text
+          maxFontSizeMultiplier={1.2}
           style={[
             styles.dayNumber,
             day.isSelected && styles.dayNumberSelected,
@@ -168,20 +175,21 @@ function createStyles(colors: ThemeColors) {
     },
     arrow: {
       alignItems: 'center',
-      height: 36,
+      height: 44,
       justifyContent: 'center',
-      width: 36,
+      width: 44,
     },
     range: {
       ...typography.title,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
     },
     todayButton: {
       backgroundColor: colors.primaryLight,
       borderRadius: radius.pill,
+      justifyContent: 'center',
+      minHeight: 36,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
     },
     todayText: {
       ...typography.caption,
@@ -222,7 +230,7 @@ function createStyles(colors: ThemeColors) {
       ...typography.title,
       ...tabularNumbers,
       color: colors.text,
-      fontSize: 15,
+      fontSize: fontSizes.body,
     },
     dayNumberSelected: {
       color: colors.textOnPrimary,

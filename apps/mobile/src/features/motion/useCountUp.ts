@@ -15,7 +15,7 @@ export function useCountUp(target: number, duration: number = durations.slower, 
     Animated.timing(value, {
       toValue: target,
       duration: isReducedMotion() ? 0 : duration,
-      useNativeDriver: true,
+      useNativeDriver: false,
       easing: (x) => easings.easeOutCubic(x),
     }).start();
 

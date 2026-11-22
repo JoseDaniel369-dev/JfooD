@@ -3,7 +3,6 @@ export interface ThemeColors {
   surface: string;
   surfaceMuted: string;
   primary: string;
-  primaryDark: string;
   primaryLight: string;
   accent: string;
   onAccent: string;
@@ -13,6 +12,12 @@ export interface ThemeColors {
   textMuted: string;
   textOnPrimary: string;
   onHero: string;
+  /** Secondary text over the hero gradient (AA on every stop, unlike a faded white). */
+  onHeroMuted: string;
+  /** Raised element on a muted surface (selected segment, chips): visible in dark mode, where shadows are not. */
+  surfaceRaised: string;
+  /** Green for small "ok" text (AA on the surface in both themes; `success` is for icons and fills). */
+  successText: string;
   toastSuccess: string;
   border: string;
   danger: string;
@@ -40,7 +45,6 @@ export const lightColors: ThemeColors = {
   surface: '#FFFFFF',
   surfaceMuted: '#E8F2EC',
   primary: '#047857',
-  primaryDark: '#065F46',
   primaryLight: '#D1FAE5',
   accent: '#F97316',
   onAccent: '#431407',
@@ -49,6 +53,9 @@ export const lightColors: ThemeColors = {
   textMuted: '#5B6B63',
   textOnPrimary: '#FFFFFF',
   onHero: '#FFFFFF',
+  onHeroMuted: '#EAF7F1',
+  surfaceRaised: '#FFFFFF',
+  successText: '#166534',
   toastSuccess: '#047857',
   border: '#DFEAE3',
   danger: '#DC2626',
@@ -73,7 +80,6 @@ export const darkColors: ThemeColors = {
   surface: '#12211C',
   surfaceMuted: '#1B2F28',
   primary: '#34D399',
-  primaryDark: '#6EE7B7',
   primaryLight: '#14372E',
   accent: '#FB923C',
   onAccent: '#431407',
@@ -82,6 +88,9 @@ export const darkColors: ThemeColors = {
   textMuted: '#93AFA2',
   textOnPrimary: '#052E21',
   onHero: '#FFFFFF',
+  onHeroMuted: '#EAF7F1',
+  surfaceRaised: '#2A4A3F',
+  successText: '#4ADE80',
   toastSuccess: '#0E3A2C',
   border: '#234038',
   danger: '#F87171',
@@ -107,12 +116,13 @@ export const darkColors: ThemeColors = {
  */
 export const heroGradient = ['#047857', '#0E7C66', '#115E59'] as const;
 
+/** Deeper sweep for dark mode: the bright light-mode green would glare on the near-black canvas. */
+export const heroGradientDark = ['#065F46', '#0B6B5C', '#134E4A'] as const;
+
 /** Decorative gradients (no text is drawn directly over them). */
 export const gradients = {
   accent: ['#FFA24D', '#FF7A1A'],
   water: ['#38BDF8', '#0284C7'],
-  celebrate: ['#FDE047', '#FB923C'],
-  brand: ['#34D399', '#059669'],
 } as const;
 
 export const spacing = {
@@ -148,13 +158,6 @@ export const shadows = {
     shadowOpacity: 0.08,
     shadowRadius: 6,
   },
-  lg: {
-    elevation: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-  },
 } as const;
 
 /** Soft shadow tinted with a colour, for hero cards and the central "+" button. */
@@ -176,41 +179,94 @@ export const fonts = {
   brand: 'Nunito_800ExtraBold',
 } as const;
 
+/**
+ * Every font size the app uses. Screens pick one of these instead of a loose
+ * number, so text stays on one scale (and one place changes it).
+ */
+export const fontSizes = {
+  micro: 11,
+  small: 12,
+  caption: 13,
+  compact: 14,
+  body: 15,
+  bodyLarge: 16,
+  title: 18,
+  subtitle: 20,
+  heading: 22,
+  headline: 24,
+  titleLarge: 28,
+  display: 32,
+  numeral: 40,
+  displayLarge: 48,
+} as const;
+
 export const typography = {
   /** Big hero numbers (calories left, weight). Use with tabularNumbers. */
   displayLarge: {
     fontFamily: fonts.brand,
-    fontSize: 48,
+    fontSize: fontSizes.displayLarge,
     letterSpacing: -1.5,
-  },
-  headline: {
-    fontFamily: fonts.brand,
-    fontSize: 24,
-    letterSpacing: -0.4,
   },
   display: {
     fontFamily: fonts.brand,
-    fontSize: 32,
+    fontSize: fontSizes.display,
     letterSpacing: -0.8,
+  },
+  /** Title of a tab screen. */
+  titleLarge: {
+    fontFamily: fonts.brand,
+    fontSize: fontSizes.titleLarge,
+    letterSpacing: -0.5,
+    lineHeight: 34,
+  },
+  headline: {
+    fontFamily: fonts.brand,
+    fontSize: fontSizes.headline,
+    letterSpacing: -0.4,
+    lineHeight: 30,
   },
   title: {
     fontFamily: fonts.heading,
-    fontSize: 18,
+    fontSize: fontSizes.title,
+    lineHeight: 24,
   },
   body: {
     fontFamily: fonts.regular,
-    fontSize: 15,
+    fontSize: fontSizes.body,
+    lineHeight: 21,
+  },
+  /** Body text that must stand out (names, button labels). */
+  bodyStrong: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.body,
+    lineHeight: 21,
   },
   caption: {
     fontFamily: fonts.semibold,
-    fontSize: 13,
+    fontSize: fontSizes.caption,
+    lineHeight: 18,
+  },
+  captionStrong: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.caption,
+    lineHeight: 18,
+  },
+  /** Smallest readable text (hints under numbers, tab labels). */
+  micro: {
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.micro,
+    lineHeight: 14,
   },
   label: {
     fontFamily: fonts.heading,
-    fontSize: 11,
+    fontSize: fontSizes.micro,
     letterSpacing: 1.2,
+    lineHeight: 14,
   },
 } as const;
 
 /** Spread into numeric Text styles so digits keep a constant width. */
 export const tabularNumbers = { fontVariant: ['tabular-nums' as const] };
+
+/** Empty part of a ring drawn over the hero gradient (decorative). */
+export const onHeroTrack = 'rgba(255, 255, 255, 0.2)';

@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type KeyboardTypeOptions } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { foodInputNutrientsSchema, makeNutrients } from '@jfood/core';
 
 import { Button } from '@/components/Button';
+import { TextField } from '@/components/TextField';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
 import { createFood, findFoodByBarcode } from '@/data/sqlite/repositories/foodRepository';
 import type { Food } from '@/features/foods/types';
 import { parseOptionalNumber } from '@/features/foods/utils/parseNumber';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts, fontSizes } from '@/theme';
 
 interface CreateFoodFormProps {
   initialName?: string;
@@ -151,23 +152,18 @@ function Field({
   onChange: (value: string) => void;
   keyboardType?: KeyboardTypeOptions;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        keyboardType={keyboardType}
-        onChangeText={onChange}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-        value={value}
-      />
-    </View>
+    <TextField
+      keyboardType={keyboardType}
+      label={label}
+      onChangeText={onChange}
+      style={fieldStyle}
+      value={value}
+    />
   );
 }
+
+const fieldStyle = { flex: 1 } as const;
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
@@ -196,7 +192,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       padding: spacing.md,
     },
     moreToggle: {
@@ -208,7 +205,7 @@ function createStyles(colors: ThemeColors) {
     moreText: {
       ...typography.caption,
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     error: {
       ...typography.caption,

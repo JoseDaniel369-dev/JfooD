@@ -1,9 +1,12 @@
 export {
   darkColors,
+  fontSizes,
   fonts,
   glow,
   gradients,
   heroGradient,
+  heroGradientDark,
+  onHeroTrack,
   lightColors,
   radius,
   shadows,

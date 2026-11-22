@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -7,7 +8,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { SectionHeader } from '@/components/SectionHeader';
 import type { Achievement } from '@/features/achievements/achievements';
 import { staggerIn } from '@/features/motion/springs';
-import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
 /** Badges to unlock, each with its progress. */
 export function AchievementsSection({ achievements }: { achievements: readonly Achievement[] }) {
@@ -35,6 +36,7 @@ export function AchievementsSection({ achievements }: { achievements: readonly A
         {sorted.map((achievement, index) => (
           <Animated.View key={achievement.id} entering={staggerIn(index, 35)}>
             <View
+              accessible
               accessibilityLabel={`${achievement.title}. ${achievement.description}. ${
                 achievement.unlocked
                   ? 'Desbloqueado'
@@ -65,7 +67,9 @@ export function AchievementsSection({ achievements }: { achievements: readonly A
                   </View>
                 )}
               </View>
-              {achievement.unlocked ? <Text style={styles.check}>✓</Text> : null}
+              {achievement.unlocked ? (
+                <Ionicons color={colors.successText} name="checkmark-circle" size={24} />
+              ) : null}
             </View>
           </Animated.View>
         ))}
@@ -101,7 +105,8 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 2,
     },
     emoji: {
-      fontSize: 26,
+      fontSize: fontSizes.titleLarge,
+      fontFamily: fonts.regular,
     },
     emojiLocked: {
       opacity: 0.4,
@@ -113,7 +118,7 @@ function createStyles(colors: ThemeColors) {
     title: {
       ...typography.title,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
     },
     description: {
       ...typography.caption,
@@ -132,10 +137,6 @@ function createStyles(colors: ThemeColors) {
       ...typography.caption,
       ...tabularNumbers,
       color: colors.textMuted,
-    },
-    check: {
-      ...typography.title,
-      color: colors.success,
     },
   });
 }

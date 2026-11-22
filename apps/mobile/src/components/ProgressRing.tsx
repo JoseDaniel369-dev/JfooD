@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-import { useTheme } from '@/theme';
+import { onHeroTrack, useTheme } from '@/theme';
 
 interface ProgressRingProps extends PropsWithChildren {
   /** Amount reached. Values above `maximum` fill the ring completely. */
@@ -44,7 +44,7 @@ export function ProgressRing({
   strokeWidth = 8,
   color,
   gradient,
-  trackColor = 'rgba(255,255,255,0.18)',
+  trackColor = onHeroTrack,
   accessibilityLabel,
   children,
 }: ProgressRingProps) {

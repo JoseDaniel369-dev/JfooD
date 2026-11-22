@@ -8,7 +8,7 @@ import Animated, {
 
 import { ringProgress } from '@/components/ProgressRing';
 import { springs } from '@/features/motion/springs';
-import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 interface MacroPillProps {
   label: string;
@@ -52,6 +52,7 @@ export function MacroPill({
 
   return (
     <View
+      accessible
       accessibilityLabel={`${label}: ${amount} de ${Math.round(goal)} ${unit}`}
       style={[styles.pill, { backgroundColor: tint }]}
     >
@@ -90,7 +91,7 @@ function createStyles(colors: ThemeColors) {
       ...typography.title,
       ...tabularNumbers,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
     },
     goal: {
       ...typography.caption,

@@ -16,7 +16,7 @@ import {
   type Serving,
 } from '@/data/sqlite/repositories/servingRepository';
 import { parseSpanishNumber } from '@/features/foods/utils/parseNumber';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
 /** Named portions of a food ("1 unidad = 60 g") used as shortcuts when logging. */
 export function ServingsCard({ foodId }: { foodId: string }) {
@@ -123,7 +123,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       minHeight: 48,
       padding: spacing.md,
     },

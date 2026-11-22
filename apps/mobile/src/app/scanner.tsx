@@ -63,6 +63,8 @@ import {
   typography,
   useTheme,
   type ThemeColors,
+  fonts,
+  fontSizes,
 } from '@/theme';
 
 type ScannerStep = 'camera' | 'preview' | 'analyzing' | 'results' | 'error';
@@ -395,7 +397,6 @@ export default function ScannerScreen() {
             'Fotografía tu comida y Gemini identificará los alimentos.'
           : 'Añade alimentos manualmente a tu diario sin depender de la red.'
         }
-        title={scannerEnabled ? 'Escáner' : 'Añadir alimento'}
       />
 
       {step === 'camera' ? (
@@ -912,7 +913,7 @@ function createStyles(colors: ThemeColors) {
     cameraTitle: {
       ...typography.title,
       color: colors.text,
-      fontSize: 20,
+      fontSize: fontSizes.subtitle,
     },
     cameraDescription: {
       ...typography.body,
@@ -1015,8 +1016,8 @@ function createStyles(colors: ThemeColors) {
     },
     resultName: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: fontSizes.body,
+      fontFamily: fonts.semibold,
     },
     textArea: {
       backgroundColor: colors.surfaceMuted,
@@ -1024,22 +1025,26 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       minHeight: 88,
       padding: spacing.md,
       textAlignVertical: 'top',
     },
     resultConfidence: {
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
     },
     resultMatch: {
       color: colors.success,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
     },
     resultNoMatch: {
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
     },
     resultActions: {
       alignItems: 'center',
@@ -1052,8 +1057,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.sm,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: fontSizes.body,
+      fontFamily: fonts.semibold,
       minWidth: 64,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
@@ -1064,11 +1069,13 @@ function createStyles(colors: ThemeColors) {
     },
     resultError: {
       color: colors.danger,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
     },
     gramsLabel: {
       color: colors.textMuted,
-      fontSize: 14,
+      fontSize: fontSizes.compact,
+      fontFamily: fonts.regular,
     },
     manualButton: {
       alignItems: 'center',
@@ -1096,8 +1103,8 @@ function createStyles(colors: ThemeColors) {
     },
     mealOptionText: {
       color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: fontSizes.compact,
+      fontFamily: fonts.semibold,
     },
     mealOptionTextSelected: {
       color: colors.textOnPrimary,

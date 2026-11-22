@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
 import { isScannerEnabled } from '@/config/api';
@@ -41,7 +42,7 @@ import { FOOD_CATEGORIES } from '@/features/foods/utils/categories';
 import { normalizeBarcode } from '@/features/foods/utils/openFoodFacts';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { scheduleReminders } from '@/features/reminders/notifications';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes, fonts } from '@/theme';
 
 type Tab = 'recents' | 'favorites' | 'frequent' | 'catalog';
 
@@ -323,7 +324,7 @@ export default function AddFoodScreen() {
   if (creating) {
     return (
       <Screen>
-        <Text style={styles.title}>Crear alimento</Text>
+        <ScreenHeader subtitle="Crear alimento" />
         <CreateFoodForm
           barcode={pendingBarcode}
           initialName={draftName || prefillName}
@@ -362,13 +363,12 @@ export default function AddFoodScreen() {
     <Screen>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Añadir alimento</Text>
           <Text style={styles.subtitle}>
             {isPlanTarget ? 'Al plan' : mealLabel} · {formatLocalDate(localDate)}
           </Text>
         </View>
         {addedCount > 0 ? (
-          <Chip emoji="✅" label={`Listo (${addedCount})`} onPress={() => router.back()} selected />
+          <Chip icon="checkmark" label={`Listo (${addedCount})`} onPress={() => router.back()} selected />
         ) : null}
       </View>
 
@@ -401,12 +401,12 @@ export default function AddFoodScreen() {
         keyboardShouldPersistTaps="handled"
         showsHorizontalScrollIndicator={false}
       >
-        <Chip emoji="✏️" label="Crear" onPress={() => openCreate('')} />
-        <Chip emoji="🍲" label="Receta" onPress={() => router.push('/recipe')} />
+        <Chip icon="create-outline" label="Crear" onPress={() => openCreate('')} />
+        <Chip icon="restaurant-outline" label="Receta" onPress={() => router.push('/recipe')} />
         {isScannerEnabled() ? (
           <>
-            <Chip emoji="📷" label="Escanear" onPress={() => router.push({ pathname: '/scanner', params: shortcutParams })} />
-            <Chip emoji="🔖" label="Código" onPress={() => router.push({ pathname: '/barcode', params: shortcutParams })} />
+            <Chip icon="camera-outline" label="Escanear" onPress={() => router.push({ pathname: '/scanner', params: shortcutParams })} />
+            <Chip icon="barcode-outline" label="Código" onPress={() => router.push({ pathname: '/barcode', params: shortcutParams })} />
           </>
         ) : null}
       </ScrollView>
@@ -499,11 +499,6 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       gap: 2,
     },
-    title: {
-      ...typography.headline,
-      color: colors.text,
-      fontSize: 26,
-    },
     subtitle: {
       ...typography.body,
       color: colors.textMuted,
@@ -521,7 +516,8 @@ function createStyles(colors: ThemeColors) {
     searchInput: {
       color: colors.text,
       flex: 1,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       paddingVertical: spacing.md,
     },
     shortcuts: {

@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { hapticImpact } from '@/features/haptics/haptics';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts } from '@/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'danger' | 'ghost';
 type ButtonSize = 'default' | 'small';
@@ -96,7 +96,7 @@ function createStyles(colors: ThemeColors) {
     },
     text: {
       ...typography.body,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     primary: {
       backgroundColor: colors.primary,

@@ -10,7 +10,7 @@ import { Chip } from '@/components/Chip';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
 import { hapticSelection } from '@/features/haptics/haptics';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts, fontSizes } from '@/theme';
 
 import {
   getReminderPermission,
@@ -37,7 +37,7 @@ type PickerTarget = { kind: MealKey | WeeklyKey } | { kind: 'waterFrom' } | { ki
 
 const MEAL_ROWS: { key: MealKey; emoji: string; label: string }[] = [
   { key: 'breakfast', emoji: '🍳', label: 'Desayuno' },
-  { key: 'lunch', emoji: '🥗', label: 'Comida' },
+  { key: 'lunch', emoji: '🥗', label: 'Almuerzo' },
   { key: 'dinner', emoji: '🍝', label: 'Cena' },
 ];
 
@@ -458,13 +458,14 @@ function createStyles(colors: ThemeColors) {
       minHeight: 48,
     },
     emoji: {
-      fontSize: 22,
+      fontSize: fontSizes.heading,
+      fontFamily: fonts.regular,
     },
     rowLabel: {
       ...typography.body,
       color: colors.text,
       flex: 1,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     rowBody: {
       alignItems: 'flex-start',
@@ -498,7 +499,7 @@ function createStyles(colors: ThemeColors) {
     everyValue: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
       minWidth: 36,
       textAlign: 'center',
     },
@@ -529,7 +530,7 @@ function createStyles(colors: ThemeColors) {
       ...typography.body,
       color: colors.text,
       fontVariant: ['tabular-nums'],
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     pressed: {
       opacity: 0.8,

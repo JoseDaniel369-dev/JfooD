@@ -18,7 +18,7 @@ import { formatGrams } from '@/features/diary/utils/totals';
 import type { WeekSummary } from '@/features/insights/buildWeekSummary';
 import { useWeekSummary } from '@/features/insights/useWeekSummary';
 import { staggerIn } from '@/features/motion/springs';
-import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, tabularNumbers, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 /** The week in numbers: calories against the goal, macros, water and weight. */
 export default function SummaryScreen() {
@@ -33,7 +33,7 @@ export default function SummaryScreen() {
 
   return (
     <Screen>
-      <ScreenHeader subtitle="Cómo ha ido tu semana" title="Resumen semanal" />
+      <ScreenHeader subtitle="Cómo ha ido tu semana" />
 
       <View style={styles.weekNav}>
         <AnimatedPressable
@@ -45,7 +45,7 @@ export default function SummaryScreen() {
         >
           <Ionicons color={colors.text} name="chevron-back" size={22} />
         </AnimatedPressable>
-        <Text style={styles.range}>
+        <Text numberOfLines={2} style={styles.range}>
           {formatWeekRange(monday)}
           {isCurrentWeek ? ' · esta semana' : ''}
         </Text>
@@ -148,34 +148,34 @@ function SummaryContent({ summary, goalKcal }: { summary: WeekSummary; goalKcal:
         <Card>
           <SectionHeader title="Datos de la semana" />
           <View style={styles.facts}>
-            <Fact emoji="📅" label="Días registrados" value={`${summary.loggedDays} de 7`} />
+            <Fact icon="calendar-outline" label="Días registrados" value={`${summary.loggedDays} de 7`} />
             {summary.closestToGoal ? (
               <Fact
-                emoji="🎯"
+                icon="flag-outline"
                 label="Día más cercano al objetivo"
                 value={`${formatLocalDate(summary.closestToGoal.localDate)} · ${summary.closestToGoal.caloriesKcal} kcal`}
               />
             ) : null}
             {summary.highestDay ? (
               <Fact
-                emoji="📈"
+                icon="trending-up-outline"
                 label="Día con más calorías"
                 value={`${formatLocalDate(summary.highestDay.localDate)} · ${summary.highestDay.caloriesKcal} kcal`}
               />
             ) : null}
             {summary.averageProteinGrams !== null ? (
-              <Fact emoji="💪" label="Proteína media" value={`${summary.averageProteinGrams} g al día`} />
+              <Fact icon="barbell-outline" label="Proteína media" value={`${summary.averageProteinGrams} g al día`} />
             ) : null}
             {summary.averageWaterMl !== null ? (
               <Fact
-                emoji="💧"
+                icon="water-outline"
                 label="Agua media"
                 value={`${formatGrams(summary.averageWaterMl / 1000)} L al día · objetivo ${summary.waterGoalDays} ${summary.waterGoalDays === 1 ? 'día' : 'días'}`}
               />
             ) : null}
             {summary.weightChangeKg !== null ? (
               <Fact
-                emoji="⚖️"
+                icon="scale-outline"
                 label="Cambio de peso"
                 value={`${summary.weightChangeKg > 0 ? '+' : ''}${formatGrams(summary.weightChangeKg)} kg`}
               />
@@ -201,13 +201,23 @@ function LegendItem({ color, label, percent }: { color: string; label: string; p
   );
 }
 
-function Fact({ emoji, label, value }: { emoji: string; label: string; value: string }) {
+function Fact({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View accessibilityLabel={`${label}: ${value}`} style={styles.fact}>
-      <Text style={styles.factEmoji}>{emoji}</Text>
+    <View accessible accessibilityLabel={`${label}: ${value}`} style={styles.fact}>
+      <View style={styles.factIcon}>
+        <Ionicons color={colors.primary} name={icon} size={20} />
+      </View>
       <View style={styles.factText}>
         <Text style={styles.factLabel}>{label}</Text>
         <Text style={styles.factValue}>{value}</Text>
@@ -239,6 +249,8 @@ function createStyles(colors: ThemeColors) {
     range: {
       ...typography.title,
       color: colors.text,
+      flex: 1,
+      textAlign: 'center',
     },
     heroLabel: {
       ...typography.label,
@@ -307,8 +319,13 @@ function createStyles(colors: ThemeColors) {
       flexDirection: 'row',
       gap: spacing.md,
     },
-    factEmoji: {
-      fontSize: 26,
+    factIcon: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.pill,
+      height: 40,
+      justifyContent: 'center',
+      width: 40,
     },
     factText: {
       flex: 1,
@@ -321,7 +338,7 @@ function createStyles(colors: ThemeColors) {
     factValue: {
       ...typography.title,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
     },
   });
 }

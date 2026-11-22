@@ -9,10 +9,18 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, Text } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { durations } from '@/features/motion/motion';
+
+import { fonts, radius, shadows, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 export type ToastVariant = 'success' | 'error';
 
@@ -43,30 +51,34 @@ export function ToastProvider({ children }: PropsWithChildren) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [toast, setToast] = useState<ToastMessage | null>(null);
-  const opacity = useMemo(() => new Animated.Value(0), []);
-  const translateY = useMemo(() => new Animated.Value(-12), []);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(-12);
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextId = useRef(0);
   const currentId = useRef<number | null>(null);
 
-  const dismiss = useCallback((id: number) => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        duration: 180,
-        toValue: 0,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        duration: 180,
-        toValue: -12,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      if (currentId.current === id) {
-        setToast(null);
-      }
-    });
-  }, [opacity, translateY]);
+  const clearToast = useCallback((id: number) => {
+    if (currentId.current === id) {
+      setToast(null);
+    }
+  }, []);
+
+  const dismiss = useCallback(
+    (id: number) => {
+      // Reduced motion: durations are 0 and the toast just disappears.
+      translateY.set(withTiming(-12, { duration: durations.fast }));
+      opacity.set(
+        withTiming(0, { duration: durations.fast }, (finished) => {
+          if (finished) scheduleOnRN(clearToast, id);
+        }),
+      );
+    },
+    [clearToast, opacity, translateY],
+  );
 
   const showToast = useCallback(
     (message: string, variant: ToastVariant = 'success', action?: ToastAction) => {
@@ -78,21 +90,12 @@ export function ToastProvider({ children }: PropsWithChildren) {
       const id = nextId.current;
       currentId.current = id;
       setToast({ id, message, variant, action });
-      opacity.setValue(0);
-      translateY.setValue(-12);
-
-      Animated.parallel([
-        Animated.timing(opacity, {
-          duration: 200,
-          toValue: 1,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          duration: 200,
-          toValue: 0,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      opacity.set(0);
+      translateY.set(-12);
+      opacity.set(withTiming(1, { duration: durations.normal }));
+      translateY.set(withTiming(0, { duration: durations.normal }));
+      // Android announces live regions by itself; iOS needs to be told.
+      void AccessibilityInfo.announceForAccessibility(message);
 
       hideTimer.current = setTimeout(
         () => dismiss(id),
@@ -123,12 +126,13 @@ export function ToastProvider({ children }: PropsWithChildren) {
           pointerEvents={toast.action ? 'box-none' : 'none'}
           style={[
             styles.toast,
-            { top: insets.top + 12, opacity, transform: [{ translateY }] },
+            { top: insets.top + 12 },
+            animatedStyle,
             toast.variant === 'error' ? styles.toastError : styles.toastSuccess,
           ]}
         >
           <Ionicons
-            color={toast.variant === 'error' ? colors.onDanger : '#FFFFFF'}
+            color={toast.variant === 'error' ? colors.onDanger : colors.onHero}
             name={
               toast.variant === 'error' ? 'alert-circle' : 'checkmark-circle'
             }
@@ -178,7 +182,6 @@ function createStyles(colors: ThemeColors) {
     toast: {
       alignItems: 'center',
       borderRadius: radius.pill,
-      elevation: 4,
       flexDirection: 'row',
       gap: spacing.sm,
       left: spacing.xl,
@@ -187,10 +190,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: spacing.md,
       position: 'absolute',
       right: spacing.xl,
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
+      ...shadows.md,
     },
     toastSuccess: {
       backgroundColor: colors.toastSuccess,
@@ -200,12 +200,12 @@ function createStyles(colors: ThemeColors) {
     },
     toastText: {
       ...typography.body,
-      color: '#FFFFFF',
+      color: colors.onHero,
       flexShrink: 1,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     toastAction: {
-      borderColor: 'rgba(255,255,255,0.7)',
+      borderColor: colors.onHeroMuted,
       borderRadius: radius.pill,
       borderWidth: 1,
       paddingHorizontal: spacing.md,
@@ -213,8 +213,8 @@ function createStyles(colors: ThemeColors) {
     },
     toastActionText: {
       ...typography.caption,
-      color: '#FFFFFF',
-      fontWeight: '800',
+      color: colors.onHero,
+      fontFamily: fonts.brand,
     },
     toastTextError: {
       color: colors.onDanger,

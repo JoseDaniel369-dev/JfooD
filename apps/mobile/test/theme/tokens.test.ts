@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { darkColors, heroGradient, lightColors } from '@/theme/tokens';
+import { darkColors, heroGradient, heroGradientDark, lightColors } from '@/theme/tokens';
 
 function relativeLuminance(hex: string): number {
   const srgb = hex
@@ -90,4 +90,33 @@ test('hero gradient keeps three stops, all readable with white text', () => {
   for (const stop of heroGradient) {
     assert.ok(contrast('#FFFFFF', stop) >= 4.5, stop);
   }
+});
+
+test('both hero gradients keep white and the muted hero text readable (AA)', () => {
+  for (const gradient of [heroGradient, heroGradientDark]) {
+    for (const stop of gradient) {
+      assert.ok(contrast('#FFFFFF', stop) >= 4.5, `white on ${stop}`);
+      for (const palette of [lightColors, darkColors]) {
+        assert.ok(contrast(palette.onHeroMuted, stop) >= 4.5, `${palette.onHeroMuted} on ${stop}`);
+      }
+    }
+  }
+});
+
+test('success text is readable on the surfaces of both themes', () => {
+  for (const palette of [lightColors, darkColors]) {
+    assert.ok(contrast(palette.successText, palette.surface) >= 4.5, `surface ${palette.successText}`);
+    assert.ok(contrast(palette.successText, palette.surfaceMuted) >= 4.5, `muted ${palette.successText}`);
+  }
+});
+
+test('the selected segment stands out from the muted track in dark mode', () => {
+  assert.ok(contrast(darkColors.surfaceRaised, darkColors.surfaceMuted) >= 1.3);
+  assert.ok(contrast(darkColors.text, darkColors.surfaceRaised) >= 4.5);
+  assert.ok(contrast(lightColors.text, lightColors.surfaceRaised) >= 4.5);
+});
+
+test('text on the danger and primary swipe backgrounds meets AA in dark mode', () => {
+  assert.ok(contrast(darkColors.onDanger, darkColors.danger) >= 4.5);
+  assert.ok(contrast(darkColors.textOnPrimary, darkColors.primary) >= 4.5);
 });

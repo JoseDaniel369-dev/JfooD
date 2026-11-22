@@ -5,6 +5,7 @@ import {
   addDays,
   assertLocalDate,
   formatLocalDate,
+  formatShortDate,
   isValidLocalDate,
   startOfWeek,
   toLocalDate,
@@ -54,4 +55,10 @@ test('startOfWeek returns the Monday of the week, across month and year boundari
   assert.equal(startOfWeek('2026-11-22'), '2026-11-16'); // Sunday
   assert.equal(startOfWeek('2026-12-01'), '2026-11-30'); // Tuesday after month change
   assert.equal(startOfWeek('2027-01-01'), '2026-12-28'); // Friday across the year
+});
+
+test('formatShortDate gives day and three-letter month', () => {
+  assert.equal(formatShortDate('2026-11-12'), '12 nov');
+  assert.equal(formatShortDate('2026-01-05'), '5 ene');
+  assert.equal(formatShortDate('2026-09-30'), '30 sep');
 });

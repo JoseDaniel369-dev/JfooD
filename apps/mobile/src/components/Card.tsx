@@ -7,6 +7,7 @@ import Animated from 'react-native-reanimated';
 import { fadeUp } from '@/features/motion/springs';
 import {
   heroGradient,
+  heroGradientDark,
   radius,
   shadows,
   spacing,
@@ -30,14 +31,14 @@ export function Card({
   animated = false,
   delay = 0,
 }: CardProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const content = (() => {
     if (variant === 'hero') {
       return (
         <LinearGradient
-          colors={[...heroGradient]}
+          colors={[...(scheme === 'dark' ? heroGradientDark : heroGradient)]}
           end={{ x: 1, y: 1 }}
           start={{ x: 0, y: 0 }}
           style={[styles.card, styles.hero, style]}

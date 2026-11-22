@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import {
@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { SectionHeader } from '@/components/SectionHeader';
+import { TextField } from '@/components/TextField';
 import { hapticSelection } from '@/features/haptics/haptics';
 import { useShake } from '@/features/motion/useShake';
 import { formatLocalDate } from '@/features/diary/utils/date';
@@ -30,6 +31,8 @@ import {
   typography,
   useTheme,
   type ThemeColors,
+  fonts,
+  fontSizes,
 } from '@/theme';
 
 export interface ProfileSubmitMeta {
@@ -138,33 +141,25 @@ export function ProfileForm({
     <Animated.View style={[styles.container, shakeStyle]}>
       <Card>
         <SectionHeader title="Datos personales" />
-        <Text style={styles.label}>Peso actual (kg)</Text>
-        <TextInput
+        <TextField
           accessibilityLabel="Peso actual en kilogramos"
+          error={errorFor('weightKg')}
           keyboardType="decimal-pad"
+          label="Peso actual (kg)"
           onChangeText={setWeight}
           placeholder="Ej. 70"
-          placeholderTextColor={colors.textMuted}
-          style={[styles.input, errorFor('weightKg') && styles.inputError]}
           value={weight}
         />
-        {errorFor('weightKg') ? (
-          <Text style={styles.errorText}>{errorFor('weightKg')}</Text>
-        ) : null}
 
-        <Text style={styles.label}>Altura (cm)</Text>
-        <TextInput
+        <TextField
           accessibilityLabel="Altura en centímetros"
+          error={errorFor('heightCm')}
           keyboardType="decimal-pad"
+          label="Altura (cm)"
           onChangeText={setHeight}
           placeholder="Ej. 175"
-          placeholderTextColor={colors.textMuted}
-          style={[styles.input, errorFor('heightCm') && styles.inputError]}
           value={height}
         />
-        {errorFor('heightCm') ? (
-          <Text style={styles.errorText}>{errorFor('heightCm')}</Text>
-        ) : null}
 
         <Text style={styles.label}>Fecha de nacimiento</Text>
         <Pressable
@@ -360,7 +355,7 @@ function createStyles(colors: ThemeColors) {
     label: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
       marginBottom: spacing.xs,
     },
     hint: {
@@ -373,7 +368,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       marginBottom: spacing.md,
       padding: spacing.md,
     },
@@ -393,16 +389,19 @@ function createStyles(colors: ThemeColors) {
     },
     dateButtonText: {
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       textTransform: 'capitalize',
     },
     dateButtonPlaceholder: {
       color: colors.textMuted,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
     },
     errorText: {
       color: colors.danger,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
       marginBottom: spacing.sm,
       marginTop: -spacing.sm,
     },
@@ -439,7 +438,7 @@ function createStyles(colors: ThemeColors) {
     optionText: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     optionTextSelected: {
       color: colors.textOnPrimary,

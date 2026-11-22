@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { ActionSheet } from '@/components/ActionSheet';
 import { Button } from '@/components/Button';
+import { CalorieHero } from '@/components/CalorieHero';
 import { Card } from '@/components/Card';
 import { WeekStrip } from '@/components/WeekStrip';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
@@ -30,17 +32,11 @@ import { MealList } from '@/features/diary/components/MealList';
 import { useDiaryDay } from '@/features/diary/hooks/useDiaryDay';
 import { useWeekOverview } from '@/features/diary/hooks/useWeekOverview';
 import { addDays, formatLocalDate, isValidLocalDate } from '@/features/diary/utils/date';
-import {
-  describeExtras,
-  describeUnknown,
-  formatPartialAmount,
-  formatRemaining,
-  remainingCalories,
-  remainingLabel,
-} from '@/features/diary/utils/totals';
+import { describeExtras } from '@/features/diary/utils/totals';
+import { fadeUp } from '@/features/motion/springs';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
 import { scheduleReminders } from '@/features/reminders/notifications';
-import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { spacing, useTheme, type ThemeColors } from '@/theme';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -294,8 +290,6 @@ export default function DiaryScreen() {
   }
 
   const kcal = day.consumedPartial.caloriesKcal;
-  const remaining = remainingCalories(day.goals.caloriesKcal, kcal);
-  const unknownCaloriesNotice = describeUnknown(kcal);
   const extras = describeExtras(
     day.consumedPartial,
     day.targets,
@@ -319,54 +313,14 @@ export default function DiaryScreen() {
           />
         </Card>
 
-        <Card animated delay={50} variant="hero">
-          <Text style={styles.cardLabel}>CALORÍAS</Text>
-          <View style={styles.calorieNumbers}>
-            <Text style={styles.calorieValue}>
-              {formatPartialAmount(kcal)}
-            </Text>
-            <Text style={styles.calorieGoal}>
-              / {formatNumber(day.goals.caloriesKcal)} kcal
-            </Text>
-          </View>
-          <View style={styles.calorieFooter}>
-            <Text style={styles.calorieFooterLabel}>
-              {remainingLabel(remaining)}
-            </Text>
-            <Text style={styles.calorieFooterValue}>
-              {formatRemaining(remaining)}
-            </Text>
-          </View>
-          {extras.length > 0 ? (
-            <View style={styles.extrasRow}>
-              {extras.map((extra) => (
-                <View
-                  key={extra.key}
-                  accessibilityLabel={`${extra.label}: ${extra.amount} gramos, ${extra.target}`}
-                  style={styles.extraItem}
-                >
-                  <Text style={styles.extraLabel}>{extra.label}</Text>
-                  <Text
-                    style={[styles.extraValue, extra.exceeded && styles.extraExceeded]}
-                  >
-                    {extra.amount} g
-                  </Text>
-                  <Text style={styles.extraTarget}>{extra.target}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {unknownCaloriesNotice ? (
-            <Text style={styles.goalNotice}>
-              {unknownCaloriesNotice}. Completa sus datos para ver el total real.
-            </Text>
-          ) : null}
-          {day.goalsAreDefault ? (
-            <Text style={styles.goalNotice}>
-              Objetivos provisionales: no calculados con tus datos personales.
-            </Text>
-          ) : null}
-        </Card>
+        <Animated.View entering={fadeUp(50)}>
+          <CalorieHero
+            extras={extras}
+            goalKcal={day.goals.caloriesKcal}
+            goalsAreDefault={day.goalsAreDefault}
+            kcal={kcal}
+          />
+        </Animated.View>
 
         {day.entries.length === 0 ? (
           <Button
@@ -440,88 +394,10 @@ function hasUnknownNutrients(entry: DiaryEntry): boolean {
   return Object.values(entry.per100g).some((value) => value === null);
 }
 
-function formatNumber(value: number | null): string {
-  return value === null ? '—' : String(Math.round(value));
-}
-
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     swipeContainer: {
       gap: spacing.lg,
-    },
-    cardLabel: {
-      color: colors.onHero,
-      fontSize: typography.label.fontSize,
-      fontWeight: '700',
-      letterSpacing: typography.label.letterSpacing,
-      opacity: 0.75,
-    },
-    calorieNumbers: {
-      alignItems: 'baseline',
-      flexDirection: 'row',
-      gap: spacing.sm,
-    },
-    calorieValue: {
-      color: colors.onHero,
-      fontSize: 44,
-      fontWeight: '700',
-      letterSpacing: -1.5,
-    },
-    calorieGoal: {
-      color: colors.onHero,
-      fontSize: 15,
-      opacity: 0.7,
-    },
-    calorieFooter: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    calorieFooterLabel: {
-      color: colors.onHero,
-      fontSize: 13,
-      opacity: 0.75,
-    },
-    calorieFooterValue: {
-      color: colors.onHero,
-      fontSize: 14,
-      fontWeight: '700',
-    },
-    extrasRow: {
-      borderTopColor: 'rgba(255,255,255,0.25)',
-      borderTopWidth: StyleSheet.hairlineWidth,
-      flexDirection: 'row',
-      gap: spacing.md,
-      paddingTop: spacing.md,
-    },
-    extraItem: {
-      flex: 1,
-      gap: 2,
-    },
-    extraLabel: {
-      color: colors.onHero,
-      fontSize: 11,
-      fontWeight: '700',
-      opacity: 0.75,
-    },
-    extraValue: {
-      color: colors.onHero,
-      fontSize: 15,
-      fontWeight: '700',
-    },
-    extraExceeded: {
-      textDecorationLine: 'underline',
-    },
-    extraTarget: {
-      color: colors.onHero,
-      fontSize: 10,
-      opacity: 0.7,
-    },
-    goalNotice: {
-      color: colors.onHero,
-      fontSize: 11,
-      lineHeight: 16,
-      opacity: 0.7,
     },
   });
 }

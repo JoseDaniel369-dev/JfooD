@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useEffect, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import ReanimatedView from 'react-native-reanimated';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { fadeUp } from '@/features/motion/springs';
-import { durations, easings } from '@/features/motion/motion';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts } from '@/theme';
 
 interface EmptyStateProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -24,31 +23,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [scale] = useState(() => new Animated.Value(0.8));
-  const [opacity] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    const animation = Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        friction: 6,
-        tension: 120,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: durations.normal,
-        useNativeDriver: true,
-        easing: (x) => easings.easeOutCubic(x),
-      }),
-    ]);
-    animation.start();
-    return () => animation.stop();
-  }, [scale, opacity]);
 
   return (
-    <ReanimatedView.View entering={fadeUp()} style={styles.container}>
-      <Animated.View style={[styles.iconRing, { opacity, transform: [{ scale }] }]}>
+    <Animated.View entering={fadeUp()} style={styles.container}>
+      <Animated.View entering={ZoomIn.springify().damping(12)} style={styles.iconRing}>
         <View style={styles.iconCircle}>
           <Ionicons color={colors.primary} name={icon} size={28} />
         </View>
@@ -65,7 +43,7 @@ export function EmptyState({
           <Text style={styles.actionText}>{actionLabel}</Text>
         </Pressable>
       ) : null}
-    </ReanimatedView.View>
+    </Animated.View>
   );
 }
 
@@ -96,7 +74,7 @@ function createStyles(colors: ThemeColors) {
     title: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     message: {
       ...typography.caption,
@@ -116,7 +94,7 @@ function createStyles(colors: ThemeColors) {
     actionText: {
       ...typography.caption,
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     pressed: {
       opacity: 0.75,

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 
 import { buildBars, type BarInput } from '@/features/progress/utils/bars';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 interface BarChartProps {
   data: readonly BarInput[];
@@ -94,7 +94,7 @@ function createStyles(colors: ThemeColors) {
     label: {
       ...typography.caption,
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: fontSizes.small,
     },
   });
 }

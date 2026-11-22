@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Card } from '@/components/Card';
-import { durations, easings, springConfigs } from '@/features/motion/motion';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { durations } from '@/features/motion/motion';
+import { springs } from '@/features/motion/springs';
+import { fonts, radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -36,8 +37,8 @@ export function ConfirmDialog({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [opacity] = useState(() => new Animated.Value(0));
-  const [scale] = useState(() => new Animated.Value(0.9));
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.92);
   const [isOpen, setIsOpen] = useState(visible);
   // Kept mounted while the close animation runs; a reopened dialog is shown again.
   if (visible && !isOpen) setIsOpen(true);
@@ -47,39 +48,40 @@ export function ConfirmDialog({
   /** True from the first close request until the close animation ends: later taps are ignored. */
   const closingRef = useRef(false);
   const closeTokenRef = useRef(0);
+  /** What to run once the dialog is gone (the confirm action). */
+  const afterCloseRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   });
 
+  /** Runs on the JS thread when the close animation really finished. */
+  const finishClose = useCallback((token: number) => {
+    // Interrupted (the dialog was reopened meanwhile): the new open owns the state.
+    if (token !== closeTokenRef.current) return;
+    closingRef.current = false;
+    openRef.current = false;
+    setIsOpen(false);
+    onCloseRef.current();
+    const afterClose = afterCloseRef.current;
+    afterCloseRef.current = undefined;
+    afterClose?.();
+  }, []);
+
   const runClose = useCallback(
     (afterClose?: () => void) => {
       if (closingRef.current || !openRef.current) return;
       closingRef.current = true;
+      afterCloseRef.current = afterClose;
       const token = closeTokenRef.current;
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: durations.fast,
-          useNativeDriver: true,
+      scale.set(withTiming(0.92, { duration: durations.fast }));
+      opacity.set(
+        withTiming(0, { duration: durations.fast }, (finished) => {
+          if (finished) scheduleOnRN(finishClose, token);
         }),
-        Animated.timing(scale, {
-          toValue: 0.9,
-          duration: durations.fast,
-          useNativeDriver: true,
-          easing: (x) => easings.easeInOutCubic(x),
-        }),
-      ]).start(({ finished }) => {
-        // Interrupted (the dialog was reopened meanwhile): the new open owns the state.
-        if (!finished || token !== closeTokenRef.current) return;
-        closingRef.current = false;
-        openRef.current = false;
-        setIsOpen(false);
-        onCloseRef.current();
-        afterClose?.();
-      });
+      );
     },
-    [opacity, scale],
+    [finishClose, opacity, scale],
   );
 
   useEffect(() => {
@@ -87,24 +89,20 @@ export function ConfirmDialog({
       closeTokenRef.current += 1;
       closingRef.current = false;
       openRef.current = true;
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: durations.normal,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scale, {
-          toValue: 1,
-          useNativeDriver: true,
-          ...springConfigs.gentle,
-        }),
-      ]).start();
+      afterCloseRef.current = undefined;
+      opacity.set(withTiming(1, { duration: durations.normal }));
+      scale.set(withSpring(1, springs.soft));
     } else {
       // Closed by the parent (not through runClose): animate out once.
       runClose();
     }
   }, [visible, opacity, scale, runClose]);
 
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const dialogStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   if (!visible && !isOpen) {
     return null;
@@ -117,7 +115,7 @@ export function ConfirmDialog({
       transparent
       visible={visible || isOpen}
     >
-      <Animated.View style={[styles.backdrop, { opacity }]}>
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable
           accessibilityLabel="Cancelar"
           accessibilityRole="button"
@@ -126,7 +124,7 @@ export function ConfirmDialog({
         />
       </Animated.View>
       <View style={styles.dialogContainer} pointerEvents="box-none">
-        <Animated.View style={[styles.dialogWrapper, { opacity, transform: [{ scale }] }]}>
+        <Animated.View style={[styles.dialogWrapper, dialogStyle]}>
           <Card style={styles.dialog}>
             <Text style={styles.title}>{title}</Text>
             {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -222,7 +220,7 @@ function createStyles(colors: ThemeColors) {
     primaryButtonText: {
       ...typography.body,
       color: colors.textOnPrimary,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     dangerButtonText: {
       color: colors.onDanger,
@@ -233,7 +231,7 @@ function createStyles(colors: ThemeColors) {
     secondaryButtonText: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     pressed: {
       opacity: 0.8,

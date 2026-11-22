@@ -11,7 +11,7 @@ import Animated, {
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { hapticSelection } from '@/features/haptics/haptics';
 import { springs } from '@/features/motion/springs';
-import { glow, radius, typography, useTheme, type ThemeColors } from '@/theme';
+import { glow, radius, typography, useTheme, type ThemeColors, fontSizes } from '@/theme';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
@@ -20,7 +20,7 @@ const CONTENT_HEIGHT = 56;
  * Space kept under the icons. Some Android devices under-report the bottom
  * inset in edge-to-edge mode and the system navigation covered the labels.
  */
-const MIN_BOTTOM_INSET = 64;
+const MIN_BOTTOM_INSET = 48;
 const PILL_WIDTH = 52;
 
 const ICONS: Record<string, { on: keyof typeof Ionicons.glyphMap; off: keyof typeof Ionicons.glyphMap }> = {
@@ -48,7 +48,8 @@ export function AppTabBar({
 }: TabBarProps & { onAdd: () => void }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const bottomInset = Math.max(barInsets.bottom, MIN_BOTTOM_INSET);
+  // A reported inset is trusted (plus a little air); a missing one gets the floor.
+  const bottomInset = barInsets.bottom > 0 ? Math.max(barInsets.bottom + 8, 16) : MIN_BOTTOM_INSET;
   const [width, setWidth] = useState(0);
 
   const slot = width > 0 ? width / state.routes.length : 0;
@@ -123,7 +124,13 @@ export function AppTabBar({
               name={icon ? (focused ? icon.on : icon.off) : 'ellipse-outline'}
               size={23}
             />
-            <Text style={[styles.label, focused && styles.labelFocused]}>{label}</Text>
+            <Text
+              maxFontSizeMultiplier={1.2}
+              numberOfLines={1}
+              style={[styles.label, focused && styles.labelFocused]}
+            >
+              {label}
+            </Text>
           </AnimatedPressable>
         );
       })}
@@ -159,7 +166,7 @@ function createStyles(colors: ThemeColors) {
     label: {
       ...typography.label,
       color: colors.textMuted,
-      fontSize: 10,
+      fontSize: fontSizes.micro,
       letterSpacing: 0.2,
     },
     labelFocused: {

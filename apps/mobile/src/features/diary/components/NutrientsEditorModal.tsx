@@ -1,24 +1,14 @@
 import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
-import {
-  foodInputNutrientsSchema,
-  type Nutrients,
-} from '@jfood/core';
+import { foodInputNutrientsSchema, type Nutrients } from '@jfood/core';
 
+import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
+import { TextField } from '@/components/TextField';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { parseOptionalNumber } from '@/features/foods/utils/parseNumber';
+import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface NutrientsEditorModalProps {
   visible: boolean;
@@ -34,7 +24,7 @@ interface NutrientsEditorModalProps {
 const FIELDS = [
   { key: 'caloriesKcal', label: 'Calorías (kcal)' },
   { key: 'proteinGrams', label: 'Proteínas (g)' },
-  { key: 'carbohydrateGrams', label: 'Carbohidratos (g)' },
+  { key: 'carbohydrateGrams', label: 'Hidratos de carbono (g)' },
   { key: 'fatGrams', label: 'Grasas (g)' },
   { key: 'fiberGrams', label: 'Fibra (g)' },
   { key: 'sugarsGrams', label: 'Azúcares (g)' },
@@ -66,16 +56,12 @@ export function NutrientsEditorModal({
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (saving) return;
     const parsed: Record<string, number | null> = {};
 
     for (const { key } of FIELDS) {
-      const raw = (texts[key] ?? '').replace(',', '.').trim();
-      if (raw === '') {
-        parsed[key] = null;
-        continue;
-      }
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
+      const { value, valid } = parseOptionalNumber(texts[key] ?? '');
+      if (!valid) {
         setError('Los valores deben ser números o quedar vacíos.');
         return;
       }
@@ -98,76 +84,50 @@ export function NutrientsEditorModal({
   };
 
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={onClose}
-      transparent
-      visible={visible}
-    >
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.flex}
-      >
-        <ScrollView
-          contentContainerStyle={styles.backdrop}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Card style={styles.dialog}>
-            <Text style={styles.title}>Valores por 100 g</Text>
-            <Text style={styles.subtitle}>{foodName}</Text>
-            <Text style={styles.hint}>
-              Deja vacío lo que no conozcas: nunca se contará como cero.
-            </Text>
+    <BottomSheet onClose={onClose} title="Valores por 100 g" visible={visible}>
+      <Text style={styles.subtitle}>{foodName}</Text>
+      <Text style={styles.hint}>Deja vacío lo que no conozcas: nunca se contará como cero.</Text>
 
-            {FIELDS.map(({ key, label }) => (
-              <View key={key}>
-                <Text style={styles.label}>{label}</Text>
-                <TextInput
-                  accessibilityLabel={label}
-                  keyboardType="decimal-pad"
-                  onChangeText={(text) =>
-                    setTexts((current) => ({ ...current, [key]: text }))
-                  }
-                  placeholder="Desconocido"
-                  placeholderTextColor={colors.textMuted}
-                  style={styles.input}
-                  value={texts[key] ?? ''}
-                />
-              </View>
-            ))}
+      {FIELDS.map(({ key, label }) => (
+        <TextField
+          key={key}
+          keyboardType="decimal-pad"
+          label={label}
+          onChangeText={(text) => setTexts((current) => ({ ...current, [key]: text }))}
+          placeholder="Desconocido"
+          value={texts[key] ?? ''}
+        />
+      ))}
 
-            {canUpdateFood ? (
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>
-                  Guardar también en el alimento
-                </Text>
-                <Switch
-                  accessibilityLabel="Guardar también en el alimento"
-                  onValueChange={setAlsoUpdateFood}
-                  value={alsoUpdateFood}
-                />
-              </View>
-            ) : null}
+      {canUpdateFood ? (
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Guardar también en el alimento</Text>
+          <Switch
+            accessibilityLabel="Guardar también en el alimento"
+            onValueChange={setAlsoUpdateFood}
+            thumbColor={alsoUpdateFood ? colors.primary : colors.surfaceRaised}
+            trackColor={{ false: colors.border, true: colors.primaryLight }}
+            value={alsoUpdateFood}
+          />
+        </View>
+      ) : null}
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <View style={styles.buttons}>
-              <View style={styles.buttonFlex}>
-                <Button title="Cancelar" variant="secondary" onPress={onClose} />
-              </View>
-              <View style={styles.buttonFlex}>
-                <Button
-                  disabled={saving}
-                  loading={saving}
-                  title="Guardar"
-                  onPress={() => void handleSave()}
-                />
-              </View>
-            </View>
-          </Card>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+      <View style={styles.buttons}>
+        <View style={styles.buttonFlex}>
+          <Button title="Cancelar" variant="secondary" onPress={onClose} />
+        </View>
+        <View style={styles.buttonFlex}>
+          <Button
+            disabled={saving}
+            loading={saving}
+            title="Guardar"
+            onPress={() => void handleSave()}
+          />
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
@@ -177,34 +137,8 @@ function formatInitial(value: number | null): string {
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    flex: { flex: 1 },
-    backdrop: {
-      alignItems: 'center',
-      backgroundColor: colors.overlay,
-      flexGrow: 1,
-      justifyContent: 'center',
-      padding: spacing.xl,
-    },
-    dialog: { gap: spacing.md, width: '100%' },
-    title: { color: colors.text, fontSize: 18, fontWeight: '700' },
-    subtitle: { ...typography.body, color: colors.textMuted },
-    hint: { ...typography.caption, color: colors.textMuted },
-    label: {
-      ...typography.body,
-      color: colors.text,
-      fontWeight: '700',
-      marginBottom: spacing.xs,
-    },
-    input: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: 16,
-      minHeight: 48,
-      padding: spacing.md,
-    },
+    subtitle: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
+    hint: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
     switchRow: {
       alignItems: 'center',
       flexDirection: 'row',

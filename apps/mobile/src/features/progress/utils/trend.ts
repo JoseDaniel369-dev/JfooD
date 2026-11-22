@@ -3,6 +3,24 @@ export interface TrendLog {
   weightKg: number;
 }
 
+export type ChangeTone = 'good' | 'neutral' | 'attention';
+
+/**
+ * How to colour a weight change given what the person wants: losing is good for
+ * "lose", gaining for "gain"; any change is neutral for "maintain" (never red:
+ * a number going up or down is not an error).
+ */
+export function weightChangeTone(
+  change: number | null,
+  goalType: 'maintain' | 'lose' | 'gain' | null | undefined,
+): ChangeTone {
+  if (change === null || change === 0 || !goalType || goalType === 'maintain') {
+    return 'neutral';
+  }
+  const towardsGoal = goalType === 'lose' ? change < 0 : change > 0;
+  return towardsGoal ? 'good' : 'attention';
+}
+
 /**
  * Computes the absolute change between the current weight and a previous one.
  * Returns null when there is no previous value to compare.

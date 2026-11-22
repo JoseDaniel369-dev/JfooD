@@ -42,6 +42,7 @@ import {
   useTheme,
   type ThemeColors,
   type ThemePreference,
+  fontSizes,
 } from '@/theme';
 
 const THEME_OPTIONS: SegmentedOption<ThemePreference>[] = [
@@ -264,7 +265,7 @@ export default function ProfileScreen() {
           </Text>
           {catalogUnavailable ? (
             <Text style={styles.aboutWarning}>
-              ⚠️ El catálogo ampliado no se ha podido cargar en este móvil. Puedes seguir usando tus
+              El catálogo ampliado no se ha podido cargar en este móvil. Puedes seguir usando tus
               alimentos y los básicos que trae la app.
             </Text>
           ) : null}
@@ -299,7 +300,7 @@ export default function ProfileScreen() {
             <Text style={styles.aboutLink}>Licencia ODbL 1.0</Text>
           </Pressable>
           <Text style={styles.aboutText}>
-            🧮 Tus objetivos se calculan con la ecuación de Mifflin-St Jeor a partir de tu peso,
+            Tus objetivos se calculan con la ecuación de Mifflin-St Jeor a partir de tu peso,
             altura, edad, sexo y nivel de actividad. Son una guía, no un consejo médico.
           </Text>
           {version ? <Text style={styles.version}>Versión {version}</Text> : null}
@@ -369,7 +370,7 @@ function GoalsSummary({ goals, goalText }: { goals: NutritionGoals; goalText: st
       <View style={styles.goalsRow}>
         <GoalItem color={colors.accent} label="Calorías" unit="kcal" value={goals.caloriesKcal} />
         <GoalItem color={colors.onHero} label="Proteínas" unit="g" value={goals.proteinGrams} />
-        <GoalItem color={colors.onHero} label="Carbos" unit="g" value={goals.carbohydrateGrams} />
+        <GoalItem color={colors.onHero} label="Hidratos" unit="g" value={goals.carbohydrateGrams} />
         <GoalItem color={colors.onHero} label="Grasas" unit="g" value={goals.fatGrams} />
       </View>
     </Card>
@@ -422,10 +423,11 @@ function createStyles(colors: ThemeColors) {
     avatarInitial: {
       color: colors.onHero,
       fontFamily: fonts.brand,
-      fontSize: 30,
+      fontSize: fontSizes.titleLarge,
     },
     avatarEmoji: {
-      fontSize: 30,
+      fontSize: fontSizes.titleLarge,
+      fontFamily: fonts.regular,
     },
     heroCopy: {
       flex: 1,
@@ -434,7 +436,7 @@ function createStyles(colors: ThemeColors) {
     heroName: {
       color: colors.onHero,
       fontFamily: fonts.heading,
-      fontSize: 22,
+      fontSize: fontSizes.heading,
     },
     heroStats: {
       ...typography.caption,
@@ -457,13 +459,15 @@ function createStyles(colors: ThemeColors) {
     },
     errorBannerText: {
       color: colors.danger,
-      fontSize: 13,
+      fontSize: fontSizes.caption,
+      fontFamily: fonts.regular,
       lineHeight: 20,
       textAlign: 'center',
     },
     goalsSubtitle: {
       color: colors.onHero,
-      fontSize: 13,
+      fontSize: fontSizes.caption,
+      fontFamily: fonts.regular,
       opacity: 0.85,
     },
     goalsTitle: {
@@ -487,24 +491,25 @@ function createStyles(colors: ThemeColors) {
     },
     goalLabel: {
       color: colors.onHero,
-      fontSize: 12,
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
       opacity: 0.75,
     },
     goalValue: {
       color: colors.onHero,
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.heading,
     },
     goalUnit: {
       color: colors.onHero,
-      fontSize: 12,
-      fontWeight: '400',
+      fontSize: fontSizes.small,
+      fontFamily: fonts.regular,
       opacity: 0.7,
     },
     label: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
       marginTop: spacing.md,
     },
     waterRow: {
@@ -519,7 +524,8 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       color: colors.text,
       flex: 1,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       padding: spacing.md,
     },
     waterButton: {
@@ -535,7 +541,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 18,
+      fontSize: fontSizes.title,
+      fontFamily: fonts.regular,
       padding: spacing.md,
     },
     aboutText: {
@@ -551,8 +558,8 @@ function createStyles(colors: ThemeColors) {
     aboutLink: {
       ...typography.caption,
       color: colors.primary,
-      minHeight: 32,
-      paddingVertical: spacing.xs,
+      minHeight: 44,
+      paddingVertical: spacing.md,
       textDecorationLine: 'underline',
     },
     version: {

@@ -1,7 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { foodInputNutrientsSchema } from '@jfood/core';
 
@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ServingsCard } from '@/features/foods/components/ServingsCard';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { TextField } from '@/components/TextField';
 import {
   deleteFood,
   duplicateFoodAsUser,
@@ -34,6 +35,8 @@ import {
   typography,
   useTheme,
   type ThemeColors,
+  fonts,
+  fontSizes,
 } from '@/theme';
 
 export default function FoodDetailScreen() {
@@ -257,7 +260,7 @@ export default function FoodDetailScreen() {
                 value={food.proteinGrams}
               />
               <MacroItem
-                label="Carbos"
+                label="Hidratos"
                 unit="g"
                 value={food.carbohydrateGrams}
               />
@@ -343,7 +346,7 @@ export default function FoodDetailScreen() {
               />
               <Field
                 keyboard
-                label="Carbos (g)"
+                label="Hidratos (g)"
                 value={carbs}
                 onChange={setCarbs}
               />
@@ -445,23 +448,18 @@ function Field({
   onChange: (value: string) => void;
   keyboard?: boolean;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
   return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        keyboardType={keyboard ? 'decimal-pad' : 'default'}
-        onChangeText={onChange}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-        value={value}
-      />
-    </View>
+    <TextField
+      keyboardType={keyboard ? 'decimal-pad' : 'default'}
+      label={label}
+      onChangeText={onChange}
+      style={fieldStyle}
+      value={value}
+    />
   );
 }
+
+const fieldStyle = { flex: 1 } as const;
 
 function formatOptional(value: number | null): string {
   return value === null ? '' : String(value);
@@ -489,12 +487,12 @@ function createStyles(colors: ThemeColors) {
     macroValue: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     macroUnit: {
       ...typography.caption,
       color: colors.textMuted,
-      fontWeight: '400',
+      fontFamily: fonts.regular,
     },
     infoRow: {
       alignItems: 'center',
@@ -508,7 +506,7 @@ function createStyles(colors: ThemeColors) {
     infoValue: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     notice: {
       backgroundColor: colors.primaryLight,
@@ -517,7 +515,8 @@ function createStyles(colors: ThemeColors) {
     },
     noticeText: {
       color: colors.primary,
-      fontSize: 13,
+      fontSize: fontSizes.caption,
+      fontFamily: fonts.regular,
       lineHeight: 19,
     },
     field: {
@@ -527,7 +526,7 @@ function createStyles(colors: ThemeColors) {
     fieldLabel: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     input: {
       backgroundColor: colors.surfaceMuted,
@@ -535,7 +534,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       padding: spacing.md,
     },
     macroFieldsRow: {
@@ -544,7 +544,8 @@ function createStyles(colors: ThemeColors) {
     },
     errorText: {
       color: colors.danger,
-      fontSize: 13,
+      fontSize: fontSizes.caption,
+      fontFamily: fonts.regular,
     },
     buttonRow: {
       flexDirection: 'row',

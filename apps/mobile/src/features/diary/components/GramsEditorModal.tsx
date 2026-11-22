@@ -1,18 +1,13 @@
 import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/Card';
+import { BottomSheet } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
+import { TextField } from '@/components/TextField';
+import { formatGrams } from '@/features/diary/utils/totals';
 import { parseSpanishNumber } from '@/features/foods/utils/parseNumber';
 import { hapticSelection } from '@/features/haptics/haptics';
-import { radius, spacing, useTheme, type ThemeColors } from '@/theme';
+import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 interface GramsEditorModalProps {
   visible: boolean;
@@ -22,6 +17,7 @@ interface GramsEditorModalProps {
   onSave: (grams: number) => void;
 }
 
+/** Changes the amount (in grams) of one diary or plan entry. */
 export function GramsEditorModal({
   visible,
   foodName,
@@ -31,7 +27,7 @@ export function GramsEditorModal({
 }: GramsEditorModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [value, setValue] = useState(() => String(initialGrams));
+  const [value, setValue] = useState(() => formatGrams(initialGrams));
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = () => {
@@ -43,132 +39,56 @@ export function GramsEditorModal({
     }
 
     setError(null);
+    hapticSelection();
     onSave(parsed);
   };
 
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={onClose}
-      transparent
-      visible={visible}
-    >
-      <KeyboardAvoidingView behavior="padding" style={styles.backdrop}>
-        <Card style={styles.dialog}>
-          <Text style={styles.title}>Editar cantidad</Text>
-          <Text style={styles.subtitle}>{foodName}</Text>
-
-          <TextInput
-            accessibilityLabel="Cantidad en gramos"
-            keyboardType="decimal-pad"
-            onChangeText={setValue}
-            selectTextOnFocus
-            style={[styles.input, error && styles.inputError]}
-            value={value}
-          />
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <View style={styles.buttons}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                hapticSelection();
-                onClose();
-              }}
-              style={({ pressed }) => [
-                styles.button,
-                styles.buttonSecondary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.buttonSecondaryText}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={handleSave}
-              style={({ pressed }) => [
-                styles.button,
-                styles.buttonPrimary,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.buttonPrimaryText}>Guardar</Text>
-            </Pressable>
-          </View>
-        </Card>
-      </KeyboardAvoidingView>
-    </Modal>
+    <BottomSheet onClose={onClose} title="Editar cantidad" visible={visible}>
+      <Text style={styles.subtitle}>{foodName}</Text>
+      <TextField
+        autoFocus
+        error={error}
+        inputStyle={styles.input}
+        keyboardType="decimal-pad"
+        label="Cantidad en gramos"
+        onChangeText={(text) => {
+          setValue(text);
+          setError(null);
+        }}
+        onSubmitEditing={handleSave}
+        returnKeyType="done"
+        selectTextOnFocus
+        value={value}
+      />
+      <View style={styles.buttons}>
+        <View style={styles.buttonFlex}>
+          <Button title="Cancelar" variant="secondary" onPress={onClose} />
+        </View>
+        <View style={styles.buttonFlex}>
+          <Button title="Guardar" onPress={handleSave} />
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    backdrop: {
-      alignItems: 'center',
-      backgroundColor: colors.overlay,
-      flex: 1,
-      justifyContent: 'center',
-      padding: spacing.xl,
-    },
-    dialog: {
-      gap: spacing.md,
-      width: '100%',
-    },
-    title: {
-      color: colors.text,
-      fontSize: 18,
-      fontWeight: '700',
-    },
     subtitle: {
+      ...typography.body,
       color: colors.textMuted,
-      fontSize: 14,
+      textAlign: 'center',
     },
     input: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      color: colors.text,
-      fontSize: 16,
-      padding: spacing.md,
-    },
-    inputError: {
-      borderColor: colors.danger,
-    },
-    errorText: {
-      color: colors.danger,
-      fontSize: 12,
+      textAlign: 'center',
     },
     buttons: {
       flexDirection: 'row',
       gap: spacing.md,
     },
-    button: {
-      alignItems: 'center',
-      borderRadius: radius.md,
+    buttonFlex: {
       flex: 1,
-      padding: spacing.md,
-    },
-    buttonPrimary: {
-      backgroundColor: colors.primary,
-    },
-    buttonSecondary: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderWidth: 1,
-    },
-    buttonPrimaryText: {
-      color: colors.textOnPrimary,
-      fontSize: 15,
-      fontWeight: '700',
-    },
-    buttonSecondaryText: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '700',
-    },
-    pressed: {
-      opacity: 0.8,
     },
   });
 }

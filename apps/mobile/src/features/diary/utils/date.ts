@@ -38,6 +38,13 @@ export function formatLocalDate(localDate: string): string {
   return `${weekday}, ${date.getDate()} de ${monthName}`;
 }
 
+/** "12 nov": a day for chart axes (three letters of the month, no weekday). */
+export function formatShortDate(localDate: string): string {
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  return `${date.getDate()} ${(MONTHS[date.getMonth()] ?? '').slice(0, 3)}`;
+}
+
 export function addDays(localDate: string, days: number): string {
   const [year, month, day] = localDate.split('-').map(Number);
   const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);

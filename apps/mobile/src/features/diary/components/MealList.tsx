@@ -10,11 +10,12 @@ import { hapticSelection } from '@/features/haptics/haptics';
 import { rowLayout } from '@/features/motion/springs';
 import {
   radius,
-  shadows,
   spacing,
   typography,
   useTheme,
   type ThemeColors,
+  fonts,
+  fontSizes,
 } from '@/theme';
 import {
   MEALS,
@@ -197,7 +198,9 @@ export function MealList({
                         <Text style={styles.entryEmojiText}>{foodEmoji(entry.foodName)}</Text>
                       </View>
                       <View style={styles.entryMain}>
-                        <Text style={styles.entryName}>{entry.foodName}</Text>
+                        <Text numberOfLines={2} style={styles.entryName}>
+                          {entry.foodName}
+                        </Text>
                         <Text style={styles.entryGrams}>{formatGrams(entry.grams)} g</Text>
                         <View style={styles.entryMacros}>
                           <MacroBadge
@@ -262,6 +265,8 @@ function MacroBadge({
   );
 }
 
+const MEAL_ICON_SIZE = 42;
+
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     list: {
@@ -281,12 +286,13 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       backgroundColor: colors.primaryLight,
       borderRadius: radius.md,
-      height: 42,
+      height: MEAL_ICON_SIZE,
       justifyContent: 'center',
-      width: 42,
+      width: MEAL_ICON_SIZE,
     },
     mealEmoji: {
-      fontSize: 22,
+      fontSize: fontSizes.heading,
+      fontFamily: fonts.regular,
     },
     entryEmoji: {
       alignItems: 'center',
@@ -297,7 +303,8 @@ function createStyles(colors: ThemeColors) {
       width: 38,
     },
     entryEmojiText: {
-      fontSize: 20,
+      fontSize: fontSizes.subtitle,
+      fontFamily: fonts.regular,
     },
     mealCopy: {
       flex: 1,
@@ -306,7 +313,7 @@ function createStyles(colors: ThemeColors) {
     mealName: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     mealDetails: {
       ...typography.caption,
@@ -319,42 +326,43 @@ function createStyles(colors: ThemeColors) {
     calories: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     unit: {
       ...typography.caption,
       color: colors.textMuted,
-      fontWeight: '400',
+      fontFamily: fonts.regular,
     },
     copyButton: {
       alignItems: 'center',
       backgroundColor: colors.primaryLight,
       borderRadius: radius.pill,
-      height: 28,
+      height: 32,
       justifyContent: 'center',
-      width: 28,
+      width: 32,
     },
     addButton: {
       alignItems: 'center',
       backgroundColor: colors.primary,
       borderRadius: radius.pill,
-      height: 28,
+      height: 32,
       justifyContent: 'center',
-      width: 28,
+      width: 32,
     },
     entries: {
-      gap: spacing.sm,
-      marginLeft: 54,
-      marginTop: spacing.sm,
+      // Lines up with the meal name: icon width + the gap after it.
+      marginLeft: MEAL_ICON_SIZE + spacing.md,
+      marginTop: spacing.xs,
     },
     entry: {
       alignItems: 'center',
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radius.md,
+      // Same colour as the card: the swipe actions slide out from under the row.
+      backgroundColor: colors.surface,
+      borderBottomColor: colors.border,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       gap: spacing.md,
-      padding: spacing.md,
-      ...shadows.sm,
+      paddingVertical: spacing.md,
     },
     entryMain: {
       flex: 1,
@@ -363,7 +371,7 @@ function createStyles(colors: ThemeColors) {
     entryName: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     entryGrams: {
       ...typography.caption,
@@ -386,13 +394,14 @@ function createStyles(colors: ThemeColors) {
       width: 6,
     },
     macroBadgeText: {
-      fontSize: 11,
+      fontSize: fontSizes.micro,
+      fontFamily: fonts.regular,
       color: colors.textMuted,
     },
     entryCalories: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
     },
     emptyEntry: {
       alignItems: 'center',
@@ -408,8 +417,8 @@ function createStyles(colors: ThemeColors) {
     },
     emptyEntryText: {
       color: colors.primary,
-      fontSize: 14,
-      fontWeight: '700',
+      fontSize: fontSizes.compact,
+      fontFamily: fonts.heading,
     },
     pressed: {
       opacity: 0.75,

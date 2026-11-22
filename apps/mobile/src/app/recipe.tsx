@@ -17,7 +17,7 @@ import { createFood, searchFoods } from '@/data/sqlite/repositories/foodReposito
 import { saveServing } from '@/data/sqlite/repositories/servingRepository';
 import { hapticSuccess } from '@/features/haptics/haptics';
 import { foodNutrients, type Food } from '@/features/foods/types';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, spacing, typography, useTheme, type ThemeColors, fonts, fontSizes } from '@/theme';
 
 interface Ingredient {
   food: Food;
@@ -153,10 +153,7 @@ export default function RecipeScreen() {
 
   return (
     <Screen>
-      <ScreenHeader
-        subtitle="Combina alimentos y guarda el resultado como un alimento más."
-        title="Nueva receta"
-      />
+      <ScreenHeader subtitle="Combina alimentos y guarda el resultado como un alimento más." />
 
       <Card>
         <Text style={styles.label}>Nombre</Text>
@@ -295,7 +292,7 @@ function createStyles(colors: ThemeColors) {
     label: {
       ...typography.body,
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: fonts.heading,
       marginBottom: spacing.xs,
     },
     input: {
@@ -304,7 +301,8 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.md,
       borderWidth: 1,
       color: colors.text,
-      fontSize: 16,
+      fontSize: fontSizes.bodyLarge,
+      fontFamily: fonts.regular,
       marginBottom: spacing.md,
       minHeight: 48,
       padding: spacing.md,

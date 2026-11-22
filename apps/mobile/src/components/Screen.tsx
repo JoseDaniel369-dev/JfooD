@@ -1,8 +1,9 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, Ref } from 'react';
 import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   type StyleProp,
   type ViewStyle,
@@ -14,9 +15,11 @@ import { spacing, useTheme, type ThemeColors } from '@/theme';
 interface ScreenProps extends PropsWithChildren {
   contentContainerStyle?: StyleProp<ViewStyle>;
   fab?: boolean;
+  /** Lets the screen scroll itself (e.g. to bring a form into view). */
+  scrollRef?: Ref<ScrollViewInstance>;
 }
 
-export function Screen({ children, contentContainerStyle, fab = false }: ScreenProps) {
+export function Screen({ children, contentContainerStyle, fab = false, scrollRef }: ScreenProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors, fab), [colors, fab]);
 
@@ -27,6 +30,7 @@ export function Screen({ children, contentContainerStyle, fab = false }: ScreenP
         style={styles.flex}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[styles.content, contentContainerStyle]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

@@ -8,7 +8,7 @@ import Animated, {
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { springs } from '@/features/motion/springs';
-import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
+import { radius, shadows, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 export interface SegmentedOption<T extends string> {
   value: T;
@@ -73,7 +73,11 @@ export function Segmented<T extends string>({
             scaleTo={0.97}
             style={styles.segment}
           >
-            <Text style={[styles.label, selected && styles.labelSelected]}>
+            <Text
+              maxFontSizeMultiplier={1.3}
+              numberOfLines={1}
+              style={[styles.label, selected && styles.labelSelected]}
+            >
               {option.label}
             </Text>
           </AnimatedPressable>
@@ -94,23 +98,20 @@ function createStyles(colors: ThemeColors) {
       padding: INSET,
     },
     indicator: {
-      backgroundColor: colors.surface,
+      // A raised colour (not only a shadow): shadows are invisible in dark mode.
+      backgroundColor: colors.surfaceRaised,
       borderRadius: radius.pill,
       bottom: INSET,
-      elevation: 2,
       left: INSET,
       position: 'absolute',
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.12,
-      shadowRadius: 3,
       top: INSET,
+      ...shadows.sm,
     },
     segment: {
       alignItems: 'center',
       flex: 1,
       justifyContent: 'center',
-      minHeight: 40,
+      minHeight: 44,
       paddingHorizontal: spacing.sm,
     },
     label: {

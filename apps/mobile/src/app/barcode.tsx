@@ -212,7 +212,7 @@ function createStyles(colors: ThemeColors) {
       top: 0,
     },
     frame: {
-      borderColor: '#FFFFFF',
+      borderColor: colors.onHero,
       borderRadius: radius.lg,
       borderWidth: 3,
       height: 150,
