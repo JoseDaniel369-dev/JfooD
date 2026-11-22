@@ -197,3 +197,19 @@ test('image/jpg is sent to Gemini as image/jpeg', () => {
   assert.equal(detectMimeType('data:image/PNG;base64,abcd'), 'image/png');
   assert.equal(detectMimeType('abcd'), 'image/jpeg');
 });
+
+test('a client refused only because the table is full is told apart from one over its own limit', () => {
+  const keyed = createKeyedDailyLimiter(1);
+
+  // Fill the table with distinct clients (the bound is 10 000).
+  for (let i = 0; i < 10_000; i += 1) {
+    assert.equal(keyed.tryConsume(`client-${i}`), true);
+  }
+
+  assert.equal(keyed.tryConsume('newcomer'), false);
+  assert.equal(keyed.isTableFullFor('newcomer'), true, 'refused for lack of room, not for use');
+
+  // A tracked client over its own limit is a different case.
+  assert.equal(keyed.tryConsume('client-0'), false);
+  assert.equal(keyed.isTableFullFor('client-0'), false);
+});

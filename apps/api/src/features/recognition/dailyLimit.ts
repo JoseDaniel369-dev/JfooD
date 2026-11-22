@@ -67,6 +67,8 @@ export interface KeyedDailyLimiter {
   tryConsume(key: string): boolean;
   /** Same rule as the shared budget: a refund from a previous UTC day is ignored. */
   refund(key: string, reservedOn?: string): void;
+  /** True when this client was refused only because the table of tracked clients is full. */
+  isTableFullFor(key: string): boolean;
 }
 
 export function createKeyedDailyLimiter(
@@ -98,6 +100,10 @@ export function createKeyedDailyLimiter(
       }
       used.set(key, current + 1);
       return true;
+    },
+    isTableFullFor(key) {
+      rollover();
+      return !used.has(key) && used.size >= MAX_TRACKED_KEYS;
     },
     refund(key, reservedOn) {
       rollover();

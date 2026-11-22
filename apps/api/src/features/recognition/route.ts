@@ -66,11 +66,15 @@ export function recognizeRoute(
     const client = request.ip;
 
     if (!perClientLimiter.tryConsume(client)) {
+      // A full client table refuses newcomers that have used nothing: do not
+      // tell them they reached a limit of their own.
+      const tableFull = perClientLimiter.isTableFullFor(client);
       void reply.status(429).send({
         error: {
           code: 'DAILY_LIMIT_REACHED',
-          message:
-            'Has alcanzado tu límite diario de análisis. Inténtalo mañana.',
+          message: tableFull
+            ? 'El servicio está muy ocupado hoy. Inténtalo más tarde.'
+            : 'Has alcanzado tu límite diario de análisis. Inténtalo mañana.',
         },
       } satisfies ErrorReply);
       return null;

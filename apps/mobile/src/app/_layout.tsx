@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { ActivityIndicator, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
@@ -54,6 +54,41 @@ export default function RootLayout() {
         </Suspense>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * Last line of defence: a screen that crashes while rendering shows this instead
+ * of a blank page. It reads the system colour scheme directly because the theme
+ * provider may be the very thing that failed. (Expo Router picks up this export.)
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const palette = useColorScheme() === 'dark' ? darkColors : lightColors;
+
+  return (
+    <View style={[stylesLoading.loading, stylesError.container, { backgroundColor: palette.background }]}>
+      <Text style={stylesError.emoji}>😕</Text>
+      <Text accessibilityRole="header" style={[stylesError.title, { color: palette.text }]}>
+        Algo ha salido mal
+      </Text>
+      <Text style={[stylesError.body, { color: palette.textMuted }]}>
+        Tus datos están a salvo en este móvil. Prueba a reintentarlo y, si vuelve a ocurrir, cierra y
+        abre la app.
+      </Text>
+      {error.message ? (
+        <Text numberOfLines={4} selectable style={[stylesError.detail, { color: palette.textMuted }]}>
+          {error.message}
+        </Text>
+      ) : null}
+      <Pressable
+        accessibilityLabel="Reintentar"
+        accessibilityRole="button"
+        onPress={() => void retry()}
+        style={[stylesError.button, { backgroundColor: palette.primary }]}
+      >
+        <Text style={[stylesError.buttonText, { color: palette.textOnPrimary }]}>Reintentar</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -132,6 +167,43 @@ function AppLoading() {
     </View>
   );
 }
+
+const stylesError = StyleSheet.create({
+  container: {
+    gap: 12,
+    padding: 24,
+  },
+  emoji: {
+    fontSize: 48,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  detail: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  button: {
+    alignItems: 'center',
+    borderRadius: 14,
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 48,
+    minWidth: 160,
+    paddingHorizontal: 24,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+});
 
 const stylesLoading = StyleSheet.create({
   root: {

@@ -1,8 +1,8 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppState, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -110,6 +110,16 @@ export function RemindersCard() {
       };
     }, [database]),
   );
+
+  // The person may grant or revoke the permission in the system settings and come back.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void getReminderPermission().then(setPermission);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const commit = async (next: ReminderSettings, previous: ReminderSettings) => {
     setSettings(next);

@@ -204,3 +204,23 @@ test('the water window needs a start before its end', () => {
   assert.equal(isValidWaterWindow('10:00', '10:00'), false);
   assert.equal(isValidWaterWindow('25:00', '26:00'), false);
 });
+
+test('a week ahead with a larger cap keeps reminders coming for days without opening the app', () => {
+  const everything = settings({
+    breakfast: { enabled: true, time: '09:00' },
+    lunch: { enabled: true, time: '14:00' },
+    dinner: { enabled: true, time: '21:00' },
+    water: { enabled: true, from: '10:00', to: '20:00', everyHours: 2 },
+  });
+  const start = new Date(2026, 10, 18, 0, 0, 0);
+
+  const week = planReminders(everything, start, NOTHING_DONE, 7, 150);
+  // 3 meals + 6 water reminders (10, 12, 14, 16, 18, 20) a day, for 7 days.
+  assert.equal(week.length, 7 * 9);
+  assert.equal(new Set(week.map((p) => p.date.getDate())).size, 7, 'every day of the week has some');
+
+  // The default cap (iOS) cuts the plan to the soonest ones instead.
+  const capped = planReminders(everything, start, NOTHING_DONE, 7);
+  assert.equal(capped.length, MAX_PLANNED_REMINDERS);
+  assert.deepEqual(capped, week.slice(0, MAX_PLANNED_REMINDERS));
+});

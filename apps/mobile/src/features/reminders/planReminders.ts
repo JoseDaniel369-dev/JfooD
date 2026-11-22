@@ -61,6 +61,7 @@ export function planReminders(
   now: Date,
   context: PlanContext,
   horizonDays = PLAN_HORIZON_DAYS,
+  maxReminders = MAX_PLANNED_REMINDERS,
 ): PlannedReminder[] {
   const planned: PlannedReminder[] = [];
   const earliest = now.getTime() + MIN_LEAD_MS;
@@ -109,5 +110,5 @@ export function planReminders(
 
   return planned
     .sort((a, b) => a.date.getTime() - b.date.getTime() || a.id.localeCompare(b.id))
-    .slice(0, MAX_PLANNED_REMINDERS);
+    .slice(0, maxReminders);
 }

@@ -24,6 +24,7 @@ export function Chip({ label, emoji, selected = false, onPress, accessibilityLab
       accessibilityRole="button"
       accessibilityState={{ selected }}
       haptic
+      hitSlop={{ top: 4, bottom: 4 }}
       onPress={onPress}
       style={[styles.chip, selected && styles.selected]}
     >
@@ -43,7 +44,7 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       flexDirection: 'row',
       gap: spacing.xs,
-      minHeight: 40,
+      minHeight: 44,
       paddingHorizontal: spacing.lg,
     },
     selected: {

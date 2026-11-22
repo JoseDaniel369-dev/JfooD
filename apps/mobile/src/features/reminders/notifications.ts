@@ -7,7 +7,7 @@ import { getReminderContext } from '@/data/sqlite/repositories/reminderRepositor
 import { getSetting, setSetting } from '@/data/sqlite/repositories/settingsRepository';
 import { toLocalDate } from '@/features/diary/utils/date';
 
-import { planReminders } from './planReminders';
+import { MAX_PLANNED_REMINDERS, planReminders } from './planReminders';
 import { REMINDER_CHANNEL_ID, buildScheduleRequests } from './schedule';
 import {
   REMINDERS_SETTING_KEY,
@@ -18,6 +18,14 @@ import {
 
 /** Notifications only exist on the phone builds. */
 const SUPPORTED = Platform.OS === 'android' || Platform.OS === 'ios';
+
+/**
+ * How far ahead reminders are planned. A week keeps them coming through a few
+ * days without opening the app; each opening plans the next week again.
+ */
+export const REMINDER_HORIZON_DAYS = 7;
+/** iOS keeps at most 64 pending notifications; Android has no such small limit. */
+const MAX_SCHEDULED = Platform.OS === 'ios' ? MAX_PLANNED_REMINDERS : 150;
 
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined';
 
@@ -37,11 +45,16 @@ export function configureNotificationHandler(): void {
 /** Android needs the channel to exist before a permission request or a schedule. */
 export async function ensureReminderChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-    name: 'Recordatorios',
-    description: 'Avisos de comidas, agua, peso y resumen semanal.',
-    importance: AndroidImportance.DEFAULT,
-  });
+  try {
+    await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
+      name: 'Recordatorios',
+      description: 'Avisos de comidas, agua, peso y resumen semanal.',
+      importance: AndroidImportance.DEFAULT,
+    });
+  } catch {
+    // Without the channel Android falls back to a default one: the reminders
+    // still arrive, so this must not stop them from being planned.
+  }
 }
 
 export async function getReminderPermission(): Promise<ReminderPermission> {
@@ -91,7 +104,9 @@ async function rebuild(database: SQLiteDatabase): Promise<void> {
   await ensureReminderChannel();
   const now = new Date();
   const context = await getReminderContext(database, toLocalDate(now));
-  const requests = buildScheduleRequests(planReminders(settings, now, context));
+  const requests = buildScheduleRequests(
+    planReminders(settings, now, context, REMINDER_HORIZON_DAYS, MAX_SCHEDULED),
+  );
 
   await Notifications.cancelAllScheduledNotificationsAsync();
   for (const request of requests) {
