@@ -1,11 +1,13 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { ErrorState } from '@/components/AsyncState';
+import { BottomSheet } from '@/components/BottomSheet';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Confetti } from '@/components/Confetti';
@@ -47,6 +49,7 @@ import { useDiaryStats } from '@/features/stats/hooks/useDiaryStats';
 import { computeStreak, computeWeekStats } from '@/features/stats/utils/streak';
 import { useWaterDay } from '@/features/water/hooks/useWaterDay';
 import { useWaterGoal } from '@/features/water/hooks/useWaterGoal';
+import { WATER_EXTRA_PRESETS, parseWaterAmount } from '@/features/water/utils/goal';
 import {
   gradients,
   radius,
@@ -70,6 +73,9 @@ export default function HomeScreen() {
   const weight = useWeightLogs();
   const { fresh, markSeen } = useAchievements();
   const [confettiBurst, setConfettiBurst] = useState(0);
+  const [customWater, setCustomWater] = useState<string | null>(null);
+  /** Set at once: two quick taps on "Añadir" must log once. */
+  const addingCustomRef = useRef(false);
 
   // Celebrate achievements unlocked since the last visit, once.
   useEffect(() => {
@@ -166,6 +172,22 @@ export default function HomeScreen() {
       pathname: '/diary/add-food',
       params: { date: localDate, meal, ...(foodId ? { foodId } : {}) },
     });
+  };
+
+  const handleAddCustomWater = async () => {
+    if (addingCustomRef.current) return;
+    const amount = parseWaterAmount(customWater ?? '');
+    if (amount === null) {
+      showToast('Escribe una cantidad entre 1 y 5000 ml.', 'error');
+      return;
+    }
+    addingCustomRef.current = true;
+    try {
+      await handleAddWater(amount);
+      setCustomWater(null);
+    } finally {
+      addingCustomRef.current = false;
+    }
   };
 
   const handleAddWater = async (amountMl: number) => {
@@ -381,6 +403,11 @@ export default function HomeScreen() {
           <View style={styles.waterButtons}>
             <Chip label="+250" onPress={() => void handleAddWater(250)} />
             <Chip label="+500" onPress={() => void handleAddWater(500)} />
+            <Chip
+              accessibilityLabel="Añadir otra cantidad de agua"
+              label="Otra…"
+              onPress={() => setCustomWater('')}
+            />
           </View>
         </Card>
 
@@ -434,6 +461,31 @@ export default function HomeScreen() {
         </Card>
       </Animated.View>
     </Screen>
+    <BottomSheet
+      onClose={() => setCustomWater(null)}
+      title="¿Cuánta agua?"
+      visible={customWater !== null}
+    >
+      <TextInput
+        accessibilityLabel="Cantidad de agua en mililitros"
+        autoFocus
+        keyboardType="number-pad"
+        maxLength={4}
+        onChangeText={setCustomWater}
+        onSubmitEditing={() => void handleAddCustomWater()}
+        placeholder="ml"
+        placeholderTextColor={colors.textMuted}
+        returnKeyType="done"
+        style={styles.waterInput}
+        value={customWater ?? ''}
+      />
+      <View style={styles.waterButtons}>
+        {WATER_EXTRA_PRESETS.map((amount) => (
+          <Chip key={amount} label={`${amount} ml`} onPress={() => setCustomWater(String(amount))} />
+        ))}
+      </View>
+      <Button title="Añadir" onPress={() => void handleAddCustomWater()} />
+    </BottomSheet>
     <Confetti burst={confettiBurst} />
     </>
   );
@@ -654,7 +706,18 @@ function createStyles(colors: ThemeColors) {
     },
     waterButtons: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: spacing.sm,
+    },
+    waterInput: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 22,
+      padding: spacing.md,
+      textAlign: 'center',
     },
     tileColumn: {
       flex: 1,

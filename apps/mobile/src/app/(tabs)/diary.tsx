@@ -23,6 +23,7 @@ import {
   type EntrySnapshot,
 } from '@/data/sqlite/repositories/diaryRepository';
 import { updateEntryNutrients } from '@/data/sqlite/repositories/entryNutrientsRepository';
+import { CopyMealSheet } from '@/features/diary/components/CopyMealSheet';
 import { GramsEditorModal } from '@/features/diary/components/GramsEditorModal';
 import { NutrientsEditorModal } from '@/features/diary/components/NutrientsEditorModal';
 import { MealList } from '@/features/diary/components/MealList';
@@ -58,6 +59,7 @@ export default function DiaryScreen() {
     useDiaryDay();
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [activeEntry, setActiveEntry] = useState<DiaryEntry | null>(null);
+  const [copyingMeal, setCopyingMeal] = useState<MealType | null>(null);
   const [completingEntry, setCompletingEntry] = useState<DiaryEntry | null>(null);
   const copyingRef = useRef(false);
 
@@ -200,6 +202,28 @@ export default function DiaryScreen() {
       showToast('Cantidad actualizada.');
     } catch {
       showToast('No se ha podido actualizar la cantidad.', 'error');
+    }
+  };
+
+  const handleCopyMeal = async (targetDate: string) => {
+    const meal = copyingMeal;
+    if (!meal) return;
+
+    try {
+      const count = await copyDiaryDay(database, localDate, targetDate, meal);
+      setCopyingMeal(null);
+      if (count === 0) {
+        showToast('Esa comida no tiene alimentos que copiar.', 'error');
+        return;
+      }
+      void scheduleReminders(database);
+      hapticSuccess();
+      showToast(`Copiado a ${formatLocalDate(targetDate)} (${count}).`, 'success', {
+        label: 'Ver día',
+        onPress: () => setLocalDate(targetDate),
+      });
+    } catch {
+      showToast('No se ha podido copiar la comida.', 'error');
     }
   };
 
@@ -360,6 +384,7 @@ export default function DiaryScreen() {
             meals={day.meals}
             variant="detailed"
             onAddFood={handleAddFood}
+            onMealCopy={setCopyingMeal}
             onEntryDelete={handleDelete}
             onEntryDuplicate={handleDuplicate}
             onEntryPress={handleEntryPress}
@@ -367,6 +392,14 @@ export default function DiaryScreen() {
         </Card>
       </View>
 
+
+      <CopyMealSheet
+        fromDate={localDate}
+        mealLabel={copyingMeal ? MEAL_LABELS[copyingMeal].toLowerCase() : ''}
+        onClose={() => setCopyingMeal(null)}
+        onCopy={handleCopyMeal}
+        visible={copyingMeal !== null}
+      />
 
       <ActionSheet
         options={actionOptions}

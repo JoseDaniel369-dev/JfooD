@@ -1,6 +1,26 @@
+import { MAX_WATER_LOG_ML } from '@/data/sqlite/repositories/waterRepository';
+
 export const DEFAULT_WATER_GOAL_ML = 2000;
 
 export const WATER_QUICK_ADD_OPTIONS = [250, 500] as const;
+
+/** Extra amounts offered in the "other amount" sheet (a small glass, a can, a big bottle). */
+export const WATER_EXTRA_PRESETS = [150, 330, 750] as const;
+
+/**
+ * An amount of water typed in millilitres ("330", "330 ml"), or null when it is
+ * empty, not a number, or outside 1 ml … the largest single record.
+ */
+export function parseWaterAmount(value: string): number | null {
+  const normalized = value.replace(/ml/i, '').replace(',', '.').trim();
+  if (normalized === '') return null;
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return null;
+
+  const rounded = Math.round(parsed);
+  return rounded >= 1 && rounded <= MAX_WATER_LOG_ML ? rounded : null;
+}
 
 const MIN_GOAL_ML = 250;
 export const MAX_GOAL_ML = 6000;

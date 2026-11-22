@@ -60,6 +60,21 @@ export function isValidLocalDate(value: string): boolean {
   );
 }
 
+/** The local-time Date of a YYYY-MM-DD day, or null when it is not a real calendar date. */
+export function parseLocalDate(localDate: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return null;
+  const [year, month, day] = localDate.split('-').map(Number);
+  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  if (
+    date.getFullYear() === year &&
+    date.getMonth() === (month ?? 1) - 1 &&
+    date.getDate() === day
+  ) {
+    return date;
+  }
+  return null;
+}
+
 /** Returns the date unchanged or throws a Spanish error when it is not valid. */
 export function assertLocalDate(value: string): string {
   if (!isValidLocalDate(value)) {

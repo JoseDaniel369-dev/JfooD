@@ -10,6 +10,7 @@ import {
   type NutrientRow,
 } from '@/data/sqlite/nutrientColumns';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
+import { getServings, saveServing } from '@/data/sqlite/repositories/servingRepository';
 import { generateId } from '@/data/sqlite/utils/id';
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { CreateFoodInput, Food, FoodSource } from '@/features/foods/types';
@@ -294,6 +295,49 @@ export async function updateFood(
   );
 
   return getFoodById(database, foodId);
+}
+
+const OWN_COPY_SUFFIX = ' (mío)';
+const MAX_COPY_NAME_LENGTH = 80;
+
+/**
+ * Makes an editable copy of a food (typically one from the base catalog, which
+ * cannot be edited): same values per 100 g and same portions, as the person's
+ * own food. The original is never touched. Returns null when it does not exist.
+ */
+export async function duplicateFoodAsUser(
+  database: SQLiteDatabase,
+  foodId: string,
+): Promise<Food | null> {
+  const original = await getFoodById(database, foodId);
+  if (!original) {
+    return null;
+  }
+
+  const portions = await getServings(database, foodId);
+  const name = `${original.name.slice(0, MAX_COPY_NAME_LENGTH - OWN_COPY_SUFFIX.length)}${OWN_COPY_SUFFIX}`;
+
+  let copy: Food | null = null;
+  // One transaction: the copy never exists without its portions.
+  await database.withTransactionAsync(async () => {
+    copy = await createFood(database, {
+      name,
+      brand: original.brand,
+      source: 'user',
+      caloriesKcal: original.caloriesKcal,
+      proteinGrams: original.proteinGrams,
+      carbohydrateGrams: original.carbohydrateGrams,
+      fatGrams: original.fatGrams,
+      fiberGrams: original.fiberGrams,
+      sugarsGrams: original.sugarsGrams,
+      saltGrams: original.saltGrams,
+    });
+    for (const portion of portions) {
+      await saveServing(database, copy.id, portion.label, portion.grams);
+    }
+  });
+
+  return copy;
 }
 
 export async function deleteFood(

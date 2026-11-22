@@ -11,6 +11,7 @@ import {
 } from '../../src/data/seed/seedCatalog';
 import {
   createFood,
+  duplicateFoodAsUser,
   getFoodById,
   searchFoods,
   updateFood,
@@ -250,4 +251,44 @@ test('getFoodsByIds returns foods in the order asked and skips unknown ids', asy
   // More ids than one chunk still works.
   const all = await getFoodsByIds(sqlite, SEED_CATALOG.map((f) => f.id));
   assert.equal(all.length, SEED_CATALOG.length);
+});
+
+test('a catalog food can be duplicated as the person’s own, with its portions, leaving the original alone', async () => {
+  const sqlite = (await createMigratedDatabase()).asSqlite();
+  await seedCatalog(sqlite);
+  const original = await getFoodById(sqlite, 'seed-manzana');
+  assert.ok(original);
+  const originalPortions = await getServings(sqlite, 'seed-manzana');
+  assert.ok(originalPortions.length > 0, 'the catalog apple has portions');
+
+  const copy = await duplicateFoodAsUser(sqlite, 'seed-manzana');
+  assert.ok(copy);
+  assert.notEqual(copy.id, original.id);
+  assert.equal(copy.source, 'user');
+  assert.equal(isEditableSource(copy.source), true);
+  assert.equal(copy.name, `${original.name} (mío)`);
+  assert.equal(copy.caloriesKcal, original.caloriesKcal);
+  assert.equal(copy.fiberGrams, original.fiberGrams);
+
+  const copyPortions = await getServings(sqlite, copy.id);
+  assert.deepEqual(
+    copyPortions.map(({ label, grams }) => ({ label, grams })),
+    originalPortions.map(({ label, grams }) => ({ label, grams })),
+  );
+
+  // The copy can be edited; the original did not change.
+  const edited = await updateFood(sqlite, copy.id, { name: 'Mi manzana', caloriesKcal: 60 });
+  assert.equal(edited?.caloriesKcal, 60);
+  assert.equal((await getFoodById(sqlite, 'seed-manzana'))?.caloriesKcal, original.caloriesKcal);
+  assert.equal((await getServings(sqlite, 'seed-manzana')).length, originalPortions.length);
+});
+
+test('duplicating a food that does not exist gives null and creates nothing', async () => {
+  const sqlite = (await createMigratedDatabase()).asSqlite();
+  const before = await sqlite.getAllAsync<{ count: number }>('SELECT COUNT(*) AS count FROM foods');
+
+  assert.equal(await duplicateFoodAsUser(sqlite, 'nope'), null);
+
+  const after = await sqlite.getAllAsync<{ count: number }>('SELECT COUNT(*) AS count FROM foods');
+  assert.equal(after[0]?.count, before[0]?.count);
 });

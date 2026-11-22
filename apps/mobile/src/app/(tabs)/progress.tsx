@@ -27,6 +27,7 @@ import { Segmented } from '@/components/Segmented';
 import { useAchievements } from '@/features/achievements/useAchievements';
 import { AchievementsSection } from '@/features/progress/components/AchievementsSection';
 import { CaloriesSection } from '@/features/progress/components/CaloriesSection';
+import { MacrosSection } from '@/features/progress/components/MacrosSection';
 import { ErrorState, LoadingState } from '@/components/AsyncState';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -35,7 +36,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useToast } from '@/components/Toast';
-import { addDays, formatLocalDate, toLocalDate } from '@/features/diary/utils/date';
+import { addDays, formatLocalDate, parseLocalDate, toLocalDate } from '@/features/diary/utils/date';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
 import { fadeUp } from '@/features/motion/springs';
 import { animateNextLayout } from '@/features/motion/motion';
@@ -65,6 +66,7 @@ const PERIOD_OPTIONS = [
 const SECTIONS = [
   { value: 'weight', label: 'Peso' },
   { value: 'calories', label: 'Calorías' },
+  { value: 'macros', label: 'Macros' },
   { value: 'achievements', label: 'Logros' },
 ] as const;
 
@@ -209,7 +211,7 @@ export default function ProgressScreen() {
     <Screen>
       <ScreenHeader
         title="Tu progreso"
-        subtitle="Peso, calorías y logros"
+        subtitle="Peso, calorías, macros y logros"
       />
 
       <Segmented
@@ -220,6 +222,7 @@ export default function ProgressScreen() {
       />
 
       {section === 'calories' ? <CaloriesSection /> : null}
+      {section === 'macros' ? <MacrosSection /> : null}
       {section === 'achievements' ? <AchievementsSection achievements={achievements} /> : null}
 
       {section === 'weight' ? (
@@ -660,20 +663,6 @@ function isValidDate(value: string): boolean {
     date.getUTCMonth() === (month ?? 1) - 1 &&
     date.getUTCDate() === day
   );
-}
-
-function parseLocalDate(localDate: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return null;
-  const [year, month, day] = localDate.split('-').map(Number);
-  const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
-  if (
-    date.getFullYear() === year &&
-    date.getMonth() === (month ?? 1) - 1 &&
-    date.getDate() === day
-  ) {
-    return date;
-  }
-  return null;
 }
 
 function createStyles(colors: ThemeColors) {

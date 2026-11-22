@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   MAX_GOAL_ML,
+  parseWaterAmount,
   parseWaterGoal,
 } from '@/features/water/utils/goal';
 
@@ -23,4 +24,15 @@ test('parseWaterGoal accepts valid values', () => {
   assert.equal(parseWaterGoal('2.000'), 2000);
   assert.equal(parseWaterGoal('2.500'), 2500);
   assert.equal(parseWaterGoal('1.000.000'), MAX_GOAL_ML);
+});
+
+test('parseWaterAmount reads a plain amount in millilitres and refuses anything else', () => {
+  assert.equal(parseWaterAmount('330'), 330);
+  assert.equal(parseWaterAmount(' 330 ml '), 330);
+  assert.equal(parseWaterAmount('1,5'), 2, 'a decimal is rounded to whole millilitres');
+  assert.equal(parseWaterAmount('5000'), 5000);
+
+  for (const bad of ['', '   ', 'abc', '0', '-5', '5001', 'Infinity']) {
+    assert.equal(parseWaterAmount(bad), null, bad);
+  }
 });

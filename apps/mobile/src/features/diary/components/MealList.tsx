@@ -27,6 +27,8 @@ interface MealListProps {
   meals: Record<MealType, MealSummary>;
   variant?: 'summary' | 'detailed';
   onAddFood?: (mealType: MealType) => void;
+  /** Copy the whole meal to another day (shown for meals that have entries). */
+  onMealCopy?: (mealType: MealType) => void;
   onEntryPress?: (entry: DiaryEntry) => void;
   /** Swipe an entry to the left to delete it (offer "Deshacer"). */
   onEntryDelete?: (entry: DiaryEntry) => void;
@@ -46,6 +48,7 @@ export function MealList({
   meals,
   variant = 'summary',
   onAddFood,
+  onMealCopy,
   onEntryPress,
   onEntryDelete,
   onEntryDuplicate,
@@ -81,6 +84,20 @@ export function MealList({
                 {formatPartialAmount(meal.partial.caloriesKcal)}
                 <Text style={styles.unit}> kcal</Text>
               </Text>
+              {isDetailed && onMealCopy && meal.entries.length > 0 ? (
+                <Pressable
+                  accessibilityLabel={`Copiar ${label} a otro día`}
+                  accessibilityRole="button"
+                  hitSlop={10}
+                  onPress={() => {
+                    hapticSelection();
+                    onMealCopy(type);
+                  }}
+                  style={({ pressed }) => [styles.copyButton, pressed && styles.pressed]}
+                >
+                  <Ionicons color={colors.primary} name="copy-outline" size={18} />
+                </Pressable>
+              ) : null}
               {isDetailed && onAddFood ? (
                 <Pressable
                   accessibilityLabel={`Añadir alimento a ${label}`}
@@ -308,6 +325,14 @@ function createStyles(colors: ThemeColors) {
       ...typography.caption,
       color: colors.textMuted,
       fontWeight: '400',
+    },
+    copyButton: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.pill,
+      height: 28,
+      justifyContent: 'center',
+      width: 28,
     },
     addButton: {
       alignItems: 'center',

@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { foodInputNutrientsSchema } from '@jfood/core';
@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import {
   deleteFood,
+  duplicateFoodAsUser,
   getFoodById,
   getFoodUsageCount,
   updateFood,
@@ -60,6 +61,9 @@ export default function FoodDetailScreen() {
   const [sugars, setSugars] = useState('');
   const [salt, setSalt] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
+  /** Set at once, before React re-renders: two quick taps must make one copy. */
+  const duplicatingRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!id) {
@@ -97,6 +101,27 @@ export default function FoodDetailScreen() {
   );
 
   const isUserFood = food ? isEditableSource(food.source) : false;
+
+  const handleDuplicate = async () => {
+    if (!food || duplicatingRef.current) return;
+    duplicatingRef.current = true;
+    setDuplicating(true);
+    try {
+      const copy = await duplicateFoodAsUser(database, food.id);
+      if (copy) {
+        hapticSuccess();
+        showToast('Ya tienes tu propia versión. Puedes editarla.');
+        router.replace({ pathname: '/foods/[id]', params: { id: copy.id } });
+      } else {
+        showToast('El alimento ya no existe.', 'error');
+      }
+    } catch {
+      showToast('No se ha podido duplicar el alimento.', 'error');
+    } finally {
+      duplicatingRef.current = false;
+      setDuplicating(false);
+    }
+  };
 
   const startEditing = () => {
     if (!food) return;
@@ -280,13 +305,21 @@ export default function FoodDetailScreen() {
               />
             </>
           ) : (
-            <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Este alimento pertenece al catálogo predefinido y no se puede
-                editar ni eliminar. Puedes crear tu propia versión desde
-                «Añadir alimento».
-              </Text>
-            </View>
+            <>
+              <View style={styles.notice}>
+                <Text style={styles.noticeText}>
+                  Este alimento pertenece al catálogo predefinido y no se puede
+                  editar ni eliminar. Duplícalo para tener tu propia versión,
+                  con sus raciones, y cambiar lo que quieras.
+                </Text>
+              </View>
+              <Button
+                icon="copy-outline"
+                loading={duplicating}
+                title="Duplicar como mío"
+                onPress={() => void handleDuplicate()}
+              />
+            </>
           )}
         </>
       ) : (
