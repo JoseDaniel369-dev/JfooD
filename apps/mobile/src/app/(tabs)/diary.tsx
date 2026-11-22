@@ -38,6 +38,7 @@ import {
   remainingLabel,
 } from '@/features/diary/utils/totals';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
+import { scheduleReminders } from '@/features/reminders/notifications';
 import { spacing, typography, useTheme, type ThemeColors } from '@/theme';
 import type { DiaryEntry, MealType } from '@/features/diary/types';
 
@@ -92,6 +93,7 @@ export default function DiaryScreen() {
         return;
       }
       await refresh();
+      void scheduleReminders(database);
       hapticSuccess();
       showToast(`Se han copiado ${count} alimento(s) del día anterior.`);
     } catch {
@@ -121,6 +123,7 @@ export default function DiaryScreen() {
     try {
       await restoreEntry(database, snapshot);
       await refresh();
+      void scheduleReminders(database);
       hapticSuccess();
     } catch {
       showToast('No se ha podido deshacer.', 'error');
@@ -135,6 +138,7 @@ export default function DiaryScreen() {
       try {
         const snapshot = await removeEntry(database, entry.id);
         await refresh();
+        void scheduleReminders(database);
         hapticWarning();
         if (snapshot) {
           showToast('Entrada eliminada.', 'success', {

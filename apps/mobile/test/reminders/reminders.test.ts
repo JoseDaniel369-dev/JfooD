@@ -7,6 +7,11 @@ import {
   type PlanContext,
 } from '../../src/features/reminders/planReminders';
 import {
+  buildScheduleRequests,
+  isSafeReminderRoute,
+  routeForReminder,
+} from '../../src/features/reminders/schedule';
+import {
   DEFAULT_REMINDER_SETTINGS,
   anyReminderEnabled,
   formatTime,
@@ -151,4 +156,43 @@ test('the plan is sorted by time, ids are unique, and it never exceeds the cap',
 test('the same input always gives the same plan', () => {
   const config = settings({ lunch: { enabled: true, time: '14:00' }, water: { enabled: true, from: '10:00', to: '14:00', everyHours: 2 } });
   assert.deepEqual(planReminders(config, NOW, NOTHING_DONE), planReminders(config, NOW, NOTHING_DONE));
+});
+
+// ---- Scheduling requests ---------------------------------------------------
+
+test('every reminder becomes a request with a stable identifier and a tap target', () => {
+  const plan = planReminders(
+    settings({
+      lunch: { enabled: true, time: '14:00' },
+      weigh: { enabled: true, weekday: 3, time: '17:00' },
+      weeklySummary: { enabled: true, weekday: 3, time: '20:00' },
+    }),
+    NOW,
+    NOTHING_DONE,
+    1,
+  );
+  const requests = buildScheduleRequests(plan);
+
+  assert.equal(requests.length, plan.length);
+  assert.equal(new Set(requests.map((r) => r.identifier)).size, requests.length, 'identifiers are unique');
+  for (const request of requests) {
+    assert.match(request.identifier, /^reminder-[A-Za-z]+-\d{4}-\d{2}-\d{2}-\d{4}$/);
+    assert.ok(isSafeReminderRoute(request.data.route), request.data.route);
+  }
+  assert.equal(requests.find((r) => r.data.kind === 'lunch')?.data.route, '/diary/add-food?meal=lunch');
+  assert.equal(requests.find((r) => r.data.kind === 'weigh')?.data.route, '/(tabs)/progress');
+  assert.equal(requests.find((r) => r.data.kind === 'weeklySummary')?.data.route, '/summary');
+});
+
+test('every kind of reminder points to a screen that exists', () => {
+  for (const kind of ['breakfast', 'lunch', 'dinner', 'water', 'weigh', 'weeklySummary'] as const) {
+    assert.ok(isSafeReminderRoute(routeForReminder(kind)), kind);
+  }
+});
+
+test('only the screens a reminder can open are accepted from a notification payload', () => {
+  assert.equal(isSafeReminderRoute('/summary'), true);
+  for (const bad of ['/foods/abc', 'https://example.com', '/diary/add-food?meal=snack', '', null, undefined, 7]) {
+    assert.equal(isSafeReminderRoute(bad), false, String(bad));
+  }
 });

@@ -38,6 +38,7 @@ import type { Food } from '@/features/foods/types';
 import { FOOD_CATEGORIES } from '@/features/foods/utils/categories';
 import { normalizeBarcode } from '@/features/foods/utils/openFoodFacts';
 import { hapticSuccess } from '@/features/haptics/haptics';
+import { scheduleReminders } from '@/features/reminders/notifications';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
 
 type Tab = 'recents' | 'favorites' | 'frequent' | 'catalog';
@@ -211,6 +212,8 @@ export default function AddFoodScreen() {
         await addPlanEntry(database, { localDate, mealType, food: selected, grams });
       } else {
         await addEntry(database, { localDate, mealType, food: selected, grams });
+        // The reminder for a meal that now has food is dropped.
+        void scheduleReminders(database);
       }
     } catch {
       showToast('No se ha podido añadir la entrada.', 'error');

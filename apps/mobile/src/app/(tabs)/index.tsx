@@ -35,6 +35,7 @@ import {
 } from '@/features/diary/utils/totals';
 import { foodEmoji } from '@/features/foods/utils/foodEmoji';
 import { hapticSelection, hapticSuccess } from '@/features/haptics/haptics';
+import { scheduleReminders } from '@/features/reminders/notifications';
 import { NEXT_MEAL_LABELS, greetingForHour, greetingLine } from '@/features/home/greeting';
 import { buildInsights, type Insight } from '@/features/insights/buildInsights';
 import { useCountUp } from '@/features/motion/useCountUp';
@@ -192,6 +193,7 @@ export default function HomeScreen() {
         return;
       }
       await refresh();
+      void scheduleReminders(database);
       hapticSuccess();
       showToast(`Añadido lo de ayer (${count}).`);
     } catch {

@@ -32,6 +32,7 @@ import {
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { Food } from '@/features/foods/types';
 import { hapticSuccess } from '@/features/haptics/haptics';
+import { scheduleReminders } from '@/features/reminders/notifications';
 import { durations, easings } from '@/features/motion/motion';
 import { MEALS, type MealType } from '@/features/diary/types';
 import { isValidLocalDate, toLocalDate } from '@/features/diary/utils/date';
@@ -299,6 +300,7 @@ export default function ScannerScreen() {
         }
       });
 
+      void scheduleReminders(database);
       hapticSuccess();
       showToast('Añadido al diario.');
       router.back();

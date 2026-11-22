@@ -35,6 +35,7 @@ import { addDays, formatLocalDate } from '@/features/diary/utils/date';
 import { currentDefaultMeal } from '@/features/diary/utils/meals';
 import { describeUnknown, formatPartialAmount } from '@/features/diary/utils/totals';
 import { hapticSuccess, hapticWarning } from '@/features/haptics/haptics';
+import { scheduleReminders } from '@/features/reminders/notifications';
 import { usePlanDay } from '@/features/plan/hooks/usePlanDay';
 import { usePlanWeekOverview } from '@/features/plan/hooks/usePlanWeekOverview';
 import { radius, spacing, typography, useTheme, type ThemeColors } from '@/theme';
@@ -221,6 +222,7 @@ export default function PlannerScreen() {
 
     try {
       await copyPlanToDiary(database, localDate);
+      void scheduleReminders(database);
       hapticSuccess();
       showToast('El día se ha copiado al diario.');
     } catch {

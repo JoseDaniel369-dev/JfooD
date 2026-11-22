@@ -9,6 +9,7 @@ import {
   type UpsertWeightLogInput,
   type WeightLog,
 } from '@/data/sqlite/repositories/weightRepository';
+import { scheduleReminders } from '@/features/reminders/notifications';
 
 interface WeightLogsState {
   logs: WeightLog[];
@@ -56,6 +57,7 @@ export function useWeightLogs() {
     async (input: UpsertWeightLogInput): Promise<void> => {
       try {
         await upsertWeightLog(database, input);
+        void scheduleReminders(database);
         await load();
       } catch (error) {
         const message =

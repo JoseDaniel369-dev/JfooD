@@ -14,6 +14,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/nunito';
 import { ToastProvider } from '@/components/Toast';
+import { useReminderScheduler } from '@/features/reminders/useReminderScheduler';
 import { initializeDatabase } from '@/data/sqlite/initializeDatabase';
 import {
   darkColors,
@@ -59,6 +60,7 @@ export default function RootLayout() {
 function RootNavigator() {
   const { colors, scheme } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  useReminderScheduler();
 
   return (
     <>
