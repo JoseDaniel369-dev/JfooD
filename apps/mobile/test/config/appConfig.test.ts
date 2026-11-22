@@ -100,11 +100,20 @@ test('builds fail early with the placeholder or an insecure API URL', () => {
   assert.doesNotThrow(() => buildConfig({ config: {} }));
 });
 
-test('without an EAS project id the config still loads and adds no EAS block', () => {
+test('the EAS project id is a UUID and reaches the config (builds need it)', () => {
   delete process.env.EXPO_PUBLIC_API_URL;
-  const config = buildConfig({ config: {} }) as { extra?: { eas?: unknown } };
+  const config = buildConfig({ config: {} }) as { extra?: { eas?: { projectId?: string } } };
 
-  assert.equal(config.extra?.eas, undefined);
+  assert.match(config.extra?.eas?.projectId ?? '', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+});
+
+test('the config keeps the project id of the root app.json (eas init) in sync', () => {
+  const rootApp = JSON.parse(readFileSync(new URL('../../../../app.json', import.meta.url), 'utf8')) as {
+    expo: { extra: { eas: { projectId: string } } };
+  };
+  const config = buildConfig({ config: {} }) as { extra?: { eas?: { projectId?: string } } };
+
+  assert.equal(config.extra?.eas?.projectId, rootApp.expo.extra.eas.projectId);
 });
 
 test('eas.json: each build gets its own environment and an APK, and the offline build has no API', () => {
