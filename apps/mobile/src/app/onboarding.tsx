@@ -82,12 +82,21 @@ export default function OnboardingScreen() {
   const [meals, setMeals] = useState<MealKey[]>([]);
   const [burst, setBurst] = useState(0);
 
+  /** Set at once: a double tap on "Empezar" saves the name once and moves on once. */
+  const startingRef = useRef(false);
+
   const handleStart = async () => {
-    // The name is optional: a failure to save it must not block the onboarding.
-    if (nameDraft.trim() !== '') {
-      await saveName(nameDraft);
+    if (startingRef.current) return;
+    startingRef.current = true;
+    try {
+      // The name is optional: a failure to save it must not block the onboarding.
+      if (nameDraft.trim() !== '') {
+        await saveName(nameDraft);
+      }
+      setStep('profile');
+    } finally {
+      startingRef.current = false;
     }
-    setStep('profile');
   };
 
   const toggleMeal = (key: MealKey) =>

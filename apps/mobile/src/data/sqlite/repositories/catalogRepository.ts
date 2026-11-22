@@ -66,6 +66,23 @@ export async function findCatalogByBarcode(
   return row ? mapCatalogFood(row) : null;
 }
 
+/** The most popular catalog food whose normalized name is exactly this, or null. */
+export async function findCatalogByExactName(
+  database: SQLiteDatabase,
+  normalizedName: string,
+): Promise<Food | null> {
+  if (!isCatalogAttached(database)) return null;
+
+  const row = await database.getFirstAsync<CatalogQueryRow>(
+    `SELECT ${CATALOG_COLUMNS} FROM ${C}.foods c
+     WHERE c.normalized_name = ?
+     ORDER BY c.popularity DESC, LENGTH(c.name) ASC, c.id ASC
+     LIMIT 1`,
+    [normalizedName],
+  );
+  return row ? mapCatalogFood(row) : null;
+}
+
 export interface CatalogCategory {
   name: string;
   count: number;
@@ -100,7 +117,7 @@ export async function getCatalogByCategory(
      FROM ${C}.foods c
      LEFT JOIN main.foods m ON m.id = c.id
      WHERE c.category = ?
-     ORDER BY c.popularity DESC, LENGTH(c.name) ASC, c.name ASC
+     ORDER BY c.popularity DESC, LENGTH(c.name) ASC, c.name ASC, c.id ASC
      LIMIT ? OFFSET ?`,
     [category, limit, offset],
   );

@@ -14,6 +14,7 @@ import { CATALOG_SCHEMA } from '@/data/catalog/catalogSchema';
 import { isCatalogAttached } from '@/data/catalog/catalogState';
 import {
   findCatalogByBarcode,
+  findCatalogByExactName,
   getCatalogFoodById,
   getCatalogServings,
 } from '@/data/sqlite/repositories/catalogRepository';
@@ -173,13 +174,29 @@ async function searchLibraryAndCatalog(
 
   const libraryWhere = patterns.map(() => `normalized_name LIKE ? ESCAPE '\\'`).join(' AND ');
   const catalogWhere = patterns.map(() => `c.search_text LIKE ? ESCAPE '\\'`).join(' AND ');
+  // A copied food the person renamed is found by the name they gave it too.
+  const ownNameWhere = patterns.map(() => `f.normalized_name LIKE ? ESCAPE '\\'`).join(' AND ');
 
+  // Three groups, each food in exactly one:
+  //  A. the person's foods that are not in the catalog (their own, the built-in ones): matched by name;
+  //  B. catalog foods the person already copied: matched like the catalog (so the BRAND still finds
+  //     them), shown with the person's own row (favourite mark, edits);
+  //  C. catalog foods not copied yet.
   const rows = await database.getAllAsync<FoodRow>(
     `SELECT * FROM (
        SELECT ${SELECT_FOOD_COLUMNS},
               is_favorite AS fav, 0 AS tier, 0 AS pop, ${rank('normalized_name')} AS rank
        FROM main.foods
        WHERE ${libraryWhere}
+         AND id NOT IN (SELECT id FROM ${CATALOG_SCHEMA}.foods)
+       UNION ALL
+       SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, f.source, f.external_id,
+              ${nutrientColumnsSql('f')},
+              f.is_favorite, f.cached_at, f.created_at, f.updated_at,
+              f.is_favorite AS fav, 0 AS tier, 0 AS pop, ${rank('f.normalized_name')} AS rank
+       FROM main.foods f
+       INNER JOIN ${CATALOG_SCHEMA}.foods c ON c.id = f.id
+       WHERE (${catalogWhere} OR (${ownNameWhere}))
        UNION ALL
        SELECT c.id, c.name, c.normalized_name, c.brand, c.barcode, c.source, NULL AS external_id,
               ${nutrientColumnsSql('c')},
@@ -191,7 +208,12 @@ async function searchLibraryAndCatalog(
      )
      ORDER BY fav DESC, rank ASC, tier ASC, pop DESC, LENGTH(name) ASC, name ASC
      LIMIT ?`,
-    [...rankParams, ...patterns, ...rankParams, ...patterns, limit],
+    [
+      ...rankParams, ...patterns, // A
+      ...rankParams, ...patterns, ...patterns, // B: catalog text OR own name
+      ...rankParams, ...patterns, // C
+      limit,
+    ],
   );
 
   return rows.map(mapFood);
@@ -304,6 +326,26 @@ export async function findFoodByBarcode(
   return (await findLibraryFoodByBarcode(database, barcode)) ?? (await findCatalogByBarcode(database, barcode));
 }
 
+/**
+ * The food whose normalized name is exactly `normalizedName`: the person's own first, then the
+ * most popular of the catalog. For matching a recognised name ("arroz") to a plain food, which
+ * a ranked search over thousands of branded products could push out of its first results.
+ */
+export async function findFoodByExactName(
+  database: SQLiteDatabase,
+  normalizedName: string,
+): Promise<Food | null> {
+  const own = await database.getFirstAsync<FoodRow>(
+    `SELECT ${SELECT_FOOD_COLUMNS}
+     FROM foods
+     WHERE normalized_name = ?
+     ORDER BY is_favorite DESC, name ASC
+     LIMIT 1`,
+    [normalizedName],
+  );
+  return own ? mapFood(own) : findCatalogByExactName(database, normalizedName);
+}
+
 /** Only the person's own library, never the catalog. */
 async function getLibraryFoodById(database: SQLiteDatabase, foodId: string): Promise<Food | null> {
   const row = await database.getFirstAsync<FoodRow>(
@@ -330,7 +372,20 @@ export async function getFoodById(
  * and recents all point at `foods`, so anything the person chooses goes through
  * here first. Idempotent: a food already in the library is returned as it is.
  */
-export async function ensureFoodInLibrary(database: SQLiteDatabase, food: Food): Promise<Food> {
+export function ensureFoodInLibrary(database: SQLiteDatabase, food: Food): Promise<Food> {
+  // Two taps on the same food (row + star, a double tap) share one copy in progress.
+  const key = `${food.id}`;
+  const running = copiesInProgress.get(key);
+  if (running) return running;
+
+  const copy = copyFoodToLibrary(database, food).finally(() => copiesInProgress.delete(key));
+  copiesInProgress.set(key, copy);
+  return copy;
+}
+
+const copiesInProgress = new Map<string, Promise<Food>>();
+
+async function copyFoodToLibrary(database: SQLiteDatabase, food: Food): Promise<Food> {
   const existing = await getLibraryFoodById(database, food.id);
   if (existing) {
     return existing;
@@ -339,7 +394,11 @@ export async function ensureFoodInLibrary(database: SQLiteDatabase, food: Food):
   const portions = await getCatalogServings(database, food.id);
   const now = new Date().toISOString();
 
-  await database.withTransactionAsync(async () => {
+  {
+    // No transaction on purpose: expo-sqlite's withTransactionAsync has no lock, so two copies
+    // overlapping (or any other write) would roll each other back. Every statement is
+    // idempotent (INSERT OR IGNORE), and the food row goes first.
+    //
     // INSERT OR IGNORE: if the person already has another food with this barcode the
     // unique index refuses the row, and that existing food is used below.
     await database.runAsync(
@@ -374,7 +433,7 @@ export async function ensureFoodInLibrary(database: SQLiteDatabase, food: Food):
         );
       }
     }
-  });
+  }
 
   return (
     (await getLibraryFoodById(database, food.id)) ??

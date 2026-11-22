@@ -1,4 +1,8 @@
-import { ensureFoodInLibrary, searchFoods } from '@/data/sqlite/repositories/foodRepository';
+import {
+  ensureFoodInLibrary,
+  findFoodByExactName,
+  searchFoods,
+} from '@/data/sqlite/repositories/foodRepository';
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { Food } from '@/features/foods/types';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -34,8 +38,11 @@ export async function findLocalFoodMatch(
     return null;
   }
 
-  const results = await searchFoods(database, normalized, 50);
-  const match = selectFoodMatch(results, recognized.name);
+  // An exact name first: among thousands of branded products a ranked search may not list the
+  // plain food at all. Then the old rule (exact or prefix) over the best matches.
+  const match =
+    (await findFoodByExactName(database, normalized)) ??
+    selectFoodMatch(await searchFoods(database, normalized, 50), recognized.name);
   // A match from the big catalog is copied into the library now: the entry that
   // is saved later points at a food of the library.
   return match ? ensureFoodInLibrary(database, match) : null;

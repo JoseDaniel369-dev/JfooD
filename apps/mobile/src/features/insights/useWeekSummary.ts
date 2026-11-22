@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getLatestGoals } from '@/data/sqlite/repositories/goalsRepository';
 import {
@@ -78,9 +78,21 @@ export function useWeekSummary(monday: string): State {
 
   useFocusEffect(load);
 
+  // A retry that is still loading when the week changes (or the screen closes) must not
+  // write its late result over the new week.
+  const retryCancel = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      retryCancel.current?.();
+      retryCancel.current = null;
+    },
+    [load],
+  );
+
   const reload = useCallback(() => {
+    retryCancel.current?.();
     setLoaded(null);
-    load();
+    retryCancel.current = load();
   }, [load]);
 
   // Numbers of another week are never shown under this week's dates.

@@ -32,15 +32,37 @@ function quoteSqlString(value: string): string {
  * person's own foods and the 338 built-in ones, as before the big catalog existed.
  */
 export async function attachCatalog(database: SQLiteDatabase): Promise<boolean> {
+  let installed: string | null = null;
+  try {
+    installed = await getSetting(database, CATALOG_INSTALLED_KEY);
+  } catch {
+    // Treated as "not installed yet": the file is copied again, which is only slower.
+  }
+
+  // First as the version says; if that copy turns out unreadable (corrupt, cut short), once more overwriting it.
+  const firstForce = installed !== String(CATALOG_VERSION);
+  const attempts = firstForce ? [true] : [false, true];
+  for (const force of attempts) {
+    if (await tryAttach(database, force)) {
+      if (installed !== String(CATALOG_VERSION)) {
+        try {
+          await setSetting(database, CATALOG_INSTALLED_KEY, String(CATALOG_VERSION));
+        } catch {
+          // The catalog works; the file is just copied again next launch.
+        }
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+async function tryAttach(database: SQLiteDatabase, forceOverwrite: boolean): Promise<boolean> {
   try {
     // `require` of a binary asset: Metro bundles it because Expo treats .db as an asset.
     const assetId = require('../../../assets/catalog/catalog.db') as number;
 
-    const installed = await getSetting(database, CATALOG_INSTALLED_KEY);
-    await importDatabaseFromAssetAsync(CATALOG_FILE, {
-      assetId,
-      forceOverwrite: installed !== String(CATALOG_VERSION),
-    });
+    await importDatabaseFromAssetAsync(CATALOG_FILE, { assetId, forceOverwrite });
 
     if (defaultDatabaseDirectory == null) {
       throw new Error('No database directory.');
@@ -53,23 +75,25 @@ export async function attachCatalog(database: SQLiteDatabase): Promise<boolean> 
       await database.execAsync(`ATTACH DATABASE ${quoteSqlString(path)} AS ${CATALOG_SCHEMA}`);
     }
 
-    const check = await database.getFirstAsync<{ count: number }>(
-      `SELECT COUNT(*) AS count FROM ${CATALOG_SCHEMA}.foods`,
+    const check = await database.getFirstAsync<{ found: number }>(
+      `SELECT 1 AS found FROM ${CATALOG_SCHEMA}.foods LIMIT 1`,
     );
-    if (!check || check.count === 0) {
+    if (!check) {
       throw new Error('The catalog is empty.');
     }
 
     markCatalogAttached(database);
     unavailableReason = null;
-    // Only now, with the catalog proven readable, is this version recorded as installed.
-    if (installed !== String(CATALOG_VERSION)) {
-      await setSetting(database, CATALOG_INSTALLED_KEY, String(CATALOG_VERSION));
-    }
     return true;
   } catch (error) {
     markCatalogDetached(database);
     unavailableReason = error instanceof Error ? error.message : 'unknown';
+    try {
+      // Let go of the file before a retry overwrites it.
+      await database.execAsync(`DETACH DATABASE ${CATALOG_SCHEMA}`);
+    } catch {
+      // It was not attached.
+    }
     return false;
   }
 }

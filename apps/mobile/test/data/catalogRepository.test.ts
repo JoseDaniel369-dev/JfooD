@@ -13,6 +13,7 @@ import {
   createFood,
   ensureFoodInLibrary,
   findFoodByBarcode,
+  findFoodByExactName,
   getFavoriteFoods,
   getFoodById,
   getRecentFoods,
@@ -114,6 +115,93 @@ test('a catalog food already in the library is listed once, not twice', async ()
   const ids = (await searchFoods(sqlite, 'yogur')).map((f) => f.id);
   assert.equal(ids.filter((id) => id === YOGURT_HACENDADO).length, 1);
   assert.equal(ids.length, 2);
+});
+
+test('a copied catalog food is still found by its brand, once, with the persons own favourite mark', async () => {
+  const sqlite = (await databaseWithCatalog()).asSqlite();
+  const fromCatalog = await getFoodById(sqlite, YOGURT_HACENDADO);
+  assert.ok(fromCatalog);
+  const inLibrary = await ensureFoodInLibrary(sqlite, fromCatalog);
+  await toggleFavorite(sqlite, inLibrary.id);
+
+  // The library row has no brand in its searchable name: the catalog text is what finds it.
+  const byBrand = await searchFoods(sqlite, 'hacendado');
+  assert.deepEqual(byBrand.map((f) => f.id), [YOGURT_HACENDADO]);
+  assert.equal(byBrand[0]?.isFavorite, true);
+
+  const byName = await searchFoods(sqlite, 'yogur');
+  assert.equal(byName.filter((f) => f.id === YOGURT_HACENDADO).length, 1);
+  assert.equal(byName[0]?.id, YOGURT_HACENDADO, 'a favourite is first');
+});
+
+test('an edit the person made to a copied catalog food shows in the search, not the catalog original', async () => {
+  const sqlite = (await databaseWithCatalog()).asSqlite();
+  const fromCatalog = await getFoodById(sqlite, YOGURT_HACENDADO);
+  assert.ok(fromCatalog);
+  await ensureFoodInLibrary(sqlite, fromCatalog);
+  await sqlite.runAsync("UPDATE foods SET calories_kcal = 99 WHERE id = ?", [YOGURT_HACENDADO]);
+
+  const found = (await searchFoods(sqlite, 'hacendado'))[0];
+  assert.equal(found?.caloriesKcal, 99);
+});
+
+test('a copied catalog food the person renamed is found by the new name and by the brand', async () => {
+  const sqlite = (await databaseWithCatalog()).asSqlite();
+  const fromCatalog = await getFoodById(sqlite, YOGURT_HACENDADO);
+  assert.ok(fromCatalog);
+  await ensureFoodInLibrary(sqlite, fromCatalog);
+  await sqlite.runAsync("UPDATE foods SET name = 'Mi postre', normalized_name = 'mi postre' WHERE id = ?", [YOGURT_HACENDADO]);
+
+  assert.deepEqual((await searchFoods(sqlite, 'postre')).map((f) => f.id), [YOGURT_HACENDADO]);
+  assert.deepEqual((await searchFoods(sqlite, 'hacendado')).map((f) => f.id), [YOGURT_HACENDADO]);
+});
+
+test('two overlapping copies of the same or of different foods both succeed', async () => {
+  const sqlite = (await databaseWithCatalog()).asSqlite();
+  const a = await getFoodById(sqlite, YOGURT_HACENDADO);
+  const b = await getFoodById(sqlite, YOGURT_DANONE);
+  assert.ok(a && b);
+
+  const results = await Promise.all([
+    ensureFoodInLibrary(sqlite, a),
+    ensureFoodInLibrary(sqlite, a),
+    ensureFoodInLibrary(sqlite, b),
+  ]);
+
+  assert.deepEqual(results.map((f) => f.id), [YOGURT_HACENDADO, YOGURT_HACENDADO, YOGURT_DANONE]);
+  assert.equal((await getServings(sqlite, YOGURT_HACENDADO)).length, 1);
+});
+
+test('an exact name finds the plain food even when branded products rank higher in a search', async () => {
+  const sqlite = (await databaseWithCatalog([
+    {
+      id: 'usda-1',
+      name: 'Arroz',
+      category: 'Cereales, pan y pasta',
+      source: 'seed',
+      popularity: 50,
+      caloriesKcal: 360, proteinGrams: 7, carbohydrateGrams: 79, fatGrams: 0.6,
+      fiberGrams: null, sugarsGrams: null, saltGrams: null,
+    },
+    {
+      id: 'off-9999999999999',
+      name: 'Arroz largo',
+      brand: 'Marca',
+      barcode: '9999999999999',
+      category: 'Cereales, pan y pasta',
+      source: 'open_food_facts',
+      popularity: 5000,
+      caloriesKcal: 350, proteinGrams: 7, carbohydrateGrams: 77, fatGrams: 1,
+      fiberGrams: null, sugarsGrams: null, saltGrams: null,
+    },
+  ])).asSqlite();
+
+  assert.equal((await findFoodByExactName(sqlite, 'arroz'))?.id, 'usda-1');
+  assert.equal(await findFoodByExactName(sqlite, 'arroz inexistente'), null);
+
+  // A food the person has with that exact name wins over the catalog.
+  const mine = await createFood(sqlite, { name: 'Arroz', caloriesKcal: 100 });
+  assert.equal((await findFoodByExactName(sqlite, 'arroz'))?.id, mine.id);
 });
 
 test('the result limit applies to the combined list', async () => {

@@ -96,9 +96,15 @@ export default function AddFoodScreen() {
   const [tab, setTab] = useState<Tab | null>(null);
   const [category, setCategory] = useState(FOOD_CATEGORIES[0]?.name ?? '');
   const [categoryFoods, setCategoryFoods] = useState<Food[]>([]);
-  /** Foods of the big catalog for the chosen category, loaded a page at a time. */
-  const [catalogFoods, setCatalogFoods] = useState<Food[]>([]);
-  const [catalogHasMore, setCatalogHasMore] = useState(false);
+  /** Foods of the big catalog for ONE category, loaded a page at a time. */
+  const [catalogState, setCatalogState] = useState<{ category: string; foods: Food[]; hasMore: boolean }>({
+    category: '',
+    foods: [],
+    hasMore: false,
+  });
+  // Pages of another category (a slow load that finished late) are never shown under this one.
+  const catalogFoods = catalogState.category === category ? catalogState.foods : [];
+  const catalogHasMore = catalogState.category === category && catalogState.hasMore;
   const [loadingMore, setLoadingMore] = useState(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [addedCount, setAddedCount] = useState(0);
@@ -153,38 +159,50 @@ export default function AddFoodScreen() {
       .catch(() => undefined);
   }, [database, focusTick]);
 
-  // Foods of the chosen category: the built-in ones first, then the big catalog by popularity.
+  // The built-in foods of the chosen category (they can change when a food is edited elsewhere).
   useEffect(() => {
     const ids = FOOD_CATEGORIES.find((c) => c.name === category)?.ids ?? [];
     let cancelled = false;
-    Promise.all([
-      getFoodsByIds(database, ids),
-      getCatalogByCategory(database, category, CATALOG_PAGE, 0),
-    ])
-      .then(([foods, page]) => {
-        if (cancelled) return;
-        setCategoryFoods(foods);
-        setCatalogFoods(page);
-        setCatalogHasMore(page.length === CATALOG_PAGE);
+    getFoodsByIds(database, ids)
+      .then((foods) => {
+        if (!cancelled) setCategoryFoods(foods);
       })
       .catch(() => {
-        if (cancelled) return;
-        setCategoryFoods([]);
-        setCatalogFoods([]);
-        setCatalogHasMore(false);
+        if (!cancelled) setCategoryFoods([]);
       });
     return () => {
       cancelled = true;
     };
   }, [database, category, focusTick]);
 
+  // The big catalog, by popularity. Not tied to focusTick: coming back from a food's page
+  // must not throw away the pages the person already loaded with "Ver más".
+  useEffect(() => {
+    let cancelled = false;
+    getCatalogByCategory(database, category, CATALOG_PAGE, 0)
+      .then((page) => {
+        if (!cancelled) setCatalogState({ category, foods: page, hasMore: page.length === CATALOG_PAGE });
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogState({ category, foods: [], hasMore: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [database, category]);
+
   const loadMoreCatalog = async () => {
     if (loadingMore) return;
+    const requested = category;
     setLoadingMore(true);
     try {
-      const page = await getCatalogByCategory(database, category, CATALOG_PAGE, catalogFoods.length);
-      setCatalogFoods((current) => [...current, ...page]);
-      setCatalogHasMore(page.length === CATALOG_PAGE);
+      const page = await getCatalogByCategory(database, requested, CATALOG_PAGE, catalogFoods.length);
+      // Only if the person is still on the category this page belongs to.
+      setCatalogState((current) =>
+        current.category === requested
+          ? { category: requested, foods: [...current.foods, ...page], hasMore: page.length === CATALOG_PAGE }
+          : current,
+      );
     } catch {
       showToast('No se han podido cargar más alimentos.', 'error');
     } finally {
@@ -231,13 +249,16 @@ export default function AddFoodScreen() {
     try {
       // A catalog food enters the library the first time it is starred.
       const inLibrary = await ensureFoodInLibrary(database, food);
-      await toggleFavorite(database, inLibrary.id);
+      // The value the database ended up with, not the opposite of what the screen showed.
+      const isFavorite = await toggleFavorite(database, inLibrary.id);
       await loadLists();
       const flip = (list: Food[]) =>
-        list.map((item) => (item.id === food.id ? { ...item, isFavorite: !item.isFavorite } : item));
+        list.map((item) =>
+          item.id === food.id || item.id === inLibrary.id ? { ...item, isFavorite } : item,
+        );
       setResults(flip);
       setCategoryFoods(flip);
-      setCatalogFoods(flip);
+      setCatalogState((current) => ({ ...current, foods: flip(current.foods) }));
     } catch {
       // The star simply does not change; the person can try again.
     }
