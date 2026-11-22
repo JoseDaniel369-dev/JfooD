@@ -10,10 +10,18 @@ import {
   type NutrientRow,
 } from '@/data/sqlite/nutrientColumns';
 import { describeNutrientsError } from '@/data/sqlite/repositories/entryNutrientsRepository';
+import { CATALOG_SCHEMA } from '@/data/catalog/catalogSchema';
+import { isCatalogAttached } from '@/data/catalog/catalogState';
+import {
+  findCatalogByBarcode,
+  getCatalogFoodById,
+  getCatalogServings,
+} from '@/data/sqlite/repositories/catalogRepository';
 import { getServings, saveServing } from '@/data/sqlite/repositories/servingRepository';
+import { containsPattern, escapeLike } from '@/data/sqlite/utils/like';
 import { generateId } from '@/data/sqlite/utils/id';
 import { normalizeName } from '@/features/foods/utils/normalize';
-import type { CreateFoodInput, Food, FoodSource } from '@/features/foods/types';
+import { foodNutrients, type CreateFoodInput, type Food, type FoodSource } from '@/features/foods/types';
 
 interface FoodRow extends NutrientRow {
   id: string;
@@ -123,6 +131,10 @@ export async function searchFoods(
     .map(() => `normalized_name LIKE ? ESCAPE '\\'`)
     .join(' AND ');
 
+  if (isCatalogAttached(database)) {
+    return searchLibraryAndCatalog(database, tokens, limit);
+  }
+
   const rows = await database.getAllAsync<FoodRow>(
     `SELECT ${SELECT_FOOD_COLUMNS}
      FROM foods
@@ -137,12 +149,52 @@ export async function searchFoods(
   return rows.map(mapFood);
 }
 
-function containsPattern(token: string): string {
-  return `%${escapeLike(token)}%`;
-}
+/**
+ * The person's foods and the bundled catalog in ONE ranked list. A food of the
+ * library wins a tie with a catalog food; among catalog foods the most popular
+ * (most scanned) and shortest name come first, so "yogur" shows plain yoghurts
+ * from the common brands before a long-named variant.
+ *
+ * Ranking: favourites, then names that start with the first word, then names
+ * with a word that starts with it, then the rest.
+ */
+async function searchLibraryAndCatalog(
+  database: SQLiteDatabase,
+  tokens: string[],
+  limit: number,
+): Promise<Food[]> {
+  const first = escapeLike(tokens[0] ?? '');
+  const patterns = tokens.length > 0 ? tokens.map(containsPattern) : ['%%'];
+  const rank = (column: string) =>
+    `CASE WHEN ${column} LIKE ? ESCAPE '\\' THEN 0
+          WHEN (' ' || ${column}) LIKE ? ESCAPE '\\' THEN 1
+          ELSE 2 END`;
+  const rankParams = [`${first}%`, `% ${first}%`];
 
-function escapeLike(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+  const libraryWhere = patterns.map(() => `normalized_name LIKE ? ESCAPE '\\'`).join(' AND ');
+  const catalogWhere = patterns.map(() => `c.search_text LIKE ? ESCAPE '\\'`).join(' AND ');
+
+  const rows = await database.getAllAsync<FoodRow>(
+    `SELECT * FROM (
+       SELECT ${SELECT_FOOD_COLUMNS},
+              is_favorite AS fav, 0 AS tier, 0 AS pop, ${rank('normalized_name')} AS rank
+       FROM main.foods
+       WHERE ${libraryWhere}
+       UNION ALL
+       SELECT c.id, c.name, c.normalized_name, c.brand, c.barcode, c.source, NULL AS external_id,
+              ${nutrientColumnsSql('c')},
+              0 AS is_favorite, NULL AS cached_at, '' AS created_at, '' AS updated_at,
+              0 AS fav, 1 AS tier, c.popularity AS pop, ${rank('c.normalized_name')} AS rank
+       FROM ${CATALOG_SCHEMA}.foods c
+       WHERE ${catalogWhere}
+         AND NOT EXISTS (SELECT 1 FROM main.foods m WHERE m.id = c.id)
+     )
+     ORDER BY fav DESC, rank ASC, tier ASC, pop DESC, LENGTH(name) ASC, name ASC
+     LIMIT ?`,
+    [...rankParams, ...patterns, ...rankParams, ...patterns, limit],
+  );
+
+  return rows.map(mapFood);
 }
 
 export async function getRecentFoods(
@@ -229,8 +281,8 @@ export async function toggleFavorite(
   return row?.is_favorite === 1;
 }
 
-/** Local food with this barcode (the barcode column is unique), or null. */
-export async function findFoodByBarcode(
+/** The person's own food with this barcode (the barcode column is unique), or null. */
+async function findLibraryFoodByBarcode(
   database: SQLiteDatabase,
   barcode: string,
 ): Promise<Food | null> {
@@ -244,10 +296,16 @@ export async function findFoodByBarcode(
   return row ? mapFood(row) : null;
 }
 
-export async function getFoodById(
+/** Food with this barcode: the person's own first, then the bundled catalog (works offline). */
+export async function findFoodByBarcode(
   database: SQLiteDatabase,
-  foodId: string,
+  barcode: string,
 ): Promise<Food | null> {
+  return (await findLibraryFoodByBarcode(database, barcode)) ?? (await findCatalogByBarcode(database, barcode));
+}
+
+/** Only the person's own library, never the catalog. */
+async function getLibraryFoodById(database: SQLiteDatabase, foodId: string): Promise<Food | null> {
   const row = await database.getFirstAsync<FoodRow>(
     `SELECT ${SELECT_FOOD_COLUMNS}
      FROM foods
@@ -256,6 +314,73 @@ export async function getFoodById(
   );
 
   return row ? mapFood(row) : null;
+}
+
+/** A food by id: from the person's library, or else from the bundled catalog. */
+export async function getFoodById(
+  database: SQLiteDatabase,
+  foodId: string,
+): Promise<Food | null> {
+  return (await getLibraryFoodById(database, foodId)) ?? (await getCatalogFoodById(database, foodId));
+}
+
+/**
+ * Makes sure a food is in the person's library (`foods`), copying it, and its
+ * portions, from the catalog the first time. Diary and plan entries, favourites
+ * and recents all point at `foods`, so anything the person chooses goes through
+ * here first. Idempotent: a food already in the library is returned as it is.
+ */
+export async function ensureFoodInLibrary(database: SQLiteDatabase, food: Food): Promise<Food> {
+  const existing = await getLibraryFoodById(database, food.id);
+  if (existing) {
+    return existing;
+  }
+
+  const portions = await getCatalogServings(database, food.id);
+  const now = new Date().toISOString();
+
+  await database.withTransactionAsync(async () => {
+    // INSERT OR IGNORE: if the person already has another food with this barcode the
+    // unique index refuses the row, and that existing food is used below.
+    await database.runAsync(
+      `INSERT OR IGNORE INTO foods (
+         id, name, normalized_name, brand, barcode, source, external_id,
+         ${nutrientColumnsSql()},
+         is_favorite, cached_at, created_at, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, NULL, ${NUTRIENT_PLACEHOLDERS}, 0, NULL, ?, ?)`,
+      [
+        food.id,
+        food.name,
+        food.normalizedName,
+        food.brand,
+        food.barcode,
+        food.source,
+        ...nutrientParams(foodNutrients(food)),
+        now,
+        now,
+      ],
+    );
+
+    const inserted = await database.getFirstAsync<{ found: number }>(
+      'SELECT 1 AS found FROM foods WHERE id = ?',
+      [food.id],
+    );
+    if (inserted) {
+      for (const [index, portion] of portions.entries()) {
+        await database.runAsync(
+          `INSERT OR IGNORE INTO food_servings (id, food_id, label, grams, created_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [`${food.id}-${index + 1}`, food.id, portion.label, portion.grams, now],
+        );
+      }
+    }
+  });
+
+  return (
+    (await getLibraryFoodById(database, food.id)) ??
+    (food.barcode ? await findLibraryFoodByBarcode(database, food.barcode) : null) ??
+    food
+  );
 }
 
 export interface UpdateFoodInput extends NutrientInput {

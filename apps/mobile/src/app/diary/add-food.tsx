@@ -18,9 +18,11 @@ import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
 import { isScannerEnabled } from '@/config/api';
+import { getCatalogByCategory } from '@/data/sqlite/repositories/catalogRepository';
 import { addEntry } from '@/data/sqlite/repositories/diaryRepository';
 import {
   getFavoriteFoods,
+  ensureFoodInLibrary,
   getFoodById,
   getFoodsByIds,
   getFrequentFoods,
@@ -49,6 +51,11 @@ const TAB_OPTIONS = [
   { value: 'frequent', label: 'Habituales' },
   { value: 'catalog', label: 'Catálogo' },
 ] as const;
+
+/** Foods per page of a catalog category ("Ver más" loads the next page). */
+const CATALOG_PAGE = 40;
+/** Results of a search. Ranking puts the most useful first, so this is plenty. */
+const SEARCH_LIMIT = 40;
 
 export default function AddFoodScreen() {
   const { colors } = useTheme();
@@ -89,6 +96,10 @@ export default function AddFoodScreen() {
   const [tab, setTab] = useState<Tab | null>(null);
   const [category, setCategory] = useState(FOOD_CATEGORIES[0]?.name ?? '');
   const [categoryFoods, setCategoryFoods] = useState<Food[]>([]);
+  /** Foods of the big catalog for the chosen category, loaded a page at a time. */
+  const [catalogFoods, setCatalogFoods] = useState<Food[]>([]);
+  const [catalogHasMore, setCatalogHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [addedCount, setAddedCount] = useState(0);
 
@@ -99,7 +110,9 @@ export default function AddFoodScreen() {
   useEffect(() => {
     if (!foodId) return;
     let cancelled = false;
+    // A food from the barcode scanner or a suggestion may come from the big catalog.
     getFoodById(database, foodId)
+      .then((food) => (food ? ensureFoodInLibrary(database, food) : null))
       .then((food) => {
         if (!cancelled && food) setSelected(food);
       })
@@ -133,28 +146,51 @@ export default function AddFoodScreen() {
   useEffect(() => {
     const current = latestQuery.current;
     if (!current) return;
-    searchFoods(database, current, 30)
+    searchFoods(database, current, SEARCH_LIMIT)
       .then((found) => {
         if (latestQuery.current === current) setResults(found);
       })
       .catch(() => undefined);
   }, [database, focusTick]);
 
-  // Foods of the chosen catalog category.
+  // Foods of the chosen category: the built-in ones first, then the big catalog by popularity.
   useEffect(() => {
     const ids = FOOD_CATEGORIES.find((c) => c.name === category)?.ids ?? [];
     let cancelled = false;
-    getFoodsByIds(database, ids)
-      .then((foods) => {
-        if (!cancelled) setCategoryFoods(foods);
+    Promise.all([
+      getFoodsByIds(database, ids),
+      getCatalogByCategory(database, category, CATALOG_PAGE, 0),
+    ])
+      .then(([foods, page]) => {
+        if (cancelled) return;
+        setCategoryFoods(foods);
+        setCatalogFoods(page);
+        setCatalogHasMore(page.length === CATALOG_PAGE);
       })
       .catch(() => {
-        if (!cancelled) setCategoryFoods([]);
+        if (cancelled) return;
+        setCategoryFoods([]);
+        setCatalogFoods([]);
+        setCatalogHasMore(false);
       });
     return () => {
       cancelled = true;
     };
   }, [database, category, focusTick]);
+
+  const loadMoreCatalog = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await getCatalogByCategory(database, category, CATALOG_PAGE, catalogFoods.length);
+      setCatalogFoods((current) => [...current, ...page]);
+      setCatalogHasMore(page.length === CATALOG_PAGE);
+    } catch {
+      showToast('No se han podido cargar más alimentos.', 'error');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(
     () => () => {
@@ -179,7 +215,7 @@ export default function AddFoodScreen() {
       setSearching(true);
       searchTimeout.current = setTimeout(async () => {
         try {
-          const found = await searchFoods(database, trimmed, 30);
+          const found = await searchFoods(database, trimmed, SEARCH_LIMIT);
           if (latestQuery.current === trimmed) setResults(found);
         } catch {
           if (latestQuery.current === trimmed) setResults([]);
@@ -193,12 +229,15 @@ export default function AddFoodScreen() {
 
   const handleToggleFavorite = async (food: Food) => {
     try {
-      await toggleFavorite(database, food.id);
+      // A catalog food enters the library the first time it is starred.
+      const inLibrary = await ensureFoodInLibrary(database, food);
+      await toggleFavorite(database, inLibrary.id);
       await loadLists();
       const flip = (list: Food[]) =>
         list.map((item) => (item.id === food.id ? { ...item, isFavorite: !item.isFavorite } : item));
       setResults(flip);
       setCategoryFoods(flip);
+      setCatalogFoods(flip);
     } catch {
       // The star simply does not change; the person can try again.
     }
@@ -237,7 +276,23 @@ export default function AddFoodScreen() {
     setCreating(true);
   };
 
-  const openInfo = (food: Food) => router.push({ pathname: '/foods/[id]', params: { id: food.id } });
+  /** Choosing a food copies it into the library first when it comes from the big catalog. */
+  const handleSelect = async (food: Food) => {
+    try {
+      setSelected(await ensureFoodInLibrary(database, food));
+    } catch {
+      showToast('No se ha podido abrir el alimento.', 'error');
+    }
+  };
+
+  const openInfo = async (food: Food) => {
+    try {
+      const inLibrary = await ensureFoodInLibrary(database, food);
+      router.push({ pathname: '/foods/[id]', params: { id: inLibrary.id } });
+    } catch {
+      showToast('No se ha podido abrir el alimento.', 'error');
+    }
+  };
   const shortcutParams = { date: localDate, meal: initialMeal, target };
 
   if (creating) {
@@ -268,7 +323,7 @@ export default function AddFoodScreen() {
     recents,
     favorites,
     frequent: frequents,
-    catalog: categoryFoods,
+    catalog: [...categoryFoods, ...catalogFoods],
   };
   const emptyText: Record<Tab, string> = {
     recents: 'Aún no has añadido alimentos.',
@@ -378,11 +433,20 @@ export default function AddFoodScreen() {
             <FoodRow
               key={food.id}
               food={food}
-              onInfo={openInfo}
-              onPress={setSelected}
+              onInfo={(item) => void openInfo(item)}
+              onPress={(item) => void handleSelect(item)}
               onToggleFavorite={(item) => void handleToggleFavorite(item)}
             />
           ))}
+          {!searchActive && activeTab === 'catalog' && catalogHasMore ? (
+            <Button
+              icon="chevron-down-outline"
+              loading={loadingMore}
+              title="Ver más alimentos"
+              variant="secondary"
+              onPress={() => void loadMoreCatalog()}
+            />
+          ) : null}
         </View>
       )}
 

@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { attachCatalog } from '@/data/catalog/catalogDatabase';
 import { seedCatalog } from '@/data/seed/seedCatalog';
 import { migrateDatabase } from '@/data/sqlite/migrate';
 
@@ -17,4 +18,9 @@ export async function initializeDatabase(database: SQLiteDatabase): Promise<void
     // foods), so a failed seed must never stop it from opening. Nothing was
     // committed, and the next launch tries again.
   }
+
+  // The big read-only catalog (tens of thousands of foods with calories). If it
+  // cannot be loaded the app works as before, with the person's foods and the
+  // built-in ones; attachCatalog never throws.
+  await attachCatalog(database);
 }

@@ -1,4 +1,4 @@
-import { searchFoods } from '@/data/sqlite/repositories/foodRepository';
+import { ensureFoodInLibrary, searchFoods } from '@/data/sqlite/repositories/foodRepository';
 import { normalizeName } from '@/features/foods/utils/normalize';
 import type { Food } from '@/features/foods/types';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -35,5 +35,8 @@ export async function findLocalFoodMatch(
   }
 
   const results = await searchFoods(database, normalized, 50);
-  return selectFoodMatch(results, recognized.name);
+  const match = selectFoodMatch(results, recognized.name);
+  // A match from the big catalog is copied into the library now: the entry that
+  // is saved later points at a food of the library.
+  return match ? ensureFoodInLibrary(database, match) : null;
 }
