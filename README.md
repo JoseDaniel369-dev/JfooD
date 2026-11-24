@@ -2,7 +2,17 @@
 
 Personal, **offline-first nutrition app** for Android, built with React Native, Expo and TypeScript. Track your meals, plan your week, follow your weight and log food from a photo, a text description or a barcode. Everything works without an account or a cloud service; a small Node.js backend is used only for AI food recognition with Gemini.
 
+> **Completely free.** No subscription, no ads, no account and no paywalled features.
+
 > The app interface is in Spanish (it targets Spanish-speaking users and a Spanish food catalog). Code, tests and documentation are in English.
+
+## Why JfooD?
+
+Most nutrition apps lock their core features (barcode scanning, meal planning, AI food recognition) behind a subscription. JfooD includes all of them for free:
+
+- Works fully **offline**: your data stays on your phone.
+- **No account** and no tracking: the app has no ads, analytics or payment code.
+- The only online feature (AI food recognition) runs on a free-tier stack (Render Free + Gemini free tier), so it costs nothing to use. Because of that tier it has daily limits per user.
 
 ## Highlights
 
