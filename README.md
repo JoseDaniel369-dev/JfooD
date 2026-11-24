@@ -1,202 +1,178 @@
 # JfooD
 
-Aplicación móvil personal de nutrición, offline-first, desarrollada con React Native, Expo y TypeScript. El backend de Node.js se reserva para el reconocimiento de alimentos con Gemini; las funciones básicas no requieren cuenta ni servicio cloud.
+Personal, **offline-first nutrition app** for Android, built with React Native, Expo and TypeScript. Track your meals, plan your week, follow your weight and log food from a photo, a text description or a barcode. Everything works without an account or a cloud service; a small Node.js backend is used only for AI food recognition with Gemini.
 
-## Estructura
+> The app interface is in Spanish (it targets Spanish-speaking users and a Spanish food catalog). Code, tests and documentation are in English.
 
-- `apps/mobile`: aplicación Expo SDK 58, Expo Router y Expo SQLite. Las rutas están en `src/app/`.
-- `apps/api`: API Fastify con configuración validada y errores centralizados.
-- `packages/core`: motor nutricional y contratos Zod compartidos.
+## Highlights
 
-## Estado actual
+- **Offline-first:** all data lives in a local SQLite database (`jfood.db`). No sign-up, no server needed for the core features.
+- **Food diary and planner:** meals, quantities in grams or servings, favorites, recents, recipes stored as foods, copy a day to another day, weekly view.
+- **Large food catalog:** ~340 basic foods plus tens of thousands of items (USDA FoodData Central and Open Food Facts) shipped as a read-only SQLite file and attached to the user database.
+- **AI food recognition:** photo or text → Gemini → a strict, validated contract (name, estimated grams, confidence). Gemini never produces nutrition values; every result goes through a mandatory review step and the local catalog.
+- **Barcode scanner** backed by the local catalog first and Open Food Facts as a fallback.
+- **Progress:** weight log and chart, 30-day calories vs. goal, BMI, streaks, achievements and a weekly summary.
+- **Local reminders** (meals, water, weigh-in, weekly summary) scheduled on the device, with no server involved.
+- **Backup and restore:** versioned JSON export; restore is atomic, so an invalid file changes nothing.
+- **Quality:** 400+ automated tests (including real SQLite migrations and repositories), strict TypeScript, ESLint and CI on every push.
 
-La base inicial incluye navegación por las cinco secciones, identidad visual, migración SQLite, lectura del resumen diario desde la base local y endpoint de salud del backend. La pantalla de Perfil permite configurar datos personales y calcular objetivos nutricionales reales con la ecuación de Mifflin-St Jeor.
+## Tech stack
 
-La Fase 1 añade el diario completo y el catálogo local offline: se pueden crear alimentos, marcarlos como favoritos, buscar en el catálogo, consultar recientes y añadir entradas al diario con un modal paso a paso. Las entradas se pueden editar en gramos, mover entre comidas y eliminar con confirmación.
+| Area | Technologies |
+|---|---|
+| Mobile | React Native 0.88, Expo SDK 58, Expo Router, Expo SQLite, Reanimated, Gesture Handler |
+| Backend | Node.js 22, Fastify, Zod-validated configuration, centralized error handling, rate limiting |
+| Shared | TypeScript monorepo (npm workspaces), `@jfood/core` with the nutrition engine and Zod contracts |
+| AI | Google Gemini (`gemini-3.5-flash-lite`), called only from the backend |
+| Delivery | EAS Build (two APKs), Render (API), GitHub Actions (CI) |
 
-La Fase 3 convierte la pantalla de Progreso en un registro de peso funcional: permite añadir, editar y eliminar registros por fecha, muestra el cambio respecto al peso anterior y la media de los últimos 7 días, y mantiene todo el historial localmente.
+## Repository structure
 
-La Fase 4 implementa el planificador (navegación día a día, sin vista de semana todavía): permite añadir alimentos del catálogo local a cualquier día, editar gramos, mover entradas entre comidas, eliminarlas y copiar un día planificado completo al diario. Todo se guarda localmente y funciona sin conexión.
+- `apps/mobile`: Expo app (SDK 58, Expo Router, Expo SQLite). Routes live in `src/app/`.
+- `apps/api`: Fastify API with validated configuration and centralized errors.
+- `packages/core`: nutrition engine and Zod contracts shared by the app and the API.
 
-La Fase 4.5 refina la interfaz y la experiencia de interacción: sistema de diseño unificado con `Button`, `ActionSheet`, `ConfirmDialog`, `EmptyState`, `DayNavigator` y `SectionHeader`; navegación de días en el Diario; totales y macros visibles en el Plan; accesos rápidos y comidas pulsables en Inicio; selector de fecha nativo y mini-gráfico de tendencia en Progreso; resumen de objetivos y formulario por secciones en Perfil.
+## Architecture notes
 
-La Fase 5 implementa el escáner con Gemini: endpoint `POST /recognize` en el backend que recibe una imagen base64, llama a la API de Gemini y devuelve solo nombre, gramos estimados y confianza; pantalla de escáner con captura de cámara o selección de galería (`expo-image-picker`), preview, análisis, revisión de resultados, edición de gramos, selección de comida destino y añadido al diario; resolución de alimentos reconocidos contra el catálogo local (solo coincidencia exacta o prefijo), creación automática como alimento de usuario cuando no hay coincidencia, y fallback manual para introducir los datos nutricionales. La clave de Gemini se mantiene únicamente en el backend.
+- **Unknown is not zero.** The engine computes nutrients per gram and keeps unknown values as `null`. `sumNutrientsKnown` returns the known total and how many values are missing, so the UI shows "≥ X kcal · N without data" instead of a wrong number.
+- **Diary and plan entries store a snapshot** of the food and its nutrients per 100 g, so later catalog changes never rewrite history.
+- **The large catalog** is a read-only SQLite file (`apps/mobile/assets/catalog/catalog.db`) copied on first launch and attached (`ATTACH`) to the user database as `catalog`. Search merges user foods and catalog with a single ordering (favorites, prefix matches, popularity, shortest name). A food is copied into `foods` only when the user uses it, so diary, plan, favorites and backups work the same way.
+- **Dates** are stored as `YYYY-MM-DD` text and validated by the repositories. A database whose `user_version` is newer than the app's is not opened, which prevents corrupting data when an older build is installed.
+- **The Gemini key stays on the backend.** Never use `EXPO_PUBLIC_*` variables for secrets.
+- **Migrations:** `001_initial` (foods, meals, diary entries, profile, goals, weight), `002_plan`, `003_settings`, `004_water`, and later ones for the catalog, serving sizes, recipes and micronutrients. All data is stored locally in `jfood.db`.
 
-La Fase 6 prepara la app para producción a coste cero:
+## Features in detail
 
-- La API se despliega en **Render Free**; el modelo por defecto es `gemini-3.5-flash-lite` (2.5-flash está deprecado) y `/recognize` tiene rate limiting (10 req/min por IP).
-- La URL del backend en producción se inyecta en build mediante `EXPO_PUBLIC_API_URL`.
-- Se generan **dos APKs** desde el mismo código con EAS Build:
-  - **estable**: 100 % offline, sin escáner; funciona sin red.
-  - **experimental**: con escáner por Gemini apuntando a la API pública.
-- Ambas APKs pueden convivir en el mismo móvil porque tienen `applicationId` distinto.
+### Diary, search and planner
 
-La Fase 7 ("JfooD Refresh") renueva la interfaz y añade funciones de usuario antes del lanzamiento:
+- Add food with a search box and tabs (Recent, Favorites, Most used, Catalog by category), plus a quantity sheet with servings, preview and "Add and continue".
+- Entries can be edited (grams), moved between meals, deleted with **Undo**, duplicated and copied to another day.
+- **Servings and recipes:** each food can have servings ("1 unit = 60 g"); a recipe combines foods and is saved as one more food.
+- **Planner:** weekly strip with each day's calories, and day-to-day duplication. The central "+" button gives quick access to add food, scan, plan and log weight.
+- **Fiber, sugars and salt** are stored per food and per entry (unknown = `NULL`, never zero). Daily references are derived from the calorie goal.
 
-- **Modo oscuro** automático y persistente con tokens light/dark.
-- **Refresh visual:** paleta verde esmeralda + naranja, tipografía Nunito, gradientes, sombras y componentes unificados.
-- **Racha y estadísticas:** anillo de racha, barras semanales y resumen de adherencia en Inicio.
-- **Registro de agua:** tarjeta rápida en Inicio y objetivo configurable en Perfil.
-- **Gestión del catálogo:** edición y eliminación de alimentos locales con aviso de uso.
-- **Progreso mejorado:** gráfico de línea por periodos (7/14/30/90 días) e IMC.
-- **Onboarding:** flujo de primer arranque de 3 pasos.
-- **Haptics y toasts:** feedback táctil y mensajes contextuales.
+### Goals and progress
 
-Tras la Fase 7 se aplicó un **rediseño animado e intuitivo** con la API `Animated` nativa (sin nuevas dependencias): transiciones suaves entre pantallas, entrada escalonada de tarjetas, barras y anillos animados, botones con escala al pulsar, swipe para cambiar de día en Diario y Planificador, FAB flotante para añadir alimentos, empty states accionables y feedback visual de errores (shake).
+- **Goals:** Mifflin-St Jeor equation; maintain, lose or gain at 0.25–1 kg per week, never below 1200 kcal.
+- **Progress:** weight log with a draggable chart, 30-day calories vs. goal, **achievements** (confetti the first time they unlock) and a **weekly summary** compared with the previous week.
+- **Local reminders** (Profile → Reminders): breakfast, lunch, dinner, water, weigh-in and weekly summary. Everything is off by default and the notification permission is requested when the first one is enabled. The next 3 days are scheduled on the device, rescheduled when the app opens and when food or weight is logged, and **reminders skip what you already did today**.
+- **Profile and onboarding:** avatar with your initial, editable name, appearance (light/dark), backup, and an "About" screen with data sources. First launch is a 4-step flow: name, data, reminders and goals.
 
-Tras el rediseño se hizo una revisión de calidad que corrigió: carrera entre toasts, doble cierre de diálogos/modales, búsqueda con resultados obsoletos, guardado atómico en el escáner, onboarding robusto contra fallo de escritura del flag, rollover de medianoche en agua, errores visibles al eliminar alimentos, rate limit que excluye query strings en `/health`, peticiones cancelables del escáner, periodos completos en el gráfico de peso (7/14/30/90 días) y mejoras de accesibilidad en campos de texto.
+### Interface
 
-Una segunda auditoría post-Fase R corrigió: cierre fantasma de `ActionSheet`/`ConfirmDialog` al reabrir durante la animación de salida, timeout en el cliente de reconocimiento para evitar análisis colgados, gate de carga del tema para eliminar el flash de tema claro al arrancar, feedback de error si falla la persistencia del tema, `accessibilityLabel` en el input de agua, caption de error en la tarjeta de agua y SQL simplificado en `getRecentFoods`.
+- Emerald + orange palette, a single Nunito type scale, shared components (`TextField`, `CalorieHero`, bottom sheets for all panels), dark mode with its own gradient, Ionicons for actions and emoji only for food.
+- Animated rings and bars (Reanimated), gestures (draggable bottom sheets, swipe rows to delete with Undo or duplicate), and a custom tab bar. "Reduce motion" is respected.
+- The tab bar respects the Android system insets (explicit numeric height and a minimum bottom area), and `expo-navigation-bar` keeps the system buttons readable in edge-to-edge mode.
 
-La app deriva automáticamente la URL del backend en desarrollo a partir de la IP que sirve el bundle de Metro (`Constants.expoConfig.hostUri`), por lo que el escáner funciona en dispositivo físico y emulador sin configuración adicional.
+### Text logging
 
-La barra de pestañas respeta el área segura del sistema en Android: usa una altura numérica explícita (`56 + inset inferior`) y un suelo de 64 dp para la zona de navegación, evitando que la barra del sistema se solape con los iconos o etiquetas incluso en dispositivos que infrarreportan el inset inferior. En SDK 58 la navegación Android es siempre edge-to-edge, por lo que también se configura `expo-navigation-bar` para mantener el contraste de los botones del sistema. La fecha del diario se mantiene al día al volver a primer plano y al cambiar el día con la aplicación abierta. Mientras no exista configuración en Perfil, la pantalla de Inicio señala que los objetivos son provisionales.
+Besides photos, the scanner accepts a description ("2 eggs and a coffee with milk"). `POST /parse-meal` returns the same strict contract as `/recognize` (name, estimated grams and confidence, never nutrients), shares the daily Gemini budget and treats the text as data, not as instructions. Every result goes through the mandatory review and the local catalog before it is saved.
 
-**Auditoría integral (noviembre de 2026).** Se corrigieron: sobrescritura del peso de hoy al guardar el Perfil con datos obsoletos, "Recientes" que devolvía una sola fila, rate limit de `/recognize` que nunca se aplicaba (rutas registradas antes del plugin) y que no distinguía clientes tras el proxy de Render, totales del día anulados por un alimento sin calorías (ahora "≥ X kcal · N sin datos" con edición de los valores de la entrada), rangos absurdos de peso/altura/edad, macros físicamente imposibles al crear alimentos, fechas inválidas o futuras, clave de Gemini en la URL, petición/respuesta de `/recognize` sin contrato Zod, permisos de cámara/micrófono innecesarios y falta de aviso de privacidad del escáner. Se añadieron tests de la capa SQLite (`node:sqlite`), de la API y de la configuración de build, y CI.
+### Barcode and product data
 
-El motor ya calcula nutrientes por gramos y conserva los valores desconocidos como `null`; para mostrarlos, `sumNutrientsKnown` devuelve el total conocido y cuántos valores faltan (nunca se cuentan como cero). El contrato de reconocimiento admite únicamente nombre, gramos estimados y confianza, nunca valores nutricionales generados por Gemini.
+The experimental variant can scan barcodes (EAN/UPC). The product is looked up in the local database first and then in [Open Food Facts](https://world.openfoodfacts.org) (public API, no key). Only name, brand and calories/macros per 100 g are stored, and any missing or implausible value stays unknown. Open Food Facts data is under the [ODbL](https://opendatacommons.org/licenses/odbl/) license and the attribution is shown in the scanner screen. The stable variant declares no camera permission.
 
-El plan por fases, el estado detallado y las instrucciones para retomar el desarrollo en una sesión nueva están en [`PLAN.md`](PLAN.md).
+### Food catalog and data sources
 
-## JfooD 2.0: rediseño, logros y recordatorios
+- **Basic catalog:** every install includes ~340 common foods in Spanish with typical servings (1 apple, 1 slice of bread…), marked `source = 'seed'` and not editable. They are loaded when the database opens (`initializeDatabase`) and refreshed only when `SEED_VERSION` increases; user foods are never touched. To regenerate them, edit `apps/mobile/scripts/seed/*.mjs` and run `node apps/mobile/scripts/build-seed-catalog.mjs <USDA-SR-Legacy-CSV-folder>`.
+- **Large catalog (tens of thousands of foods, already with calories and macros):** see the architecture notes above. If it cannot be loaded, the app keeps working with the user's foods and the basic ones.
+- **Where the data comes from:** generic foods from [USDA FoodData Central](https://fdc.nal.usda.gov/) (SR Legacy, public domain CC0), with names translated into Spanish with Gemini once (`scripts/catalog/translations.json`, versioned); and supermarket products from [Open Food Facts](https://world.openfoodfacts.org/) sold in Spain ([ODbL](https://opendatacommons.org/licenses/odbl/1-0/), credited in Profile → About), sorted by popularity and filtered (Spanish name, calories and macros present and consistent with each other).
+- **Rebuild the large catalog:** `npm run catalog:build` downloads USDA (6 MB) and the Open Food Facts dump (~1.5 GB, once, into `.catalog-cache/`, ignored by git), translates what is pending (needs `GEMINI_API_KEY` in `apps/api/.env`; only food names are sent) and rewrites `catalog.db` and `src/data/catalog/catalogVersion.ts`. With the translations already done, `npm run catalog:assemble` is enough. `scripts/catalog/translation-review.md` lists the ~300 most basic foods so their names can be reviewed.
+- **Icons and splash:** `node apps/mobile/scripts/generate-brand-assets.mjs` regenerates every brand image from a single SVG glyph.
 
-- **Interfaz viva:** paleta esmeralda + naranja, emojis de comida, anillos y barras animados con Reanimated, y gestos (`react-native-gesture-handler`): hojas inferiores arrastrables, filas que se deslizan para **borrar con «Deshacer»** o duplicar, tira semanal L-D y barra de pestañas con botón «+» central. Se respeta «reducir animaciones».
-- **Inicio:** saludo con tu nombre, hero con calorías y macros, «siguiente comida» con tus alimentos habituales y «repetir ayer», botella de agua, racha, peso y consejos del día.
-- **Añadir alimento:** buscador, pestañas (Recientes, Favoritos, Más usados, Catálogo por categorías) y hoja de cantidad con raciones, vista previa y «Añadir y seguir».
-- **Progreso:** peso, calorías de 30 días frente al objetivo y **logros** (con confeti la primera vez que se desbloquean). **Resumen semanal** con comparación con la semana anterior.
-- **Recordatorios locales** (Perfil → Recordatorios): desayuno, comida, cena, agua, pesarte y resumen semanal. Todo está apagado por defecto y el permiso de notificaciones se pide al activar el primero. Se programan los próximos 3 días en el móvil (sin servidor, sin conexión), se reprograman al abrir la app y al registrar comidas o peso, y **no avisan de lo que ya has hecho hoy**. Al tocar un aviso se abre la pantalla correspondiente.
-- **Perfil y onboarding:** avatar con tu inicial, nombre editable, apariencia, copia de seguridad y «Acerca de» con las fuentes de datos. El primer arranque son 4 pasos: nombre, datos, recordatorios y objetivos.
+## API protection
 
-## Refresco visual y auditoría (noviembre de 2026)
+Optional backend variables (Render) so that nobody can burn the Gemini quota:
 
-- **Errores corregidos:** diálogos que ejecutaban la acción dos veces, escáner que guardaba en el diario al venir del plan, cantidades en formato español mal leídas («1.500» ml), racha y logros inflados por días futuros, transacciones solapadas, respuestas de Gemini rechazadas por un campo suelto, archivo de copia borrado antes de compartirlo y selector de fecha que guardaba 2000-01-01.
-- **Diseño:** una sola escala tipográfica en Nunito, componentes compartidos (`TextField`, `CalorieHero`, hojas inferiores para todos los paneles), modo oscuro con su propio degradado, iconos Ionicons para acciones y emojis solo para comida.
-- **Pantallas:** Inicio más ligero, gráfica de peso con ejes y arrastre, historial reciente primero, objetivos con los colores de cada macro, escáner con barra de guardado fija y línea de escaneo en el código de barras.
-- **Arranque:** la pantalla de bienvenida se mantiene hasta que la base de datos está lista, y «Reintentar» tras un fallo de arranque vuelve a abrirla de verdad.
+- `APP_TOKEN`: shared secret; when set, `/recognize` and `/parse-meal` require the `x-app-token` header. The app sends it when built with `EXPO_PUBLIC_APP_TOKEN` set to the same value (for example in the `env` block of the `experimental` profile in `eas.json`). It ships inside the APK, so it only stops casual traffic.
+- `RECOGNIZE_DAILY_LIMIT_PER_IP` (default 40): analyses per day per IP, on top of the global cap `RECOGNIZE_DAILY_LIMIT` (300). Calls that fail on Gemini's side do not consume quota.
+- If Gemini answers 429/503, the API replies `503 UPSTREAM_BUSY` and the app shows "service busy".
 
-Detalle completo en [`PLAN.md`](PLAN.md) §3.14.
+## Requirements
 
-## Datos del usuario, objetivos y recetas
+- Node.js 22.13 or newer.
+- An Android device or an emulator configured to run the app.
 
-- **Copia de seguridad:** Perfil → «Tus datos» exporta un JSON versionado y restaura desde un archivo. La restauración es atómica: si algo no es válido, no se cambia nada.
-- **Objetivo de peso:** mantener, perder o ganar con un ritmo de 0,25 a 1 kg por semana; las calorías nunca bajan de 1200 kcal.
-- **Raciones y recetas:** cada alimento puede tener raciones ("1 unidad = 60 g"); una receta combina alimentos y se guarda como un alimento más.
-- **Planificador:** tira semanal con las calorías de cada día y duplicado del día al siguiente. El botón central «+» de la barra da acceso rápido a añadir comida, escanear, planificar y registrar peso.
-
-## Registro por texto
-
-Además de la foto, el escáner admite describir la comida ("2 huevos y un café con leche"). `POST /parse-meal` devuelve el mismo contrato estricto que `/recognize` (nombre, gramos estimados y confianza, nunca nutrientes), comparte el límite diario de Gemini y trata el texto como datos, no como instrucciones. Todo resultado pasa por la revisión obligatoria y por el catálogo local antes de guardarse.
-
-## Código de barras y datos de productos
-
-La variante experimental puede escanear códigos de barras (EAN/UPC). El producto se busca primero en la base local y, si no está, en [Open Food Facts](https://world.openfoodfacts.org) (API pública, sin clave); solo se guardan nombre, marca y calorías/macros por 100 g, y cualquier valor ausente o inverosímil queda como desconocido. Los datos de Open Food Facts están bajo licencia [ODbL](https://opendatacommons.org/licenses/odbl/): se muestra la atribución en la pantalla del escáner. La variante estable no declara permisos de cámara.
-
-## Catálogo base y micronutrientes
-
-- **Catálogo básico:** cada instalación incluye ~340 alimentos comunes en español con sus raciones típicas (1 manzana, 1 rebanada de pan…), marcados `source = 'seed'` y no editables. Se cargan al abrir la base de datos (`initializeDatabase`) y se refrescan solo si sube `SEED_VERSION`; nunca se tocan los alimentos del usuario. Para regenerarlos: edita `apps/mobile/scripts/seed/*.mjs` y ejecuta `node apps/mobile/scripts/build-seed-catalog.mjs <carpeta-CSV-USDA-SR-Legacy>`.
-- **Catálogo grande (decenas de miles de alimentos, ya con calorías y macros):** va en un archivo SQLite de solo lectura, `apps/mobile/assets/catalog/catalog.db`, que se copia al abrir la app y se enlaza (`ATTACH`) a la base del usuario como `catalog`. La búsqueda une tus alimentos y el catálogo con un único orden (tus favoritos, nombres que empiezan por lo escrito, productos más populares, nombre más corto); la pestaña «Catálogo» pagina por categoría; el código de barras se resuelve sin conexión. Un alimento solo se copia a `foods` cuando lo usas (lo eliges, lo marcas favorito o abres su ficha), así el diario, el plan, los favoritos y las copias de seguridad funcionan igual. Si el catálogo no se puede cargar, la app sigue con tus alimentos y los básicos.
-- **De dónde salen los datos:** alimentos genéricos de [USDA FoodData Central](https://fdc.nal.usda.gov/) (SR Legacy, dominio público CC0), con nombres traducidos al español con Gemini una sola vez (`scripts/catalog/translations.json`, versionado); y productos de supermercado de [Open Food Facts](https://world.openfoodfacts.org/) vendidos en España (licencia [ODbL](https://opendatacommons.org/licenses/odbl/1-0/): se cita en Perfil → Acerca de), ordenados por popularidad y filtrados (nombre en español, calorías y macros presentes y coherentes entre sí).
-- **Regenerar el catálogo grande:** `npm run catalog:build` descarga USDA (6 MB) y el volcado de Open Food Facts (~1,5 GB, una vez, en `.catalog-cache/`, ignorada por git), traduce lo pendiente (necesita `GEMINI_API_KEY` en `apps/api/.env`; solo se envían nombres de alimentos) y vuelve a escribir `catalog.db` y `src/data/catalog/catalogVersion.ts`. Con las traducciones ya hechas, `npm run catalog:assemble` basta. `scripts/catalog/translation-review.md` lista los ~300 alimentos más básicos para revisar sus nombres.
-- **Fibra, azúcares y sal:** cada alimento y cada entrada guardan también estos tres valores (desconocidos = `NULL`, nunca cero). Las referencias diarias (fibra mínima, azúcares y sal máximos) se calculan a partir del objetivo de calorías.
-- **Iconos y splash:** `node apps/mobile/scripts/generate-brand-assets.mjs` regenera todas las imágenes de marca a partir de un único glifo SVG.
-
-## Protección de la API
-
-Variables opcionales del backend (Render) para que nadie pueda gastar el cupo de Gemini:
-
-- `APP_TOKEN`: secreto compartido; si se define, `/recognize` y `/parse-meal` exigen la cabecera `x-app-token`. La app la envía si se compila con `EXPO_PUBLIC_APP_TOKEN` con el mismo valor (por ejemplo en el bloque `env` del perfil `experimental` de `eas.json`). Va dentro del APK, así que solo frena el tráfico casual.
-- `RECOGNIZE_DAILY_LIMIT_PER_IP` (por defecto 40): análisis al día por IP, además del tope global `RECOGNIZE_DAILY_LIMIT` (300). Las llamadas que fallan en Gemini no consumen cupo.
-- Si Gemini responde 429/503, la API contesta `503 UPSTREAM_BUSY` y la app muestra «servicio saturado».
-
-## Requisitos
-
-- Node.js 22.13 o superior.
-- Un dispositivo Android o un emulador configurado para ejecutar la app.
-
-## Instalación y desarrollo
+## Getting started
 
 ```sh
 npm install
 npm run start:mobile
 ```
 
-Ejecuta Expo siempre desde `apps/mobile`, o usa `npm run start:mobile` desde la raíz. No ejecutes `npx expo start` en la raíz del monorepo: la raíz no es un proyecto Expo y se usaría la entrada por defecto `expo/AppEntry.js`, que falla con `Unable to resolve "../../App"`.
+Always run Expo from `apps/mobile`, or use `npm run start:mobile` from the root. Do not run `npx expo start` in the monorepo root: the root is not an Expo project and the default entry `expo/AppEntry.js` would be used, which fails with `Unable to resolve "../../App"`.
 
-Para el backend:
+For the backend:
 
 ```sh
 npm run start:api
 ```
 
-El endpoint `GET /health` no necesita clave de Gemini y una `GEMINI_API_KEY` vacía se interpreta como no configurada, de modo que la API arranca sin ella. Crea `apps/api/.env` (ignorado por git) con estas variables y configura `GEMINI_API_KEY` solo en el backend. Nunca uses variables `EXPO_PUBLIC_*` para secretos.
+`GET /health` does not need a Gemini key, and an empty `GEMINI_API_KEY` is treated as not configured, so the API starts without it. Create `apps/api/.env` (ignored by git) with these variables and set `GEMINI_API_KEY` only on the backend. Never use `EXPO_PUBLIC_*` variables for secrets.
 
 ```sh
-GEMINI_API_KEY=            # obligatoria para /recognize
+GEMINI_API_KEY=            # required for /recognize
 GEMINI_MODEL=gemini-3.5-flash-lite
 API_HOST=0.0.0.0
-API_PORT=3000              # PORT tiene prioridad (Render)
-RECOGNIZE_DAILY_LIMIT=300  # llamadas a Gemini por día UTC para todos los usuarios
-TRUST_PROXY_HOPS=          # proxies de confianza; por defecto 1 en Render (variable RENDER) y 0 en local
+API_PORT=3000              # PORT takes priority (Render)
+RECOGNIZE_DAILY_LIMIT=300  # Gemini calls per UTC day for all users
+TRUST_PROXY_HOPS=          # trusted proxies; defaults to 1 on Render (RENDER variable) and 0 locally
 ```
 
-## Despliegue y builds de distribución
+## Deployment and distribution builds
 
-> **Guía completa paso a paso: [`RELEASE.md`](RELEASE.md)** (despliegue, EAS, instalación y lista de comprobación en el móvil).
+> **Full step-by-step guide: [`RELEASE.md`](RELEASE.md)** (deployment, EAS, installation and the on-device checklist).
 
-### API en Render Free
+### API on Render Free
 
-El repositorio incluye un *blueprint* (`render.yaml`): en Render, **New → Blueprint** y elige el repositorio. Crea el servicio con `npm ci && npm run build` y lo arranca en modo producción con `npm run start -w @jfood/api` (`node dist/server.js`). **No uses `npm run start:api`**: es el modo desarrollo (`tsx watch`).
+The repository includes a *blueprint* (`render.yaml`): in Render choose **New → Blueprint** and select the repository. It creates the service with `npm ci && npm run build` and starts it in production mode with `npm run start -w @jfood/api` (`node dist/server.js`). **Do not use `npm run start:api`**: it is the development mode (`tsx watch`).
 
-1. Escribe en el panel de Render `GEMINI_API_KEY` (tu clave de Gemini) y `APP_TOKEN` (secreto compartido con la app). El resto de variables ya vienen en el blueprint.
-2. Render define `RENDER`, por lo que la API confía en 1 proxy para obtener la IP real del cliente (rate limit de 10 req/min por IP); si pones otro proxy delante (p. ej. Cloudflare), ajusta `TRUST_PROXY_HOPS`.
-3. Render inyecta `PORT` automáticamente; el servidor lo usa en lugar de `API_PORT`.
-4. Para evitar el cold start de ~1 min, crea un monitor gratuito en [UptimeRobot](https://uptimerobot.com) que haga ping a `https://TU_API.onrender.com/health` cada 5 min.
+1. In the Render dashboard, set `GEMINI_API_KEY` (your Gemini key) and `APP_TOKEN` (the secret shared with the app). The other variables already come from the blueprint.
+2. Render sets `RENDER`, so the API trusts 1 proxy to get the real client IP (rate limit of 10 req/min per IP). If you put another proxy in front (for example Cloudflare), adjust `TRUST_PROXY_HOPS`.
+3. Render injects `PORT` automatically; the server uses it instead of `API_PORT`.
+4. To avoid the ~1 minute cold start, create a free [UptimeRobot](https://uptimerobot.com) monitor that pings `https://YOUR_API.onrender.com/health` every 5 minutes.
 
-### Builds de la app con EAS
+### App builds with EAS
 
-Escribe la URL real de tu API en `apps/mobile/eas.json` con `npm run release:set-api-url -- https://tu-api.onrender.com` (la build falla si queda el valor de ejemplo `TU_API` o si la URL no es HTTPS). Antes de compilar, `npm run release:check` lanza todas las comprobaciones.
+Write the real URL of your API into `apps/mobile/eas.json` with `npm run release:set-api-url -- https://your-api.onrender.com` (the build fails if the placeholder `TU_API` is left or if the URL is not HTTPS). Before building, `npm run release:check` runs every check.
 
-Genera las APKs:
+Build the APKs:
 
 ```sh
 cd apps/mobile
-npx eas-cli@latest build --profile estable        # APK 100 % offline
-npx eas-cli@latest build --profile experimental   # APK con escáner Gemini
+npx eas-cli@latest build --profile estable        # 100 % offline APK
+npx eas-cli@latest build --profile experimental   # APK with the Gemini scanner
 ```
 
-Versión de la app `0.2.0`; el `versionCode` lo gestiona EAS (`appVersionSource: remote` + `autoIncrement`), así que cada build suma uno. Antes de compilar hay que iniciar sesión una vez con `npx eas-cli@latest login`. Si usas `APP_TOKEN` en la API, define el mismo valor como variable de EAS en el entorno `preview` (`npx eas-cli@latest env:set --name EXPO_PUBLIC_APP_TOKEN --value … --environment preview --visibility plaintext`) en vez de escribirlo en `eas.json`, que se sube al repositorio. Cada perfil usa su propio entorno (`estable` → `production`, `experimental` → `preview`), así que el token solo llega a la experimental. Con `app.config.js` como script, pega el `projectId` que muestra `eas init` en `EAS_PROJECT_ID`.
+The app version is `0.2.0`; EAS manages `versionCode` (`appVersionSource: remote` + `autoIncrement`), so each build adds one. You must sign in once with `npx eas-cli@latest login` before building. If you use `APP_TOKEN` on the API, set the same value as an EAS variable in the `preview` environment (`npx eas-cli@latest env:set --name EXPO_PUBLIC_APP_TOKEN --value … --environment preview --visibility plaintext`) instead of writing it in `eas.json`, which is committed. Each profile uses its own environment (`estable` → `production`, `experimental` → `preview`), so the token only reaches the experimental build. Because `app.config.js` is a script, paste the `projectId` shown by `eas init` into `EAS_PROJECT_ID`.
 
-La variante estable no declara permisos de cámara ni fotos (se bloquean también en el manifiesto de Android); ninguna variante pide micrófono. La primera vez que se usa el escáner se muestra un aviso explicando que la foto se envía a Google (Gemini).
+The stable variant declares no camera or photo permissions (they are also blocked in the Android manifest); neither variant asks for the microphone. The first time the scanner is used, a notice explains that the photo is sent to Google (Gemini).
 
-Ambos perfiles usan `distribution: internal` y generan un APK que puedes compartir directamente por sideload. La versión experimental se instala como `JfooD Experimental` (`com.jfood.app.experimental`) para que no sobrescriba la estable.
+Both profiles use `distribution: internal` and produce an APK that can be shared directly by sideloading. The experimental version installs as `JfooD Experimental` (`com.jfood.app.experimental`) so it does not overwrite the stable one.
 
-### Variables de entorno del móvil
+### Mobile environment variables
 
-- `EXPO_PUBLIC_API_URL`: URL pública y HTTPS de la API. Si no está definida, la app funciona en modo offline (versión estable).
-- En desarrollo, sin esta variable, la app usa `Constants.expoConfig.hostUri` para conectar con tu máquina.
+- `EXPO_PUBLIC_API_URL`: public HTTPS URL of the API. If it is not defined, the app works in offline mode (stable version).
+- In development, without this variable, the app uses `Constants.expoConfig.hostUri` to reach your machine.
 
-## Comprobaciones
+## Checks
 
 ```sh
 npm test
-npm run typecheck   # fuentes y tests de los tres paquetes
+npm run typecheck   # sources and tests of the three packages
 npm run lint
 npm run build
 npx expo export --platform android
 ```
 
-`npm test` ejecuta las migraciones reales sobre SQLite en memoria (`apps/mobile/test/helpers/sqliteAdapter.ts`, basado en `node:sqlite`) para probar los repositorios. Si cambias dependencias o `packages/core`, ejecuta `npm ci`: `@jfood/core` se consume desde `dist` y un `dist` antiguo rompe la app. El workflow `.github/workflows/ci.yml` repite todas estas comprobaciones.
+`npm test` runs the real migrations on in-memory SQLite (`apps/mobile/test/helpers/sqliteAdapter.ts`, based on `node:sqlite`) to test the repositories. If you change dependencies or `packages/core`, run `npm ci`: `@jfood/core` is consumed from `dist` and a stale `dist` breaks the app. The workflow `.github/workflows/ci.yml` repeats all these checks.
 
-Diagnóstico adicional de la app:
+Additional app diagnostics:
 
 ```sh
 npm exec -w @jfood/mobile -- expo-doctor
 ```
 
-## Modelo de datos
+## Project history
 
-La migración `001_initial` crea alimentos, comidas y entradas del diario, perfil, objetivos y registros de peso. La migración `002_plan` añade la tabla `plan_entries`; `003_settings` añade `app_settings` para preferencias (tema, onboarding visto, objetivo de agua); `004_water` añade `water_logs`. Las entradas del diario y del plan guardan un snapshot del alimento y de sus nutrientes por 100 g para que cambios posteriores del catálogo no alteren el historial.
-
-Las fechas se guardan como texto `YYYY-MM-DD`; los repositorios las validan y no admiten pesos con fecha futura. Una base de datos con `user_version` mayor que el de la app no se abre (evita corromper datos al instalar una build antigua).
-
-Los objetivos iniciales de la interfaz son provisionales (2000 kcal) hasta completar su configuración en Perfil, y la pantalla de Inicio lo indica explícitamente. Todos los datos se almacenan localmente en `jfood.db`.
+The project was built in phases (diary and catalog, weight tracking, planner, Gemini scanner, production release, visual refresh, "JfooD 2.0" with achievements and reminders, and several audits that fixed correctness, accessibility and security issues). The architecture, engineering principles, data model and a summary of the phases are in [`PLAN.md`](PLAN.md).

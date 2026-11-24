@@ -23,3 +23,6 @@ Thumbs.db
 
 # Catalog build downloads (USDA / Open Food Facts), never committed
 .catalog-cache/
+
+# Local AI tooling (third-party skills), not part of the project
+.agents/

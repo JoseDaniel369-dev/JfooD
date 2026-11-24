@@ -1,23 +1,23 @@
-# Blueprint de Render para la API de JfooD (plan gratuito).
-# En Render: New → Blueprint → elige este repositorio. Después escribe en el panel
-# los dos valores marcados «sync: false» (nunca se guardan en git).
+# Render blueprint for the JfooD API (free plan).
+# In Render: New → Blueprint → choose this repository. Then set in the dashboard
+# the two values marked `sync: false` (they are never stored in git).
 services:
   - type: web
     name: jfood-api
     runtime: node
     plan: free
-    # `npm ci` también compila @jfood/core (postinstall); `npm run build` compila core y api.
+    # `npm ci` also builds @jfood/core (postinstall); `npm run build` builds core and api.
     buildCommand: npm ci && npm run build
-    # Producción: node dist/server.js. NO uses `npm run start:api` (es el modo desarrollo, con tsx watch).
+    # Production: node dist/server.js. Do NOT use `npm run start:api` (development mode, tsx watch).
     startCommand: npm run start -w @jfood/api
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 22
-      # Clave de https://aistudio.google.com/apikey . Sin ella, /recognize responde 503.
+      # Key from https://aistudio.google.com/apikey . Without it, /recognize answers 503.
       - key: GEMINI_API_KEY
         sync: false
-      # Secreto compartido con la app (EXPO_PUBLIC_APP_TOKEN). Invéntalo largo y aleatorio.
+      # Secret shared with the app (EXPO_PUBLIC_APP_TOKEN). Make it long and random.
       - key: APP_TOKEN
         sync: false
       - key: GEMINI_MODEL

@@ -1,69 +1,69 @@
-# Cómo generar las APK de JfooD
+# How to build the JfooD APKs
 
-Esta guía lleva de «el código está listo» a «tengo dos `.apk` instalados en el móvil». Sigue los pasos en orden. Todo lo marcado con 🔑 necesita algo que solo tienes tú (cuentas y claves).
+This guide takes you from "the code is ready" to "I have two `.apk` files installed on my phone". Follow the steps in order. Everything marked with 🔑 needs something only you have (accounts and keys).
 
-| APK | Qué es | Necesita |
+| APK | What it is | Needs |
 |---|---|---|
-| **estable** (`JfooD`) | 100 % sin conexión: diario, catálogo, recordatorios, progreso. Sin cámara ni escáner. | Solo cuenta de Expo |
-| **experimental** (`JfooD Experimental`) | Lo mismo + escáner por foto, registro por texto y código de barras. | Cuenta de Expo + la API desplegada en Render + clave de Gemini |
+| **stable** (`JfooD`) | 100 % offline: diary, catalog, reminders, progress. No camera or scanner. | Only an Expo account |
+| **experimental** (`JfooD Experimental`) | Same, plus photo scanner, text logging and barcode scanner. | Expo account + the API deployed on Render + a Gemini key |
 
-Conviven en el mismo móvil porque tienen `applicationId` distinto (`com.jfood.app` y `com.jfood.app.experimental`). Si solo quieres la estable, salta los pasos 2 y 4.
+They can live on the same phone because they have different `applicationId`s (`com.jfood.app` and `com.jfood.app.experimental`). If you only want the stable one, skip steps 2 and 4.
 
 ---
 
-## 1. Comprobar que todo está en verde
+## 1. Check that everything is green
 
-Desde la raíz del repositorio:
+From the repository root:
 
 ```sh
 npm ci
 npm run release:check
 ```
 
-Ejecuta, y para en el primer fallo: tests (API, móvil, núcleo), `typecheck`, `lint`, compilación de la API y el núcleo, exportación del paquete de Android y `expo-doctor`. Si algo falla, no sigas.
+It runs, and stops at the first failure: tests (API, mobile, core), `typecheck`, `lint`, API and core build, Android bundle export and `expo-doctor`. If anything fails, do not continue.
 
-## 2. 🔑 Desplegar la API en Render (solo para la experimental)
+## 2. 🔑 Deploy the API on Render (experimental only)
 
-1. Sube el repositorio a GitHub.
-2. En [Render](https://render.com): **New → Blueprint** y elige el repositorio. Lee `render.yaml` y crea el servicio `jfood-api` (plan gratuito, arranque de producción `node dist/server.js`).
-3. En el panel del servicio, **Environment**, escribe los dos valores que `render.yaml` deja vacíos a propósito:
-   - `GEMINI_API_KEY`: tu clave de <https://aistudio.google.com/apikey>.
-   - `APP_TOKEN`: una cadena larga y aleatoria que inventas tú (por ejemplo, 40 caracteres). **Apúntala**: la necesitas en el paso 4.
-4. Espera a que el despliegue termine y comprueba que `https://TU-SERVICIO.onrender.com/health` responde con `"status":"ok"`.
-5. Opcional pero recomendable: un monitor gratuito de [UptimeRobot](https://uptimerobot.com) que haga ping a `/health` cada 5 min, para evitar el arranque en frío de ~1 minuto del plan gratuito.
+1. Push the repository to GitHub.
+2. In [Render](https://render.com): **New → Blueprint** and choose the repository. It reads `render.yaml` and creates the `jfood-api` service (free plan, production start `node dist/server.js`).
+3. In the service's **Environment** panel, set the two values that `render.yaml` intentionally leaves empty:
+   - `GEMINI_API_KEY`: your key from <https://aistudio.google.com/apikey>.
+   - `APP_TOKEN`: a long random string that you make up (for example 40 characters). **Write it down**: you need it in step 4.
+4. Wait for the deploy to finish and check that `https://YOUR-SERVICE.onrender.com/health` answers with `"status":"ok"`.
+5. Optional but recommended: a free [UptimeRobot](https://uptimerobot.com) monitor that pings `/health` every 5 minutes, to avoid the ~1 minute cold start of the free plan.
 
-> Prueba local de la misma API en modo producción: `npm run start:api:prod` (con un `apps/api/.env` basado en `apps/api/.env.example`).
+> Local test of the same API in production mode: `npm run start:api:prod` (with an `apps/api/.env` based on `apps/api/.env.example`).
 
-## 3. 🔑 Proyecto de Expo (EAS)
-
-```sh
-cd apps/mobile
-npx eas-cli@latest login        # tu cuenta de expo.dev
-npx eas-cli@latest init         # crea el proyecto y muestra su projectId
-```
-
-Como la configuración de la app es un script (`app.config.js`), `eas init` no puede escribir el identificador por ti si no lo reconoce: **pégalo a mano** en la constante `EAS_PROJECT_ID` al principio de `apps/mobile/app.config.js`. No es un secreto; puede ir al repositorio.
-
-## 4. 🔑 URL y token de la API (solo para la experimental)
-
-Desde la raíz del repositorio:
-
-```sh
-npm run release:set-api-url -- https://TU-SERVICIO.onrender.com
-```
-
-Comprueba que es HTTPS y escribe la URL en el perfil `experimental` de `apps/mobile/eas.json` (la build se niega a salir con el valor de ejemplo `TU_API`).
-
-Después, el token (el mismo `APP_TOKEN` de Render). Cada perfil de build usa su propio entorno de EAS (`estable` → `production`, `experimental` → `preview`), así que el token solo llega a la experimental:
+## 3. 🔑 Expo project (EAS)
 
 ```sh
 cd apps/mobile
-npx eas-cli@latest env:set --name EXPO_PUBLIC_APP_TOKEN --value "EL_MISMO_APP_TOKEN" --environment preview --visibility plaintext
+npx eas-cli@latest login        # your expo.dev account
+npx eas-cli@latest init         # creates the project and shows its projectId
 ```
 
-El token viaja dentro del APK (cualquiera con el APK puede leerlo), así que solo frena el tráfico casual: lo que de verdad protege tu cupo de Gemini son los límites diarios de la API. Si tu versión de `eas-cli` ofrece `--visibility sensitive`, puedes usarla (`npx eas-cli@latest env:set --help`); **no** uses `secret` con variables `EXPO_PUBLIC_`.
+Because the app configuration is a script (`app.config.js`), `eas init` cannot write the identifier for you if it does not recognize it: **paste it by hand** into the `EAS_PROJECT_ID` constant at the top of `apps/mobile/app.config.js`. It is not a secret; it can be committed.
 
-## 5. Compilar
+## 4. 🔑 API URL and token (experimental only)
+
+From the repository root:
+
+```sh
+npm run release:set-api-url -- https://YOUR-SERVICE.onrender.com
+```
+
+It checks that the URL is HTTPS and writes it into the `experimental` profile of `apps/mobile/eas.json` (the build refuses to run with the placeholder `TU_API`).
+
+Then the token (the same `APP_TOKEN` as on Render). Each build profile uses its own EAS environment (`estable` → `production`, `experimental` → `preview`), so the token only reaches the experimental build:
+
+```sh
+cd apps/mobile
+npx eas-cli@latest env:set --name EXPO_PUBLIC_APP_TOKEN --value "THE_SAME_APP_TOKEN" --environment preview --visibility plaintext
+```
+
+The token travels inside the APK (anyone with the APK can read it), so it only stops casual traffic: what really protects your Gemini quota are the API's daily limits. If your version of `eas-cli` offers `--visibility sensitive`, you can use it (`npx eas-cli@latest env:set --help`); **do not** use `secret` with `EXPO_PUBLIC_` variables.
+
+## 5. Build
 
 ```sh
 cd apps/mobile
@@ -71,51 +71,52 @@ npx eas-cli@latest build -p android --profile estable
 npx eas-cli@latest build -p android --profile experimental
 ```
 
-- Compila en la nube de EAS (en Windows no se puede compilar Android en local con EAS). Cada build tarda unos 10-20 minutos en la cola gratuita.
-- Al terminar, EAS muestra un enlace de descarga del `.apk` de cada una.
-- El número de versión interno (`versionCode`) lo gestiona EAS y sube solo en cada build.
-- La primera vez te preguntará si quiere generar una *keystore* (la firma de la app): responde que sí y **no la pierdas** (EAS la guarda por ti en tu cuenta).
+- It builds in the EAS cloud (on Windows you cannot build Android locally with EAS). Each build takes about 10–20 minutes in the free queue.
+- When it finishes, EAS shows a download link for each `.apk`.
+- The internal version number (`versionCode`) is managed by EAS and goes up by itself on every build.
+- The first time it will ask whether to generate a *keystore* (the app signature): answer yes and **do not lose it** (EAS stores it for you in your account).
 
-## 6. Instalar
+## 6. Install
 
-- **Desde el móvil:** abre el enlace de EAS, descarga el `.apk` y permite «instalar apps de origen desconocido» para el navegador.
-- **Desde el PC con `adb`:** `adb install JfooD.apk`.
+- **From the phone:** open the EAS link, download the `.apk` and allow "install apps from unknown sources" for the browser.
+- **From the PC with `adb`:** `adb install JfooD.apk`.
 
-## 7. Comprobar en el móvil
+## 7. Check on the phone
 
-Esto es lo único que no se puede verificar sin un dispositivo. Pruébalo con la **estable** (y los puntos 8-9 con la experimental):
+This is the only thing that cannot be verified without a device. Try it with the **stable** build (and points 8–9 with the experimental one). The app interface is in Spanish; the labels below are given in English with the Spanish text in quotes when it helps.
 
-1. **Primer arranque:** icono y pantalla de inicio nuevos; onboarding de 4 pasos (nombre, datos, avisos, objetivos con confeti). La app debe abrir sin tardar más de unos segundos: copia el catálogo grande la primera vez.
-   - **Catálogo grande:** Añadir alimento → busca «yogur natural», «pan de molde», «pechuga de pollo», «hacendado»: salen con marca, calorías y macros sin escribir nada. Elige uno y añádelo al diario; debe aparecer luego en «Recientes». Prueba también la pestaña «Catálogo» (chips de categoría, «Ver más alimentos») y marcar uno como favorito.
-   - Si Perfil → Acerca de muestra «El catálogo ampliado no se ha podido cargar», anótalo con el modelo del móvil (la app sigue funcionando con los 338 básicos).
-2. **Teclado en las hojas:** Añadir alimento → toca uno → toca el campo de gramos. El botón «Añadir» debe verse entero sobre el teclado, también en un móvil pequeño. Repite con «Otra…» del agua y con tu nombre en Perfil.
-3. **Gestos:** en el Diario, desliza una entrada a la izquierda (borra con «Deshacer») y a la derecha (duplica).
-4. **Recordatorios:** Perfil → Recordatorios → activa uno con la hora a +2 minutos. Debe llegar la notificación y, al tocarla, abrirse la pantalla correcta. Registra esa comida antes de la hora y comprueba que **no** llega.
-5. **Copiar a otro día** (icono de copiar junto a una comida del Diario) y **Duplicar como mío** (ficha de un alimento del catálogo): el original no cambia.
-6. **Progreso → Macros** con algunos días registrados; **Agua → Otra…**.
-7. **Modo oscuro** (Perfil → Apariencia) y «reducir animaciones» del sistema: sin pantallas rotas ni texto ilegible.
-8. **Copia de seguridad:** Perfil → Tus datos → exportar; restaura en la otra APK y comprueba que siguen los recordatorios, el nombre y el catálogo.
-9. **Solo experimental:** escáner por foto, por texto («2 huevos y un café») y por código de barras. La primera petición tras un rato puede tardar hasta ~1 minuto (la API gratuita «se duerme»). Desde el Planificador, «Añadir alimento» → «Escanear» debe guardar en el **plan**, no en el diario.
-10. **Refresco visual (noviembre de 2026):**
-    - **Barra de pestañas:** que los botones del sistema no tapen las etiquetas y que no quede demasiado alta. Si algo se solapa, sube `MIN_BOTTOM_INSET` en `apps/mobile/src/components/AppTabBar.tsx`.
-    - **Teclado:** abre un campo bajo en Progreso (peso), Receta y Perfil (altura): debe verse entero sobre el teclado.
-    - **Arranque:** sin parpadeo entre la pantalla de bienvenida y la app, en claro y en oscuro.
-    - **Gráfica de peso** (Progreso → Peso, con 2+ registros): arrastra el dedo para ver cada día; el desplazamiento vertical de la pantalla debe seguir funcionando.
-    - **Doble toque:** en «Copiar al diario» del Planificador y en «Repetir ayer» de Inicio debe copiar una sola vez.
+1. **First launch:** new icon and splash screen; 4-step onboarding (name, data, reminders, goals with confetti). The app must open in no more than a few seconds: it copies the large catalog the first time.
+   - **Large catalog:** Add food → search "yogur natural", "pan de molde", "pechuga de pollo", "hacendado": they appear with brand, calories and macros without typing anything. Pick one and add it to the diary; it must then appear in "Recientes". Also try the "Catálogo" tab (category chips, "Ver más alimentos") and mark one as a favorite.
+   - If Profile → About shows "El catálogo ampliado no se ha podido cargar" (the extended catalog could not be loaded), note it down with the phone model (the app keeps working with the 338 basic foods).
+2. **Keyboard in sheets:** Add food → tap one → tap the grams field. The "Add" button must be fully visible above the keyboard, also on a small phone. Repeat with "Otra…" (other) in water and with your name in Profile.
+3. **Gestures:** in the Diary, swipe an entry left (deletes, with Undo) and right (duplicates).
+4. **Reminders:** Profile → Reminders → enable one with the time set 2 minutes ahead. The notification must arrive and, when tapped, open the right screen. Log that meal before the time and check that it does **not** arrive.
+5. **Copy to another day** (copy icon next to a meal in the Diary) and **Duplicate as mine** (food detail from the catalog): the original does not change.
+6. **Progress → Macros** with a few logged days; **Water → Otra…**.
+7. **Dark mode** (Profile → Appearance) and the system "reduce motion" setting: no broken screens or unreadable text.
+8. **Backup:** Profile → Your data → export; restore in the other APK and check that reminders, name and catalog are still there.
+9. **Experimental only:** photo scanner, text ("2 huevos y un café") and barcode scanner. The first request after a while can take up to ~1 minute (the free API "falls asleep"). From the Planner, "Add food" → "Scan" must save to the **plan**, not to the diary.
+10. **Visual refresh (November 2026):**
+    - **Tab bar:** the system buttons must not cover the labels and the bar must not be too tall. If something overlaps, raise `MIN_BOTTOM_INSET` in `apps/mobile/src/components/AppTabBar.tsx`.
+    - **Keyboard:** open a low field in Progress (weight), Recipe and Profile (height): it must be fully visible above the keyboard.
+    - **Startup:** no flicker between the splash screen and the app, in light and dark.
+    - **Weight chart** (Progress → Weight, with 2+ entries): drag a finger to see each day; vertical scrolling of the screen must keep working.
+    - **Double tap:** "Copy to diary" in the Planner and "Repeat yesterday" on Home must copy only once.
 
-### Cosas que son normales
+### Things that are normal
 
-- En Android 12+ los avisos pueden llegar con **unos minutos de retraso**: la app no pide el permiso de «alarmas exactas» a propósito, para no añadir permisos especiales.
-- Los recordatorios se programan para los próximos 7 días cada vez que abres la app: si pasas más de una semana sin abrirla, dejarán de llegar hasta que la abras.
-- La APK estable no muestra el escáner ni los códigos de barras; es lo esperado.
+- On Android 12+ notifications can arrive **a few minutes late**: the app deliberately does not request the "exact alarms" permission, to avoid adding special permissions.
+- Reminders are scheduled for the next 7 days every time you open the app: if you go more than a week without opening it, they stop arriving until you open it.
+- The stable APK does not show the scanner or barcodes; that is expected.
 
-## 8. Si algo falla
+## 8. If something fails
 
-| Síntoma | Qué mirar |
+| Symptom | What to look at |
 |---|---|
-| La build falla con «TU_API» o «HTTPS» | Repite el paso 4 (`release:set-api-url`). |
-| `eas build` dice que no hay proyecto | Pega el `projectId` en `EAS_PROJECT_ID` (paso 3). |
-| El escáner responde «no autorizada» | El `EXPO_PUBLIC_APP_TOKEN` de EAS no coincide con `APP_TOKEN` de Render; recompila la experimental tras corregirlo. |
-| El escáner responde «servicio saturado» | Es el límite de Gemini del nivel gratuito: espera o sube `RECOGNIZE_DAILY_LIMIT` en Render. |
-| El botón de la hoja queda tapado por el teclado | Anótalo con el modelo del móvil: el plan B es sustituir el cálculo del teclado por `react-native-keyboard-controller`. |
-| No llegan los avisos | Ajustes del móvil → Apps → JfooD → Notificaciones (activadas) y «sin restricciones de batería». Perfil muestra un aviso si el permiso está denegado. |
+| The build fails with "TU_API" or "HTTPS" | Repeat step 4 (`release:set-api-url`). |
+| `eas build` says there is no project | Paste the `projectId` into `EAS_PROJECT_ID` (step 3). |
+| The scanner answers "not authorized" | The EAS `EXPO_PUBLIC_APP_TOKEN` does not match Render's `APP_TOKEN`; rebuild the experimental APK after fixing it. |
+| The scanner says "El reconocimiento no está configurado en este servidor" (recognition is not configured on this server) | `GEMINI_API_KEY` is empty on the server. Set it in the Render **Environment** panel (key name `GEMINI_API_KEY`, value = your Gemini key) and wait for the deploy to be **Live**. No rebuild needed. |
+| The scanner says "service busy" | It is the Gemini free-tier limit: wait, or raise `RECOGNIZE_DAILY_LIMIT` on Render. |
+| The sheet button is hidden by the keyboard | Note it down with the phone model: plan B is to replace the keyboard calculation with `react-native-keyboard-controller`. |
+| Notifications do not arrive | Phone settings → Apps → JfooD → Notifications (enabled) and "no battery restrictions". Profile shows a warning if the permission is denied. |
